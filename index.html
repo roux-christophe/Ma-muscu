@@ -751,7 +751,7 @@ const FOOD_DB = [{"nom":"Abondance","categorie":"Fromages à pâte pressée","kc
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260908143835';
+const APP_BUILD_VERSION = '20260908164350';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1018,6 +1018,11 @@ function computeDureeTotaleMin(L, seanceDef){
     let total = 0;
     (L.cardio && L.cardio.blocs || []).forEach(b=>{ if(b.duree!=null) total += Number(b.duree)||0; });
     if(L.finisherCardio && L.finisherCardio.duree!=null) total += Number(L.finisherCardio.duree)||0;
+    // Le circuit abdos (poids du corps, a la suite du cardio) est optionnel
+    // et sa duree est saisie a part (cf. circuitAbdosHTML) : on l'ajoute au
+    // total sinon les seances cardio qui en comportent un sous-estiment
+    // systematiquement la duree reelle, donc les calories brulees.
+    if(L.circuitAbdosDureeMin!=null) total += Number(L.circuitAbdosDureeMin)||0;
     return total;
   }
   return L.dureeMin!=null ? Number(L.dureeMin)||0 : 0;
@@ -1446,7 +1451,7 @@ const app = {
         // dans le budget nutrition, meme apres avoir bien entraine. Un
         // defaut modere assure une estimation par defaut, ajustable en
         // tapant un autre chiffre si besoin.
-        intensite: 5, dureeMin: null,
+        intensite: 5, dureeMin: null, circuitAbdosDureeMin: null,
         exercices: (seanceDef.exercices||[]).map(e=>({
           exercice: e.exercice,
           series: Array.from({length:parseSeriesCount(e.series_reps)}, ()=>({poids:null,reps:null}))
@@ -1482,7 +1487,7 @@ const app = {
     let html = '';
     if(seanceDef.type==='cardio'){
       html += this.cardioBlockHTML(seanceDef, L.cardio, 'cardio', semaine, seanceDef.progressionDuree8Semaines);
-      if(seanceDef.circuitAbdos){ html += this.circuitAbdosHTML(seanceDef.circuitAbdos); }
+      if(seanceDef.circuitAbdos){ html += this.circuitAbdosHTML(seanceDef.circuitAbdos, L.circuitAbdosDureeMin); }
     } else {
       html += L.exercices.map((exState, idx)=>{
         const def = seanceDef.exercices.find(e=>e.exercice===exState.exercice) || {};
@@ -1563,7 +1568,8 @@ const app = {
   },
   setIntensite(n){ this.currentLog.intensite = n; this.renderLog(); this.autosaveLog(); },
   updateDureeMin(v){ this.currentLog.dureeMin = v===''?null:parseFloat(v); this.renderLog(); this.autosaveLog(); },
-  circuitAbdosHTML(circuit){
+  updateCircuitAbdosDuree(v){ this.currentLog.circuitAbdosDureeMin = v===''?null:parseFloat(v); this.renderLog(); this.autosaveLog(); },
+  circuitAbdosHTML(circuit, dureeMin){
     const rows = circuit.exercices.map(e=>`
       <div class="list-row" style="align-items:flex-start;">
         <div class="meta">
@@ -1576,6 +1582,9 @@ const app = {
       <div class="exo-sub" style="margin-bottom:6px;">À la suite du cardio, au poids du corps — pas de charge ni de séries à noter ici.</div>
       ${rows}
       ${circuit.repos?`<p class="small-note" style="margin-top:8px;">Repos : ${escapeHtml(circuit.repos)}</p>`:''}
+      <div class="field" style="margin-top:12px;"><label>Durée totale du circuit (min)</label>
+        <input type="number" inputmode="numeric" placeholder="Ex : 8 à 10" value="${dureeMin!=null?dureeMin:''}" onchange="app.updateCircuitAbdosDuree(this.value)"></div>
+      <p class="small-note" style="margin-top:6px;">Optionnel, mais s'ajoute à la durée du cardio ci-dessus pour estimer les calories brûlées de la séance — sans elle, ce circuit n'est pas compté.</p>
     </div>`;
   },
   cardioBlockHTML(seanceDef, state, kind, semaine, progressionDuree, compact){
