@@ -794,7 +794,7 @@ const FOOD_DB = [{"nom":"Abondance","categorie":"Fromages à pâte pressée","kc
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260911170308';
+const APP_BUILD_VERSION = '20260911171511';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1910,7 +1910,21 @@ const app = {
     const wrap = document.getElementById('nutri-summary');
     const profil = calculNutritionProfil();
     if(!profil){
-      wrap.innerHTML = '<div class="card"><p class="empty">Complète ton profil (⚙️ en haut) pour voir ton budget calorique et tes macros.</p></div>';
+      // Depuis que le poids a ete deplace dans "Suivi corporel" (separe de
+      // "Profil & objectif"), completer l'un sans l'autre ne suffit plus a
+      // debloquer le calcul — d'ou un message generique qui donnait
+      // l'impression que rien ne se passait. On indique precisement ce qui
+      // manque, avec un bouton direct vers le bon ecran pour chaque cas.
+      const s = this.db.settings;
+      const profilIncomplet = !s.sexe || !s.dateNaissance || s.taille==null;
+      const poidsManquant = !latestPoidsKg();
+      wrap.innerHTML = `<div class="card">
+        <p class="empty">Pour voir ton budget calorique et tes macros, il manque${profilIncomplet && poidsManquant ? ' :' : ''} ${profilIncomplet?'ton profil (sexe, date de naissance, taille)':''}${profilIncomplet && poidsManquant?' et ':''}${poidsManquant?'une pesée récente':''}.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+          ${profilIncomplet?'<button class="btn btn-ghost" style="width:auto;padding:9px 12px;" onclick="nav.push(\'view-nutri-profil\'); app.renderNutriProfil();">⚙️ Compléter mon profil</button>':''}
+          ${poidsManquant?'<button class="btn btn-ghost" style="width:auto;padding:9px 12px;" onclick="nav.push(\'view-nutri-corps\'); app.renderNutriCorps();">📏 Ajouter une pesée</button>':''}
+        </div>
+      </div>`;
       return;
     }
     const entries = this.db.journalAlimentaire.filter(e=>e.date===date);
@@ -2547,7 +2561,9 @@ const app = {
     const el = document.getElementById('nutri-calcul-resultat');
     const profil = calculNutritionProfil();
     if(!profil){
-      el.innerHTML = '<p class="empty">Renseigne ton sexe, ta date de naissance, ta taille et une pesée récente (section Poids) pour voir le calcul.</p>';
+      const poidsManquant = !latestPoidsKg();
+      el.innerHTML = `<p class="empty">Renseigne ton sexe, ta date de naissance et ta taille ci-dessus${poidsManquant?', puis ajoute une pesée récente':''}.</p>
+        ${poidsManquant?'<button class="btn btn-ghost" style="width:auto;padding:9px 12px;margin-top:8px;" onclick="nav.push(\'view-nutri-corps\'); app.renderNutriCorps();">📏 Ajouter une pesée (Suivi corporel)</button>':''}`;
       return;
     }
     el.innerHTML = `<div class="stat-grid">
