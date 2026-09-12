@@ -127,8 +127,13 @@ button{font-family:inherit;}
    ce n'est plus l'unite structurelle par defaut de l'appli. */
 .card{
   background:var(--card); border:1px solid var(--card-border); border-radius:var(--radius-card); padding:18px;
-  margin-bottom:14px; box-shadow:var(--shadow);
+  margin-bottom:14px; box-shadow:var(--shadow); overflow:hidden;
 }
+/* Repli defensif : empeche un champ (notamment input[type=date], dont le
+   controle natif iOS/Safari peut ignorer width:100% et deborder du cadre)
+   de faire deborder visuellement la carte. */
+.info-text{display:none;}
+.info-text.show{display:block;}
 .card + .card{margin-top:0;}
 .section-title{font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); margin:26px 0 11px; font-weight:800;}
 .section-title:first-child{margin-top:0;}
@@ -369,7 +374,7 @@ button{font-family:inherit;}
 .field{margin-bottom:12px;}
 .field label{display:block; font-size:13px; color:var(--text-dim); margin-bottom:6px; font-weight:700;}
 .field input, .field select, .field textarea{
-  width:100%; background:var(--input-bg); border:1px solid var(--card-border); border-radius:12px;
+  width:100%; max-width:100%; min-width:0; background:var(--input-bg); border:1px solid var(--card-border); border-radius:12px;
   padding:12px 13px; font-size:16px; color:var(--text); font-family:inherit; transition:border-color .15s ease;
 }
 .field input:focus, .field select:focus, .field textarea:focus{border-color:var(--accent);}
@@ -407,7 +412,7 @@ button{font-family:inherit;}
 }
 .navbar button{
   position:relative; flex:1; background:none; border:none; padding:9px 4px 8px; border-radius:17px; display:flex; flex-direction:column; align-items:center;
-  gap:3px; color:var(--text-faint); font-size:10.5px; font-weight:700; transition:color .15s ease, transform .12s ease, background .18s ease;
+  gap:3px; color:var(--text-dim); font-size:10.5px; font-weight:700; transition:color .15s ease, transform .12s ease, background .18s ease;
 }
 .navbar button:active{transform:scale(.93);}
 .navbar button.active{color:var(--accent); background:color-mix(in srgb, var(--accent) 13%, transparent);}
@@ -882,7 +887,7 @@ const FOOD_DB = [{"nom":"Abat, cuit (aliment moyen)","categorie":"viandes cuites
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260912070552';
+const APP_BUILD_VERSION = '20260912093246';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -893,6 +898,10 @@ const SVG_HEART = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const SVG_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
 const SVG_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>';
 const SVG_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5v14l11-7z"/></svg>';
+const SVG_INFO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg>';
+// Chronometre (minuterie de repos) — remplace l'icone "play" generique sur
+// le bouton dedie, pour eviter la confusion avec une action de lecture.
+const SVG_TIMER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 2h6"/></svg>';
 const SVG_APPLE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8c0-3-2-6-6-6-1 2-1 4 0 6"/><path d="M12 8c-5 0-8 4-8 9 0 3 2 6 5 6 2 0 2.5-1 3-1s1 1 3 1c3 0 5-3 5-6 0-2-1-3-2-4"/></svg>';
 const SVG_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg>';
 const SVG_PLATE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg>';
@@ -1949,7 +1958,7 @@ const app = {
           <div class="series-grid">${seriesRows}</div>
           <div class="series-actions-row">
             <button class="btn btn-secondary btn-sm" onclick="app.addSerie(${idx})">＋ Ajouter une série</button>
-            <button class="icon-btn" title="Démarrer le repos" onclick="app.startRestTimer(${idx})">${SVG_PLAY}</button>
+            <button class="icon-btn" title="Démarrer le repos" onclick="app.startRestTimer(${idx})">${SVG_TIMER}</button>
             ${!single?`<button class="icon-btn" title="Calculateur de disques" onclick="app.openPlateCalc(${plateCalcPrefill!=null?plateCalcPrefill:'null'})">${SVG_PLATE}</button>`:''}
             <button class="icon-btn" title="Supprimer une série" onclick="app.removeSerie(${idx})">${SVG_TRASH}</button>
           </div>
@@ -2405,9 +2414,12 @@ const app = {
     const goalBars = [];
     if(s.objectifSel!=null) goalBars.push(objectifBarHTML('Sel', sel, s.objectifSel, 'g', true));
     if(s.objectifFibres!=null) goalBars.push(objectifBarHTML('Fibres', fibres, s.objectifFibres, 'g', false));
-    wrap.innerHTML = `<div class="section-title" style="margin:22px 0 8px;">Détail du jour</div>
+    wrap.innerHTML = `<div class="section-title" style="margin:22px 0 8px;display:flex;align-items:center;gap:6px;justify-content:space-between;">
+        <span>Détail du jour</span>
+        <button type="button" class="icon-btn" style="width:24px;height:24px;flex-shrink:0;" title="Comment ce total est calculé" onclick="this.closest('.section-title').nextElementSibling.querySelector('.info-text').classList.toggle('show')">${SVG_INFO}</button>
+      </div>
       <div class="card">
-        <p class="small-note" style="margin-top:0;">Calculé sur ${withDetail.length}/${entries.length} aliment${entries.length>1?'s':''} du jour — uniquement ceux dont la source fournit ce niveau de détail (scan, recherche en ligne Open Food Facts, ou certaines fiches enrichies de la base locale comme le fast-food et CIQUAL). Les saisies manuelles et certains aliments génériques n'ont pas cette donnée, ce total n'est donc pas exhaustif.</p>
+        <p class="small-note info-text" style="margin-top:0;">Calculé sur ${withDetail.length}/${entries.length} aliment${entries.length>1?'s':''} du jour — uniquement ceux dont la source fournit ce niveau de détail (scan, recherche en ligne Open Food Facts, ou certaines fiches enrichies de la base locale comme le fast-food et CIQUAL). Les saisies manuelles et certains aliments génériques n'ont pas cette donnée, ce total n'est donc pas exhaustif.</p>
         <div class="quickstats">${rows.map(r=>`<div class="qs"><div class="v">${r.v}</div><div class="l">${r.l}</div></div>`).join('')}</div>
         ${additifs.length ? `<div style="margin-top:12px;"><label class="small-note" style="display:block;margin-bottom:6px;">Additifs détectés aujourd'hui</label><div class="pill-row">${additifs.map(a=>`<span class="pill" style="pointer-events:none;">${escapeHtml(a)}</span>`).join('')}</div></div>` : ''}
         ${goalBars.length ? `<div style="margin-top:14px;">${goalBars.join('')}</div>` : ''}
