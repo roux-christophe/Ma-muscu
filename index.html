@@ -327,7 +327,12 @@ button{font-family:inherit;}
 .btn-ghost{background:transparent; color:var(--accent); padding:8px;}
 .btn-sm{padding:9px 13px; font-size:14px; width:auto;}
 .row{display:flex; gap:10px;}
-.row > *{flex:1;}
+/* min-width:0 : sans ca, un flex item dont le contenu ne peut pas se
+   retrecir (ex. un label sur une seule ligne un peu long) s'etend au-dela
+   de sa part "flex:1", et deux champs cote a cote (ex. "Nouvelle pesee" +
+   "Date") se retrouvent avec des largeurs differentes malgre flex:1 sur
+   les deux. */
+.row > *{flex:1; min-width:0;}
 
 .list-row{
   display:flex; align-items:center; gap:12px; padding:13px 2px; border-bottom:1px solid var(--card-border);
@@ -374,15 +379,30 @@ button{font-family:inherit;}
 
 .field{margin-bottom:12px;}
 .field label{display:block; font-size:13px; color:var(--text-dim); margin-bottom:6px; font-weight:700;}
-.field input, .field select, .field textarea{
-  width:100%; max-width:100%; min-width:0; background:var(--input-bg); border:1px solid var(--card-border); border-radius:12px;
+/* Une seule regle de taille pour tous les champs sur une ligne (texte,
+   nombre, date, select...) : meme padding, meme hauteur FIXE (pas juste
+   min-height, pour forcer des moteurs de rendu differents — le rendu
+   interne d'un input[type=date] n'a pas exactement la meme hauteur
+   intrinseque qu'un champ texte a padding egal — a produire malgre tout
+   des boites strictement identiques), pour que deux champs cote a cote
+   (ex. "Nouvelle pesee" + "Date") fassent toujours exactement la meme
+   taille. Le textarea est exclu (hauteur multi-lignes definie a part).
+*/
+.field input, .field select{
+  width:100%; max-width:100%; min-width:0; box-sizing:border-box; background:var(--input-bg); border:1px solid var(--card-border); border-radius:12px;
+  padding:14px 13px; height:50px; font-size:16px; line-height:1.4; color:var(--text); font-family:inherit; transition:border-color .15s ease;
+}
+.field textarea{
+  width:100%; max-width:100%; min-width:0; min-height:70px; box-sizing:border-box; background:var(--input-bg); border:1px solid var(--card-border); border-radius:12px;
   padding:12px 13px; font-size:16px; line-height:1.4; color:var(--text); font-family:inherit; transition:border-color .15s ease;
 }
 .field input:focus, .field select:focus, .field textarea:focus{border-color:var(--accent);}
-/* input[type=date] : le controle natif iOS/Safari a besoin d'un peu plus de
-   marge verticale que les autres champs pour ne jamais rogner le texte
-   affiche (jour/mois/annee) contre le bord de la pastille. */
-.field input[type="date"]{padding:15px 13px; min-height:50px;}
+/* input[type=date] sur iOS/Safari : le controle natif ("-webkit-appearance"
+   par defaut) peut se dessiner avec une largeur/hauteur intrinseque qui
+   ignore le width:100% impose ci-dessus et deborder du cadre. On neutralise
+   l'habillage natif pour forcer un box model 100% CSS, identique aux autres
+   champs — l'ouverture du selecteur de date au tap n'est pas affectee. */
+.field input[type="date"]{-webkit-appearance:none; appearance:none;}
 
 .bottom-bar{
   position:fixed; left:0; right:0; bottom:calc(90px + env(safe-area-inset-bottom)); z-index:15;
@@ -456,7 +476,7 @@ button{font-family:inherit;}
 .nutri-day-label svg{width:15px;height:15px; color:var(--text-faint);}
 .nutri-day-head input[type="date"]{
   background:var(--card-2); border:1px solid var(--card-border); border-radius:10px; color:var(--text-faint); font-size:12px;
-  padding:8px 10px; line-height:1.4; width:auto;
+  padding:8px 10px; line-height:1.4; width:auto; box-sizing:border-box; -webkit-appearance:none; appearance:none;
 }
 .week-strip{display:flex; justify-content:space-between; margin:12px 0 18px; background:var(--card-2); border:1px solid var(--card-border); border-radius:16px; padding:6px;}
 .week-strip .wd{background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:5px; padding:8px 0; flex:1; color:var(--text-faint); font-size:12px; font-weight:800; border-radius:12px; cursor:pointer; transition:background .15s ease, color .15s ease;}
@@ -892,7 +912,7 @@ const FOOD_DB = [{"nom":"Abat, cuit (aliment moyen)","categorie":"viandes cuites
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260912094921';
+const APP_BUILD_VERSION = '20260912100920';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
