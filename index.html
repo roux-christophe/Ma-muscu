@@ -227,7 +227,7 @@ button{font-family:inherit;}
 .exo-meta-row{display:flex; gap:16px; margin-top:10px; flex-wrap:wrap;}
 .exo-meta-row .em{font-size:12.5px; color:var(--text-faint); font-weight:700;}
 .exo-meta-row .em b{color:var(--text-dim); font-weight:800;}
-.exo-meta-row .em.target{color:var(--chip-text); background:var(--chip-bg); padding:3px 10px; border-radius:99px;}
+.em.target{color:var(--chip-text); background:var(--chip-bg); padding:3px 10px; border-radius:99px;}
 
 /* ---------- TABLEAU DE SERIES (Serie / KG / REPS / valide) ---------- */
 .series-head{display:grid; grid-template-columns:32px 1fr 1fr 32px; gap:9px; padding:14px 3px 6px; font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; color:var(--text-faint);}
@@ -367,6 +367,24 @@ button{font-family:inherit;}
   padding:12px 16px; background:linear-gradient(to top, var(--bg) 55%, transparent);
 }
 .bottom-bar .app{padding:0;}
+.rest-timer-bar{
+  position:fixed; left:14px; right:14px; bottom:calc(154px + env(safe-area-inset-bottom)); z-index:16;
+  max-width:560px; margin:0 auto; display:flex; align-items:center; gap:8px;
+  background:var(--nav-bg); backdrop-filter:blur(22px) saturate(1.5); -webkit-backdrop-filter:blur(22px) saturate(1.5);
+  border:1px solid var(--card-border); border-radius:18px; padding:9px 12px;
+  box-shadow:0 12px 30px -14px rgba(0,0,0,.55);
+}
+.rest-timer-bar[hidden]{display:none;}
+.rest-timer-bar.done{border-color:var(--accent-2);}
+.rest-timer-bar .rt-time{font-size:21px; font-weight:800; font-variant-numeric:tabular-nums; min-width:54px;}
+.rest-timer-bar.done .rt-time{color:var(--accent-2);}
+.rest-timer-bar .rt-label{flex:1; font-size:11.5px; color:var(--text-dim); font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.rest-timer-bar .rt-btn{
+  background:var(--card-2); border:1px solid var(--card-border); border-radius:10px; height:32px; padding:0 10px;
+  color:var(--text); font-size:12px; font-weight:800; flex-shrink:0;
+}
+.rest-timer-bar .rt-btn:active{transform:scale(.94);}
+.rest-timer-bar .icon-btn{width:32px; height:32px; flex-shrink:0;}
 /* Capsule flottante, translucide, style "app native" plutot que barre
    d'onglets HTML classique — memes 5 boutons / data-view / onclick. */
 .navbar{
@@ -524,6 +542,7 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
     <div class="card" id="log-meta"></div>
     <div id="log-body"></div>
     <div style="height:90px"></div>
+    <div id="rest-timer-bar" class="rest-timer-bar" hidden></div>
     <div class="bottom-bar"><div class="app"><button class="btn btn-primary" onclick="app.saveSeance()">Enregistrer la séance</button></div></div>
   </div>
 
@@ -581,6 +600,7 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
     </div>
     <div class="week-strip" id="nutri-week-strip"></div>
     <div id="nutri-summary"></div>
+    <div id="nutri-hydratation"></div>
     <div id="nutri-detail-jour"></div>
     <div id="nutri-meals"></div>
   </div>
@@ -670,6 +690,15 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
       </div>
       <div class="field" style="margin-top:12px;"><label>Glucides (g)</label><input type="number" inputmode="numeric" id="nutri-override-glucides" placeholder="auto" onchange="app.setNutriField('glucidesOverride', this.value)"></div>
     </div>
+    <div class="section-title">Objectifs sel &amp; fibres (optionnel)</div>
+    <div class="card">
+      <p class="small-note" style="margin-bottom:10px;">Laisse vide pour ne pas afficher d'objectif. Repères usuels (OMS/ANSES) : sel &lt; 5g/jour, fibres 25 à 30g/jour.</p>
+      <div class="row">
+        <div class="field"><label>Sel (g/jour)</label><input type="number" inputmode="decimal" step="0.1" id="nutri-objectif-sel" placeholder="Ex : 5" onchange="app.setNutriField('objectifSel', this.value)"></div>
+        <div class="field"><label>Fibres (g/jour)</label><input type="number" inputmode="numeric" id="nutri-objectif-fibres" placeholder="Ex : 28" onchange="app.setNutriField('objectifFibres', this.value)"></div>
+      </div>
+      <p class="small-note" style="margin-top:6px;">Ne compte que sur les aliments dont la source fournit ce détail (comme le total "Détail du jour" dans l'onglet Nutrition) — pas exhaustif si tu saisis surtout des aliments manuels.</p>
+    </div>
   </div>
 
   <!-- ===== NUTRITION : AJOUT D'ALIMENT ===== -->
@@ -690,6 +719,7 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
       <button class="btn btn-ghost" style="width:auto;padding:9px 2px;" onclick="app.searchOpenFoodFactsOnline()">🔎 Chercher aussi sur Open Food Facts (produits de marque, en ligne)</button>
       <div id="nutri-db-online-results"></div>
     </div>
+    <div id="nutri-repastypes-zone"></div>
     <div id="nutri-favoris-zone"></div>
     <div class="section-title">Détails</div>
     <div class="card">
@@ -774,6 +804,30 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
   </div>
 </div>
 
+<div class="confirm-overlay" id="plate-calc-overlay">
+  <div class="confirm-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:16px;font-weight:800;">Calculateur de disques</div>
+      <button class="icon-btn" title="Fermer" onclick="app.closePlateCalc()">✕</button>
+    </div>
+    <div class="field"><label>Poids total visé (barre + disques)</label>
+      <input type="number" inputmode="decimal" id="plate-calc-input" placeholder="Ex : 62.5" oninput="app.renderPlateCalc()"></div>
+    <div class="field"><label>Barre</label><div class="pill-row" id="plate-calc-bars"></div></div>
+    <div id="plate-calc-result"></div>
+  </div>
+</div>
+
+<div class="confirm-overlay" id="prompt-overlay">
+  <div class="confirm-box">
+    <p id="prompt-message"></p>
+    <div class="field"><input type="text" id="prompt-input"></div>
+    <div class="row">
+      <button class="btn btn-secondary" id="prompt-cancel">Annuler</button>
+      <button class="btn btn-primary" id="prompt-ok">Valider</button>
+    </div>
+  </div>
+</div>
+
 <nav class="navbar">
   <button data-view="home" onclick="nav.tab('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Accueil</button>
   <button data-view="sport" onclick="nav.tab('sport')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M2.5 9.5v5M21.5 9.5v5M6.5 12h11"/></svg>Sport</button>
@@ -794,7 +848,7 @@ const FOOD_DB = [{"nom":"Abat, cuit (aliment moyen)","categorie":"viandes cuites
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260912044910';
+const APP_BUILD_VERSION = '20260912053959';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -807,6 +861,7 @@ const SVG_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const SVG_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5v14l11-7z"/></svg>';
 const SVG_APPLE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8c0-3-2-6-6-6-1 2-1 4 0 6"/><path d="M12 8c-5 0-8 4-8 9 0 3 2 6 5 6 2 0 2.5-1 3-1s1 1 3 1c3 0 5-3 5-6 0-2-1-3-2-4"/></svg>';
 const SVG_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg>';
+const SVG_PLATE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg>';
 function seanceIconSVG(isCardio){ return isCardio ? SVG_HEART : SVG_DUMBBELL; }
 // Etiquette de date relative, presentation uniquement (n'affecte aucune
 // donnee/tri) : "Aujourd'hui" / "Hier" / date complete sinon.
@@ -886,10 +941,16 @@ function defaultSettings(){
     proteinesOverride: null,
     lipidesOverride: null,
     glucidesOverride: null,
+    // Objectifs quotidiens optionnels (null = pas d'objectif affiche) : a la
+    // difference des macros, pas de formule fiable a partir du profil, donc
+    // simple saisie manuelle.
+    objectifSel: null,       // g
+    objectifFibres: null,    // g
+    objectifEauMl: 2000,     // ml — repere usuel (2L/jour), ajustable
   };
 }
 function defaultDB(){
-  return { version: 1, settings: defaultSettings(), seances: [], pesees: [], mensurations: [], journalAlimentaire: [], alimentsFavoris: [] };
+  return { version: 1, settings: defaultSettings(), seances: [], pesees: [], mensurations: [], journalAlimentaire: [], alimentsFavoris: [], hydratation: [], repasTypes: [] };
 }
 function tryParseDB(raw){
   if(!raw) return null;
@@ -902,6 +963,8 @@ function tryParseDB(raw){
       mensurations: Array.isArray(data.mensurations) ? data.mensurations : [],
       journalAlimentaire: Array.isArray(data.journalAlimentaire) ? data.journalAlimentaire : [],
       alimentsFavoris: Array.isArray(data.alimentsFavoris) ? data.alimentsFavoris : [],
+      hydratation: Array.isArray(data.hydratation) ? data.hydratation : [],
+      repasTypes: Array.isArray(data.repasTypes) ? data.repasTypes : [],
     });
   }catch(e){ return null; }
 }
@@ -991,6 +1054,24 @@ function parseSeriesCount(str){
   if(!found) return 3;
   return Math.min(total, 8);
 }
+function parseRecupSeconds(str){
+  // Extrait une durée de repos en secondes depuis le texte libre "recup" des
+  // programmes (ex : "2 min", "1-2 min", "45s", "1-2 min", ""). Ne capture
+  // que des paires nombre+unité collées ("2 min", "45s") : sur un intervalle
+  // du type "1-2 min" seule la borne haute ("2 min") est ainsi retenue, ce
+  // qui donne par défaut le repos le plus prudent plutôt que le plus court.
+  if(!str) return null;
+  const s = String(str).toLowerCase().replace(',', '.');
+  const re = /(\d+(?:\.\d+)?)\s*(min|mn|s)\b/g;
+  let m, vals = [];
+  while((m = re.exec(s))){
+    const n = parseFloat(m[1]);
+    vals.push(m[2]==='s' ? n : n*60);
+  }
+  if(!vals.length) return null;
+  return Math.round(Math.max(...vals));
+}
+const REST_TIMER_DEFAULT_SEC = 90;
 function parseRangeKey(k){
   const m = k.match(/(\d+)(?:-(\d+))?/);
   if(!m) return [1,1];
@@ -1022,6 +1103,100 @@ function formatSeries(series){
   return series.filter(s=>s && (s.poids!=null || s.reps!=null))
     .map(s=> (s.poids!=null? s.poids+'kg':'—') + (s.reps!=null? '×'+s.reps:''))
     .join(', ');
+}
+function parseMainRepRange(seriesReps){
+  // Extrait la fourchette de repetitions des SERIES DE TRAVAIL PRINCIPALES a
+  // partir du texte libre "series_reps" (ex : "1x8-10, 3x10-12" -> la
+  // derniere serie de travail visee est 3x10-12, donc {lo:10,hi:12} —
+  // le premier groupe est generalement une serie d'approche, on privilegie
+  // le dernier groupe rencontre).
+  if(!seriesReps) return null;
+  const matches = [...String(seriesReps).matchAll(/(\d+)\s*x\s*(\d+)(?:\s*[-–]\s*(\d+))?/gi)];
+  if(!matches.length) return null;
+  const m = matches[matches.length-1];
+  const lo = parseInt(m[2],10), hi = m[3]?parseInt(m[3],10):lo;
+  if(isNaN(lo)) return null;
+  return {lo, hi:isNaN(hi)?lo:hi};
+}
+function suggestProgression(def, last){
+  // Suggestion de "double progression" (methode standard en musculation) :
+  // tant que tu n'as pas atteint le haut de la fourchette de repetitions
+  // visee, l'objectif est de faire une rep de plus au meme poids ; une fois
+  // le haut de la fourchette atteint sur toutes les series, l'objectif est
+  // d'augmenter la charge (au palier de disque le plus courant : 2.5kg) et
+  // de redescendre dans la fourchette basse. Reste une SUGGESTION affichee a
+  // titre indicatif : elle ne remplace jamais la programmation du coach
+  // (series_reps / recup), elle aide juste a decider quoi viser AUJOURD'HUI
+  // a partir de la derniere seance.
+  if(!last || !last.series || !last.series.length) return null;
+  const range = parseMainRepRange(def.series_reps);
+  if(def.mode === 'poids_only'){
+    const vals = last.series.filter(s=>s && s.poids!=null).map(s=>s.poids);
+    if(!vals.length) return null;
+    const maxV = Math.max(...vals);
+    return `🎯 Objectif : au moins ${maxV}kg (record précédent) — augmente si c'était facile`;
+  }
+  if(def.mode === 'reps_only'){
+    const vals = last.series.filter(s=>s && s.reps!=null).map(s=>s.reps);
+    if(!vals.length) return null;
+    const minV = Math.min(...vals);
+    if(range && minV>=range.hi){
+      return `🎯 Objectif : ${range.hi} reps sur toutes les séries (déjà fait la dernière fois), ou ajoute du lest si c'était facile`;
+    }
+    return `🎯 Objectif : au moins ${minV+1} reps sur ta série la plus faible (tu avais fait ${minV})`;
+  }
+  const withBoth = last.series.filter(s=>s && s.poids!=null && s.reps!=null);
+  if(!withBoth.length) return null;
+  const maxPoids = Math.max(...withBoth.map(s=>s.poids));
+  const minRepsAtMax = Math.min(...withBoth.filter(s=>s.poids===maxPoids).map(s=>s.reps));
+  if(range && minRepsAtMax>=range.hi){
+    return `🎯 Objectif : ${maxPoids+2.5}kg × ${range.lo}${range.hi>range.lo?'-'+range.hi:''} (tu as fait ${range.hi}+ reps à ${maxPoids}kg la dernière fois)`;
+  }
+  return `🎯 Objectif : ${maxPoids}kg × ${minRepsAtMax+1}+ (au moins 1 rep de plus qu'à la dernière séance, même poids)`;
+}
+/* ===================== CALCULATEUR DE DISQUES ===================== */
+// Jeu de disques standard (kg), du plus lourd au plus leger — dispo en double
+// de chaque cote dans la quasi-totalite des salles equipees en olympique.
+const PLATE_SET_KG = [25, 20, 15, 10, 5, 2.5, 1.25, 0.5];
+const BAR_WEIGHTS_KG = [20, 15, 10, 0];
+function computePlateLoad(totalKg, barKg){
+  const perSide = (totalKg - barKg) / 2;
+  if(perSide <= 1e-6){
+    return {plates:[], perSideTotal:0, achievedTotal: Math.round(barKg*100)/100, exact: Math.abs(totalKg-barKg)<0.01};
+  }
+  const plates = [];
+  let remaining = perSide;
+  for(const p of PLATE_SET_KG){
+    while(remaining + 1e-6 >= p){ plates.push(p); remaining -= p; }
+  }
+  const perSideTotal = Math.round((perSide - remaining)*100)/100;
+  return {
+    plates,
+    perSideTotal,
+    achievedTotal: Math.round((barKg + perSideTotal*2)*100)/100,
+    exact: remaining < 0.01,
+  };
+}
+// Petite barre de progression generique pour un objectif quotidien (sel,
+// fibres, eau...). warnIfOver=true colore la barre en rouge au-dela de 100%
+// (ex : sel, ou depasser n'est pas souhaitable) ; sinon elle reste dans le
+// degrade habituel meme au-dela de 100% (ex : fibres, eau — plus n'est pas
+// un probleme).
+function objectifBarHTML(label, value, objectif, unit, warnIfOver){
+  const obj = Number(objectif)||0;
+  const pct = obj>0 ? (value/obj)*100 : 0;
+  const barPct = Math.max(0, Math.min(100, pct));
+  const over = warnIfOver && obj>0 && value>obj;
+  const decimals = unit==='g' && obj<10 ? 1 : (unit==='L' ? 2 : 0);
+  const fmt = n=> (Math.round(n*Math.pow(10,decimals))/Math.pow(10,decimals)).toLocaleString('fr-FR');
+  return `<div style="margin-bottom:10px;">
+    <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--text-dim);font-weight:700;margin-bottom:4px;">
+      <span>${escapeHtml(label)}</span><span>${fmt(value)}${unit} / ${fmt(obj)}${unit}${over?' ⚠️':''}</span>
+    </div>
+    <div style="height:8px;border-radius:99px;background:var(--input-bg);overflow:hidden;">
+      <div style="height:100%;border-radius:99px;width:${barPct}%;background:${over?'var(--accent-danger)':'var(--grad)'};"></div>
+    </div>
+  </div>`;
 }
 function getLastPerformance(name, excludeId){
   const logs = app.db.seances.filter(s=> s.id!==excludeId && s.exercices && s.exercices.some(e=>e.exercice===name))
@@ -1222,6 +1397,23 @@ function showConfirm(message, onConfirm){
   btnYes.onclick = ()=>{ cleanup(); onConfirm(); };
   btnNo.onclick = cleanup;
 }
+// Meme logique que showConfirm(), mais pour demander un texte court (ex :
+// nommer un repas type) — a la place de window.prompt(), tout aussi peu
+// fiable que confirm()/alert() dans une PWA installee sur iOS.
+function showPrompt(message, placeholder, onConfirm){
+  const overlay = document.getElementById('prompt-overlay');
+  const input = document.getElementById('prompt-input');
+  const btnOk = document.getElementById('prompt-ok');
+  const btnCancel = document.getElementById('prompt-cancel');
+  document.getElementById('prompt-message').textContent = message;
+  input.placeholder = placeholder || '';
+  input.value = '';
+  overlay.style.display = 'flex';
+  setTimeout(()=>input.focus(), 60);
+  const cleanup = ()=>{ overlay.style.display='none'; btnOk.onclick=null; btnCancel.onclick=null; };
+  btnOk.onclick = ()=>{ const v = input.value.trim(); if(!v) return; cleanup(); onConfirm(v); };
+  btnCancel.onclick = cleanup;
+}
 
 /* ===================== NAVIGATION ===================== */
 const nav = {
@@ -1328,6 +1520,7 @@ function computeNutriWindowStats(days){
 const app = {
   db: null,
   currentLog: null,
+  restTimer: null,
 
   /* ---------- HOME ---------- */
   renderHome(){
@@ -1513,6 +1706,7 @@ const app = {
         finisherCardio: seanceDef.finisher ? {type:'velo', duree:null} : null,
       };
     }
+    this.stopRestTimer();
     nav.push('view-log');
     this.renderLog();
   },
@@ -1545,6 +1739,7 @@ const app = {
       html += L.exercices.map((exState, idx)=>{
         const def = seanceDef.exercices.find(e=>e.exercice===exState.exercice) || {};
         const last = getLastPerformance(exState.exercice, L.id);
+        const suggestion = suggestProgression(def, last);
         const target = def.progression8Semaines && semaine!=null ? getProgressionValue(def.progression8Semaines, semaine) : null;
         const showPoids = def.mode!=='reps_only';
         const showReps = def.mode!=='poids_only';
@@ -1561,15 +1756,29 @@ const app = {
           // propre colonne (.s-check) — le numero de serie (.s-num) ne change
           // plus jamais, ce qui simplifie aussi le patch DOM d'updateSerie().
           const done = (!showPoids || s.poids!=null) && (!showReps || s.reps!=null);
+          // Suggestion par serie : la valeur de CETTE MEME serie (meme
+          // numero) lors de la derniere seance, affichee en placeholder
+          // grise — un repere concret a battre, sans presumer d'une valeur
+          // par defaut (le champ reste bien vide tant que rien n'est saisi).
+          const lastS = last && last.series ? last.series[j] : null;
+          const poidsPh = lastS && lastS.poids!=null ? String(lastS.poids) : '0';
+          const repsPh = lastS && lastS.reps!=null ? String(lastS.reps) : '0';
           const fields = [];
-          if(showPoids) fields.push(`<div class="s-field"><input type="number" inputmode="decimal" placeholder="0" value="${s.poids!=null?s.poids:''}" onchange="app.updateSerie(${idx},${j},'poids',this.value,this)"></div>`);
-          if(showReps) fields.push(`<div class="s-field"><input type="number" inputmode="numeric" placeholder="0" value="${s.reps!=null?s.reps:''}" onchange="app.updateSerie(${idx},${j},'reps',this.value,this)"></div>`);
+          if(showPoids) fields.push(`<div class="s-field"><input type="number" inputmode="decimal" placeholder="${poidsPh}" value="${s.poids!=null?s.poids:''}" onchange="app.updateSerie(${idx},${j},'poids',this.value,this)"></div>`);
+          if(showReps) fields.push(`<div class="s-field"><input type="number" inputmode="numeric" placeholder="${repsPh}" value="${s.reps!=null?s.reps:''}" onchange="app.updateSerie(${idx},${j},'reps',this.value,this)"></div>`);
           return `<div class="series-row ${single?'single':''} ${done?'done':''}">
             <div class="s-num">${j+1}</div>
             ${fields.join('')}
             <div class="s-check">${SVG_CHECK}</div>
           </div>`;
         }).join('');
+        // Calculateur de disques : pertinent uniquement pour les exercices
+        // barre/poids+reps classiques (pas farmer walk/tractions au poids du
+        // corps). Pre-remplissage avec le poids le plus lourd deja saisi
+        // aujourd'hui, sinon celui de la derniere seance.
+        const filledPoids = exState.series.filter(s=>s && s.poids!=null).map(s=>s.poids);
+        const lastPoidsVals = last && last.series ? last.series.filter(s=>s && s.poids!=null).map(s=>s.poids) : [];
+        const plateCalcPrefill = filledPoids.length ? Math.max(...filledPoids) : (lastPoidsVals.length ? Math.max(...lastPoidsVals) : null);
         return `<div class="exo-block">
           <div class="exo-header">
             <div class="exo-ic">${SVG_DUMBBELL}</div>
@@ -1584,10 +1793,13 @@ const app = {
           </div>
           <div class="em" style="display:block;margin-top:7px;">${last? 'Dernière fois ('+fmtDateHuman(last.date)+') : '+formatSeries(last.series) : 'Pas encore de données pour cet exercice'}
             <button class="link" style="margin-left:6px;font-size:12px;" onclick="app.showExoHistory('${encodeURIComponent(exState.exercice)}')">Historique</button></div>
+          ${suggestion?`<div class="em target" style="display:inline-block;margin-top:7px;">${escapeHtml(suggestion)}</div>`:''}
           <div class="series-head ${single?'single':''}">${headCols}</div>
           <div class="series-grid">${seriesRows}</div>
           <div class="series-actions-row">
             <button class="btn btn-secondary btn-sm" onclick="app.addSerie(${idx})">＋ Ajouter une série</button>
+            <button class="icon-btn" title="Démarrer le repos" onclick="app.startRestTimer(${idx})">${SVG_PLAY}</button>
+            ${!single?`<button class="icon-btn" title="Calculateur de disques" onclick="app.openPlateCalc(${plateCalcPrefill!=null?plateCalcPrefill:'null'})">${SVG_PLATE}</button>`:''}
             <button class="icon-btn" title="Supprimer une série" onclick="app.removeSerie(${idx})">${SVG_TRASH}</button>
           </div>
         </div>`;
@@ -1725,13 +1937,136 @@ const app = {
     // qui se colore via CSS quand .done est present.
     const row = el && el.closest ? el.closest('.series-row') : null;
     if(row){
+      const wasDone = row.classList.contains('done');
       const inputs = row.querySelectorAll('input');
       const done = inputs.length>0 && Array.from(inputs).every(inp=>inp.value!=='');
       row.classList.toggle('done', done);
+      // La serie vient d'etre completee (tous les champs remplis) : on lance
+      // automatiquement le repos, comme le ferait un coach entre deux
+      // series. Un bouton ▶ reste dispo pour le (re)lancer manuellement.
+      if(done && !wasDone) this.startRestTimer(exIdx);
     }
   },
   addSerie(exIdx){ this.currentLog.exercices[exIdx].series.push({poids:null,reps:null}); this.renderLog(); this.autosaveLog(); },
   removeSerie(exIdx){ const s=this.currentLog.exercices[exIdx].series; if(s.length>1) s.pop(); this.renderLog(); this.autosaveLog(); },
+
+  /* ---------- MINUTEUR DE REPOS ---------- */
+  startRestTimer(exIdx){
+    const L = this.currentLog;
+    const prog = PROGRAMS.find(p=>p.id===L.programmeId);
+    const seanceDef = prog.seances.find(s=>s.numero===L.seanceNumero);
+    const exState = L.exercices[exIdx];
+    const def = (seanceDef.exercices||[]).find(e=>e.exercice===exState.exercice) || {};
+    const seconds = parseRecupSeconds(def.recup) || REST_TIMER_DEFAULT_SEC;
+    this._startRestTimerSeconds(seconds, exState.exercice);
+  },
+  _startRestTimerSeconds(seconds, label){
+    clearInterval(this._restInterval);
+    this.restTimer = { total: seconds, remaining: seconds, label: label || '', done: false };
+    this.renderRestTimer();
+    this._restInterval = setInterval(()=>this._tickRestTimer(), 1000);
+  },
+  _tickRestTimer(){
+    if(!this.restTimer){ clearInterval(this._restInterval); return; }
+    this.restTimer.remaining -= 1;
+    if(this.restTimer.remaining <= 0){
+      this.restTimer.remaining = 0;
+      if(!this.restTimer.done){ this.restTimer.done = true; this._restTimerFinishedCue(); }
+      clearInterval(this._restInterval);
+    }
+    this.renderRestTimer();
+  },
+  adjustRestTimer(deltaSec){
+    if(!this.restTimer) return;
+    this.restTimer.remaining = Math.max(0, this.restTimer.remaining + deltaSec);
+    this.restTimer.total = Math.max(this.restTimer.total, this.restTimer.remaining);
+    if(this.restTimer.remaining > 0 && this.restTimer.done){
+      this.restTimer.done = false;
+      clearInterval(this._restInterval);
+      this._restInterval = setInterval(()=>this._tickRestTimer(), 1000);
+    }
+    this.renderRestTimer();
+  },
+  stopRestTimer(){
+    clearInterval(this._restInterval);
+    this.restTimer = null;
+    this.renderRestTimer();
+  },
+  _restTimerFinishedCue(){
+    try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(e){}
+    try{
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if(!Ctx) return;
+      const ctx = new Ctx();
+      const beep = (start, dur)=>{
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = 880;
+        o.connect(g); g.connect(ctx.destination);
+        g.gain.setValueAtTime(0.0001, ctx.currentTime + start);
+        g.gain.exponentialRampToValueAtTime(0.28, ctx.currentTime + start + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + start + dur);
+        o.start(ctx.currentTime + start);
+        o.stop(ctx.currentTime + start + dur + 0.03);
+      };
+      beep(0, 0.16);
+      beep(0.22, 0.16);
+    }catch(e){}
+  },
+  renderRestTimer(){
+    const bar = document.getElementById('rest-timer-bar');
+    if(!bar) return;
+    if(!this.restTimer){ bar.hidden = true; bar.innerHTML = ''; return; }
+    const r = this.restTimer;
+    const mm = Math.floor(r.remaining/60), ss = r.remaining%60;
+    bar.hidden = false;
+    bar.classList.toggle('done', r.done);
+    bar.innerHTML = `
+      <div class="rt-time">${mm}:${String(ss).padStart(2,'0')}</div>
+      <div class="rt-label">${r.done ? "Repos terminé" : 'Repos'}${r.label ? ' — '+escapeHtml(r.label) : ''}</div>
+      <button type="button" class="rt-btn" onclick="app.adjustRestTimer(-15)">-15s</button>
+      <button type="button" class="rt-btn" onclick="app.adjustRestTimer(15)">+15s</button>
+      <button type="button" class="icon-btn" title="Arrêter le repos" onclick="app.stopRestTimer()">${SVG_CHECK}</button>
+    `;
+  },
+  /* ---------- CALCULATEUR DE DISQUES ---------- */
+  openPlateCalc(prefillKg){
+    if(this._plateCalcBar==null) this._plateCalcBar = 20;
+    document.getElementById('plate-calc-overlay').style.display = 'flex';
+    const input = document.getElementById('plate-calc-input');
+    if(prefillKg!=null) input.value = prefillKg;
+    this.renderPlateCalc();
+  },
+  closePlateCalc(){ document.getElementById('plate-calc-overlay').style.display = 'none'; },
+  setPlateCalcBar(kg){ this._plateCalcBar = kg; this.renderPlateCalc(); },
+  renderPlateCalc(){
+    const barKg = this._plateCalcBar!=null ? this._plateCalcBar : 20;
+    document.getElementById('plate-calc-bars').innerHTML = BAR_WEIGHTS_KG.map(b=>
+      `<button type="button" class="pill ${barKg===b?'active':''}" onclick="app.setPlateCalcBar(${b})">${b>0?b+'kg':'Sans barre'}</button>`
+    ).join('');
+    const out = document.getElementById('plate-calc-result');
+    const totalKg = parseFloat(document.getElementById('plate-calc-input').value);
+    if(isNaN(totalKg) || totalKg<=0){
+      out.innerHTML = '<p class="small-note">Indique le poids total visé ci-dessus.</p>';
+      return;
+    }
+    const r = computePlateLoad(totalKg, barKg);
+    if(!r.plates.length){
+      out.innerHTML = `<p class="small-note">${totalKg<=barKg?'La barre seule ('+barKg+'kg) atteint ou dépasse déjà ce poids : aucun disque à ajouter.':'Aucun disque nécessaire.'}</p>`;
+      return;
+    }
+    const counts = {};
+    r.plates.forEach(p=>{ counts[p] = (counts[p]||0)+1; });
+    const rows = Object.keys(counts).sort((a,b)=>b-a).map(p=>
+      `<div class="list-row"><div class="meta"><div class="t1">${p} kg</div></div><div class="t2" style="font-weight:800;">× ${counts[p]}</div></div>`
+    ).join('');
+    out.innerHTML = `
+      <p class="small-note" style="margin-bottom:6px;">Par côté (barre ${barKg}kg) :</p>
+      ${rows}
+      ${r.exact
+        ? `<p class="small-note" style="margin-top:8px;">Total exact : ${r.achievedTotal} kg</p>`
+        : `<p class="small-note" style="margin-top:8px;color:var(--accent-warn);">⚠️ Pas de combinaison exacte avec ce jeu de disques standard (25/20/15/10/5/2.5/1.25/0.5kg) : ${r.achievedTotal} kg atteints au plus proche.</p>`}
+    `;
+  },
   updateNotes(v){ this.currentLog.notes = v; this.autosaveLog(); },
   autosaveLog(){
     // Sauvegarde chaque saisie (poids/reps/notes/etc.) au fur et a mesure,
@@ -1753,6 +2088,7 @@ const app = {
   },
   saveSeance(){
     if(!this.autosaveLog()) return;
+    this.stopRestTimer();
     toast('Séance enregistrée ✅');
     nav.tab('sport');
   },
@@ -1761,6 +2097,7 @@ const app = {
       const prev = this.db.seances;
       this.db.seances = this.db.seances.filter(s=>s.id!==this.currentLog.id);
       if(!saveDBOrWarn(this.db)){ this.db.seances = prev; return; }
+      this.stopRestTimer();
       toast('Séance supprimée');
       nav.tab('sport');
     });
@@ -1828,8 +2165,53 @@ const app = {
     document.getElementById('nutri-day-label-text').textContent = relativeDateLabel(date);
     this.renderNutriWeekStrip(date);
     this.renderNutriSummary(date);
+    this.renderNutriHydratation(date);
     this.renderNutriDetailJour(date);
     this.renderNutriMeals(date);
+  },
+  /* ---------- HYDRATATION ---------- */
+  totalEauJour(date){
+    return this.db.hydratation.filter(h=>h.date===date).reduce((s,h)=>s+(Number(h.ml)||0),0);
+  },
+  addEau(ml){
+    const date = this._nutriDate || todayISO();
+    this.db.hydratation.push({id:uid(), date, ml});
+    if(!saveDBOrWarn(this.db)){ this.db.hydratation.pop(); return; }
+    this.renderNutriHydratation(date);
+  },
+  // Retire la derniere prise ajoutee aujourd'hui (plutot qu'un solde negatif
+  // arbitraire) : plus intuitif pour corriger une saisie en trop.
+  undoLastEau(){
+    const date = this._nutriDate || todayISO();
+    const idx = this.db.hydratation.map((h,i)=>({h,i})).filter(x=>x.h.date===date).map(x=>x.i).pop();
+    if(idx==null) return;
+    const prev = this.db.hydratation;
+    this.db.hydratation = this.db.hydratation.filter((_,i)=>i!==idx);
+    if(!saveDBOrWarn(this.db)){ this.db.hydratation = prev; return; }
+    this.renderNutriHydratation(date);
+  },
+  setEauObjectif(v){
+    this.db.settings.objectifEauMl = v===''? 2000 : Math.max(0, Number(v));
+    if(!saveDBOrWarn(this.db)) return;
+    this.renderNutriHydratation(this._nutriDate || todayISO());
+  },
+  renderNutriHydratation(date){
+    const wrap = document.getElementById('nutri-hydratation');
+    if(!wrap) return;
+    const totalMl = this.totalEauJour(date);
+    const objMl = this.db.settings.objectifEauMl!=null ? this.db.settings.objectifEauMl : 2000;
+    wrap.innerHTML = `<div class="section-title" style="margin:22px 0 8px;">💧 Hydratation</div>
+      <div class="card">
+        ${objectifBarHTML('Eau', totalMl/1000, objMl/1000, 'L', false)}
+        <div class="pill-row" style="margin-top:8px;">
+          <button type="button" class="pill" onclick="app.addEau(150)">+150ml (verre)</button>
+          <button type="button" class="pill" onclick="app.addEau(330)">+330ml (canette)</button>
+          <button type="button" class="pill" onclick="app.addEau(500)">+500ml</button>
+          <button type="button" class="pill" onclick="app.undoLastEau()">↩︎ Annuler la dernière</button>
+        </div>
+        <div class="field" style="margin-top:12px;"><label>Objectif quotidien (ml)</label>
+          <input type="number" inputmode="numeric" value="${objMl}" onchange="app.setEauObjectif(this.value)"></div>
+      </div>`;
   },
   // Carte "Detail du jour" (sucres/AG satures/fibres/sel cumules + additifs
   // detectes) — calculee uniquement a partir des aliments qui portent cette
@@ -1845,7 +2227,12 @@ const app = {
       const p = e.product100g;
       return p && (p.sucres!=null || p.agSatures!=null || p.fibres!=null || p.sel!=null || (p.additifs && p.additifs.length));
     });
-    if(!withDetail.length){ wrap.innerHTML = ''; return; }
+    const s = this.db.settings;
+    const hasGoals = s.objectifSel!=null || s.objectifFibres!=null;
+    // On garde la carte visible tant qu'un objectif sel/fibres est configure,
+    // meme sans aucun aliment "detaille" aujourd'hui (sinon l'objectif
+    // disparaissait completement des qu'on n'avait encore rien mange).
+    if(!withDetail.length && !hasGoals){ wrap.innerHTML = ''; return; }
     let sucres=0, agSatures=0, fibres=0, sel=0;
     const additifsSet = new Set();
     withDetail.forEach(e=>{
@@ -1864,11 +2251,16 @@ const app = {
       {v:(Math.round(sel*100)/100)+' g', l:'Sel'},
     ];
     const additifs = Array.from(additifsSet);
+    const goalBars = [];
+    if(s.objectifSel!=null) goalBars.push(objectifBarHTML('Sel', sel, s.objectifSel, 'g', true));
+    if(s.objectifFibres!=null) goalBars.push(objectifBarHTML('Fibres', fibres, s.objectifFibres, 'g', false));
     wrap.innerHTML = `<div class="section-title" style="margin:22px 0 8px;">Détail du jour</div>
       <div class="card">
         <p class="small-note" style="margin-top:0;">Calculé sur ${withDetail.length}/${entries.length} aliment${entries.length>1?'s':''} du jour — uniquement ceux dont la source fournit ce niveau de détail (scan, recherche en ligne Open Food Facts, ou certaines fiches enrichies de la base locale comme le fast-food et CIQUAL). Les saisies manuelles et certains aliments génériques n'ont pas cette donnée, ce total n'est donc pas exhaustif.</p>
         <div class="quickstats">${rows.map(r=>`<div class="qs"><div class="v">${r.v}</div><div class="l">${r.l}</div></div>`).join('')}</div>
         ${additifs.length ? `<div style="margin-top:12px;"><label class="small-note" style="display:block;margin-bottom:6px;">Additifs détectés aujourd'hui</label><div class="pill-row">${additifs.map(a=>`<span class="pill" style="pointer-events:none;">${escapeHtml(a)}</span>`).join('')}</div></div>` : ''}
+        ${goalBars.length ? `<div style="margin-top:14px;">${goalBars.join('')}</div>` : ''}
+        ${goalBars.length ? `<p class="small-note" style="margin-top:2px;">Objectif${goalBars.length>1?'s':''} réglable${goalBars.length>1?'s':''} dans Profil &amp; objectif.</p>` : ''}
       </div>`;
   },
   changeNutriDate(v){ this._nutriDate = v || todayISO(); this.renderNutrition(); },
@@ -1979,9 +2371,69 @@ const app = {
           <span>${escapeHtml(m.label)}</span><span class="prog-badge">${Math.round(totalCal)} kcal</span>
         </div>
         ${rows}
-        <button class="btn btn-ghost" style="width:auto;padding:9px 2px;" onclick="app.openAddAliment('${m.id}')">＋ Ajouter un aliment</button>
+        <div class="row" style="gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-ghost" style="width:auto;padding:9px 2px;" onclick="app.openAddAliment('${m.id}')">＋ Ajouter un aliment</button>
+          ${entries.length?`<button class="btn btn-ghost" style="width:auto;padding:9px 2px;" onclick="app.promptSaveRepasType('${m.id}')">💾 Enregistrer comme repas type</button>`:''}
+        </div>
       </div>`;
     }).join('');
+  },
+  /* ---------- REPAS TYPES ---------- */
+  promptSaveRepasType(mealId){
+    const date = this._nutriDate || todayISO();
+    const entries = this.db.journalAlimentaire.filter(e=>e.date===date && e.mealId===mealId);
+    if(!entries.length) return;
+    const label = (MEALS.find(m=>m.id===mealId)||{}).label || '';
+    showPrompt(`Enregistrer ce ${label.toLowerCase()} (${entries.length} aliment${entries.length>1?'s':''}) comme repas type — sous quel nom ?`, 'Ex : Petit-déj protéiné', nom=>{
+      this.saveRepasType(mealId, nom, entries);
+    });
+  },
+  saveRepasType(mealId, nom, entries){
+    const items = entries.map(e=>({nom:e.nom, cal:e.cal, prot:e.prot, gluc:e.gluc, lip:e.lip, portion:e.portion, product100g:e.product100g, quantite:e.quantite}));
+    this.db.repasTypes.push({id:uid(), nom, items, createdAt: todayISO()});
+    if(!saveDBOrWarn(this.db)){ this.db.repasTypes.pop(); return; }
+    toast('Repas type enregistré ✅');
+  },
+  deleteRepasType(id){
+    showConfirm('Supprimer ce repas type ? (les aliments déjà enregistrés dans ton journal ne sont pas touchés)', ()=>{
+      const prev = this.db.repasTypes;
+      this.db.repasTypes = this.db.repasTypes.filter(x=>x.id!==id);
+      if(!saveDBOrWarn(this.db)){ this.db.repasTypes = prev; return; }
+      toast('Repas type supprimé');
+      this.renderRepasTypes();
+    });
+  },
+  // Ajoute TOUS les aliments du repas type d'un coup au repas en cours
+  // d'edition (contrairement aux favoris, pas de reprise/ajustement item par
+  // item ici : c'est le principe du repas type, un bloc pret a l'emploi).
+  addRepasType(id){
+    const rt = this.db.repasTypes.find(x=>x.id===id);
+    if(!rt || !this._nutriAdd) return;
+    const date = this._nutriDate || todayISO();
+    const mealId = this._nutriAdd.mealId;
+    const prev = this.db.journalAlimentaire.slice();
+    rt.items.forEach(it=>{
+      this.db.journalAlimentaire.push({id:uid(), date, mealId, nom:it.nom, cal:it.cal, prot:it.prot, gluc:it.gluc, lip:it.lip, portion:it.portion, product100g:it.product100g, quantite:it.quantite});
+    });
+    if(!saveDBOrWarn(this.db)){ this.db.journalAlimentaire = prev; return; }
+    toast(`Repas ajouté ✅ (${rt.items.length} aliment${rt.items.length>1?'s':''})`);
+    this.stopBarcodeScan();
+    nav.back();
+    this.renderNutrition();
+  },
+  renderRepasTypes(){
+    const wrap = document.getElementById('nutri-repastypes-zone');
+    if(!wrap) return;
+    const types = this.db.repasTypes;
+    if(!types.length){ wrap.innerHTML = ''; return; }
+    wrap.innerHTML = `<div class="section-title" style="margin-top:0;">Repas types</div>
+      <div class="card">${types.map(rt=>{
+        const cal = rt.items.reduce((s,it)=>s+(Number(it.cal)||0),0);
+        return `<div class="list-row">
+          <div class="meta" style="cursor:pointer" onclick="app.addRepasType('${rt.id}')"><div class="t1">${escapeHtml(rt.nom)}</div><div class="t2">${Math.round(cal)} kcal · ${rt.items.length} aliment${rt.items.length>1?'s':''}</div></div>
+          <button class="icon-btn" title="Supprimer ce repas type" onclick="event.stopPropagation(); app.deleteRepasType('${rt.id}')">${SVG_TRASH}</button>
+        </div>`;
+      }).join('')}</div>`;
   },
   deleteAliment(id){
     showConfirm('Supprimer cet aliment du journal ?', ()=>{
@@ -2008,6 +2460,7 @@ const app = {
     document.getElementById('nutri-db-online-zone').style.display = 'none';
     document.getElementById('nutri-add-save-btn').textContent = 'Ajouter au repas';
     this.renderFavoris();
+    this.renderRepasTypes();
     this.renderNutriAddDetail();
     nav.push('view-nutri-add');
   },
@@ -2048,6 +2501,10 @@ const app = {
     document.getElementById('nutri-db-online-zone').style.display = 'none';
     document.getElementById('nutri-add-save-btn').textContent = 'Enregistrer les modifications';
     this.renderFavoris();
+    // Pas de "repas types" en mode modification d'un aliment deja au journal
+    // (ajouter tout un repas type n'a pas de sens ici, on corrige un seul
+    // aliment) — la zone reste simplement vide.
+    document.getElementById('nutri-repastypes-zone').innerHTML = '';
     this.renderNutriAddDetail();
     nav.push('view-nutri-add');
   },
@@ -2583,11 +3040,13 @@ const app = {
     document.getElementById('nutri-override-proteines').value = s.proteinesOverride!=null ? s.proteinesOverride : '';
     document.getElementById('nutri-override-lipides').value = s.lipidesOverride!=null ? s.lipidesOverride : '';
     document.getElementById('nutri-override-glucides').value = s.glucidesOverride!=null ? s.glucidesOverride : '';
+    document.getElementById('nutri-objectif-sel').value = s.objectifSel!=null ? s.objectifSel : '';
+    document.getElementById('nutri-objectif-fibres').value = s.objectifFibres!=null ? s.objectifFibres : '';
     this.renderNutriCalculResultat();
   },
   setNutriField(field, value){
     const s = this.db.settings;
-    if(['objectifPoids','proteinesOverride','lipidesOverride','glucidesOverride'].includes(field)){
+    if(['objectifPoids','proteinesOverride','lipidesOverride','glucidesOverride','objectifSel','objectifFibres'].includes(field)){
       s[field] = value===''? null : Number(value);
     } else if(field==='taille'){
       s.taille = value===''? null : Number(value);
