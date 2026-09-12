@@ -771,7 +771,7 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
     <div class="section-title">Détails</div>
     <div class="card">
       <div class="field"><label>Nom de l'aliment</label><input type="text" id="nutri-add-nom" placeholder="Ex : Poulet grillé"></div>
-      <div class="field" id="nutri-add-quantite-wrap" style="display:none;margin-top:12px;"><label>Quantité consommée (g)</label><input type="number" inputmode="numeric" id="nutri-add-quantite" placeholder="100" oninput="app.recalcFromQuantite()"></div>
+      <div class="field" id="nutri-add-quantite-wrap" style="display:none;margin-top:12px;"><label>Quantité consommée (g)</label><input type="number" inputmode="numeric" id="nutri-add-quantite" placeholder="100" onfocus="this.select()" oninput="app.recalcFromQuantite()"></div>
       <p class="small-note" style="margin-top:10px;" id="nutri-add-hint">Renseigne les valeurs pour la quantité que tu as mangée (pas forcément pour 100g).</p>
       <div class="row" style="margin-top:6px;">
         <div class="field"><label>Calories (kcal)</label><input type="number" inputmode="numeric" id="nutri-add-cal" placeholder="0"></div>
@@ -912,7 +912,7 @@ const FOOD_DB = [{"nom":"Abat, cuit (aliment moyen)","categorie":"viandes cuites
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260912100920';
+const APP_BUILD_VERSION = '20260912104533';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
