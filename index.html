@@ -531,7 +531,6 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
     <div class="topbar" style="margin:0 -16px 4px;justify-content:space-between;">
       <h1>Sport</h1>
       <div style="display:flex;gap:8px;">
-        <button class="icon-btn" title="Gérer mes programmes" onclick="nav.tab('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></button>
         <button class="icon-btn" title="Historique" onclick="nav.push('view-history'); app.renderHistory();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></button>
         <button class="icon-btn" title="Statistiques" onclick="nav.push('view-stats'); app.renderStats();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg></button>
       </div>
@@ -539,6 +538,10 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
     <div class="quickstats" id="sport-quickstats"></div>
     <div class="section-title">Programmes</div>
     <div class="tiles-row" id="sport-programs"></div>
+    <div class="list-row" style="cursor:pointer;" onclick="nav.tab('settings')">
+      <div class="meta"><div class="t1">Choix de programme</div><div class="t2">Sélectionner les programmes affichés ici</div></div>
+      <div class="chev">›</div>
+    </div>
     <div class="section-title">Activité récente</div>
     <div class="timeline" id="sport-recent"></div>
   </div>
@@ -879,7 +882,7 @@ const FOOD_DB = [{"nom":"Abat, cuit (aliment moyen)","categorie":"viandes cuites
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260912065804';
+const APP_BUILD_VERSION = '20260912070552';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
