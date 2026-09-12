@@ -127,11 +127,8 @@ button{font-family:inherit;}
    ce n'est plus l'unite structurelle par defaut de l'appli. */
 .card{
   background:var(--card); border:1px solid var(--card-border); border-radius:var(--radius-card); padding:18px;
-  margin-bottom:14px; box-shadow:var(--shadow); overflow:hidden;
+  margin-bottom:14px; box-shadow:var(--shadow);
 }
-/* Repli defensif : empeche un champ (notamment input[type=date], dont le
-   controle natif iOS/Safari peut ignorer width:100% et deborder du cadre)
-   de faire deborder visuellement la carte. */
 .info-text{display:none;}
 .info-text.show{display:block;}
 .card + .card{margin-top:0;}
@@ -145,6 +142,10 @@ button{font-family:inherit;}
 .surface{background:var(--card-2); border:1px solid var(--card-border); border-radius:var(--radius-card); padding:16px;}
 
 /* ---------- HERO (accueil) ---------- */
+/* Seule vue sans .topbar (qui reserve deja env(safe-area-inset-top) partout
+   ailleurs) : sans ca, le titre "Ma Muscu" remonte sous l'heure/l'encoche
+   sur iPhone. */
+#view-home{padding-top:calc(env(safe-area-inset-top) + 10px);}
 .greeting{padding:2px 0 4px;}
 .greeting .hi{font-size:26px; font-weight:900; letter-spacing:-.02em; line-height:1.15;}
 .greeting .sub{color:var(--text-dim); font-size:14.5px; margin-top:4px;}
@@ -375,9 +376,13 @@ button{font-family:inherit;}
 .field label{display:block; font-size:13px; color:var(--text-dim); margin-bottom:6px; font-weight:700;}
 .field input, .field select, .field textarea{
   width:100%; max-width:100%; min-width:0; background:var(--input-bg); border:1px solid var(--card-border); border-radius:12px;
-  padding:12px 13px; font-size:16px; color:var(--text); font-family:inherit; transition:border-color .15s ease;
+  padding:12px 13px; font-size:16px; line-height:1.4; color:var(--text); font-family:inherit; transition:border-color .15s ease;
 }
 .field input:focus, .field select:focus, .field textarea:focus{border-color:var(--accent);}
+/* input[type=date] : le controle natif iOS/Safari a besoin d'un peu plus de
+   marge verticale que les autres champs pour ne jamais rogner le texte
+   affiche (jour/mois/annee) contre le bord de la pastille. */
+.field input[type="date"]{padding:15px 13px; min-height:50px;}
 
 .bottom-bar{
   position:fixed; left:0; right:0; bottom:calc(90px + env(safe-area-inset-bottom)); z-index:15;
@@ -451,7 +456,7 @@ button{font-family:inherit;}
 .nutri-day-label svg{width:15px;height:15px; color:var(--text-faint);}
 .nutri-day-head input[type="date"]{
   background:var(--card-2); border:1px solid var(--card-border); border-radius:10px; color:var(--text-faint); font-size:12px;
-  padding:6px 8px; width:auto;
+  padding:8px 10px; line-height:1.4; width:auto;
 }
 .week-strip{display:flex; justify-content:space-between; margin:12px 0 18px; background:var(--card-2); border:1px solid var(--card-border); border-radius:16px; padding:6px;}
 .week-strip .wd{background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:5px; padding:8px 0; flex:1; color:var(--text-faint); font-size:12px; font-weight:800; border-radius:12px; cursor:pointer; transition:background .15s ease, color .15s ease;}
@@ -887,7 +892,7 @@ const FOOD_DB = [{"nom":"Abat, cuit (aliment moyen)","categorie":"viandes cuites
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260912093246';
+const APP_BUILD_VERSION = '20260912094921';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
