@@ -705,7 +705,9 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
   <!-- ===== NUTRITION : AIDE AU REPAS (choisir une recette -> liste de courses) ===== -->
   <div class="view" id="view-aide-repas">
     <div class="topbar"><button class="back" onclick="nav.back(); app.renderNutrition();">‹</button><h1>Aide au repas</h1></div>
-    <p class="small-note" style="margin-top:0;">Différent de l'écran « Recettes » : ici tu choisis une recette pour ce que tu as ENVIE de manger, et l'appli te donne la liste de courses complète — pas besoin d'avoir déjà quoi que ce soit.</p>
+    <p class="small-note" style="margin-top:0;">Différent de l'écran « Recettes » : ici tu choisis une ou plusieurs recettes pour ce que tu as ENVIE de manger, et l'appli te donne la liste de courses — sans ce que tu as déjà.</p>
+
+    <div id="aide-repas-listes-sauvegardees"></div>
 
     <div class="field" style="margin-top:10px;">
       <label>Ingrédient principal souhaité</label>
@@ -738,16 +740,40 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
         <label>Cuisine</label>
         <select id="aide-repas-filtre-cuisine" onchange="app.renderAideRepasResultats()"><option value="">Toutes</option></select>
       </div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:4px;">
+        <input type="checkbox" id="aide-repas-filtre-proteine" onchange="app.renderAideRepasResultats()" style="width:18px;height:18px;flex-shrink:0;">
+        <span>Riche en protéines uniquement (≥ 25 g / portion)</span>
+      </label>
     </div>
 
     <div class="section-title">Recettes correspondantes</div>
+    <p class="small-note" style="margin-top:-6px;">Coche une ou plusieurs recettes pour construire ta liste de courses ; touche le nom pour voir la recette en détail.</p>
     <div id="aide-repas-resultats"></div>
+    <div id="aide-repas-selection-bar" style="position:sticky;bottom:8px;margin-top:10px;"></div>
   </div>
 
   <!-- ===== NUTRITION : DETAIL D'UNE RECETTE ===== -->
   <div class="view" id="view-recette-detail">
     <div class="topbar"><button class="back" onclick="nav.back();">‹</button><h1 id="recette-detail-titre">Recette</h1></div>
     <div id="recette-detail-contenu"></div>
+  </div>
+
+  <!-- ===== NUTRITION : LISTE DE COURSES (une ou plusieurs recettes) ===== -->
+  <div class="view" id="view-liste-courses">
+    <div class="topbar"><button class="back" onclick="nav.back(); app.renderAideRepasListesSauvegardees();">‹</button><h1>Liste de courses</h1></div>
+    <div class="section-title" style="margin-top:0;">Recette(s)</div>
+    <div id="liste-courses-recettes" class="card" style="padding:6px 12px;"></div>
+
+    <div class="field" style="margin-top:12px;max-width:160px;">
+      <label>Nombre de personnes</label>
+      <input type="number" id="liste-courses-personnes" min="1" step="1" inputmode="numeric" onchange="app.changeListeCoursesPersonnes(this.value)" onfocus="this.select()">
+    </div>
+
+    <div class="section-title">À acheter</div>
+    <div id="liste-courses-items" class="card"></div>
+    <div id="liste-courses-deja" style="margin-top:8px;"></div>
+
+    <button class="btn btn-danger" style="margin-top:16px;" onclick="app.supprimerListeCourses()">Supprimer cette liste</button>
   </div>
 
   <!-- ===== NUTRITION : SUIVI CORPOREL (poids + mensurations) ===== -->
@@ -1011,7 +1037,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260914111046';
+const APP_BUILD_VERSION = '20260914112829';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1157,7 +1183,7 @@ function defaultSettings(){
   };
 }
 function defaultDB(){
-  return { version: 1, settings: defaultSettings(), seances: [], pesees: [], mensurations: [], journalAlimentaire: [], alimentsFavoris: [], hydratation: [], repasTypes: [] };
+  return { version: 1, settings: defaultSettings(), seances: [], pesees: [], mensurations: [], journalAlimentaire: [], alimentsFavoris: [], hydratation: [], repasTypes: [], listesCourses: [] };
 }
 function tryParseDB(raw){
   if(!raw) return null;
@@ -1172,6 +1198,11 @@ function tryParseDB(raw){
       alimentsFavoris: Array.isArray(data.alimentsFavoris) ? data.alimentsFavoris : [],
       hydratation: Array.isArray(data.hydratation) ? data.hydratation : [],
       repasTypes: Array.isArray(data.repasTypes) ? data.repasTypes : [],
+      // Listes de courses generees depuis "Aide au repas" : une ou plusieurs
+      // recettes choisies, un nombre de personnes, et l'etat coche/pas coche
+      // de chaque ligne -- stockees pour les retrouver facilement le jour ou
+      // on veut cuisiner (cf. demande explicite de Christophe).
+      listesCourses: Array.isArray(data.listesCourses) ? data.listesCourses : [],
     });
   }catch(e){ return null; }
 }
@@ -1298,6 +1329,14 @@ function matchRecipe(recipe, haveSet, additionalHave){
   const requis = (recipe.ingredients||[]).filter(i => !i.optionnel && !isStapleIngredient(i.nom));
   const manquants = requis.filter(i => !haveSet.has(i.nom) && !(additionalHave && additionalHave.has(i.nom)));
   return {recipe, requisCount: requis.length, manquants};
+}
+// Seuil "riche en proteines" utilise par le filtre de l'ecran Aide au repas :
+// 25 g de proteines par portion est un repere courant et simple a expliquer
+// pour un repas riche en proteines (contexte fitness/musculation de l'appli).
+const PROTEIN_RICHE_SEUIL = 25;
+function recetteProtPortion(recipe){
+  const {totals} = computeRecipeTotals(recipe);
+  return totals.prot / (recipe.portions||1);
 }
 function fmtDateHuman(iso){
   if(!iso) return '';
@@ -2708,18 +2747,29 @@ const app = {
     sel.innerHTML = '<option value="">Toutes</option>' + cuisines.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(cuisineLabel(c))}</option>`).join('');
     document.getElementById('aide-repas-filtre-repas').value = '';
     document.getElementById('aide-repas-filtre-regime').value = '';
+    document.getElementById('aide-repas-filtre-proteine').checked = false;
+    // Selection de recettes pour construire une liste de courses : vecue
+    // comme un panier temporaire, videe a chaque (re)ouverture de l'ecran --
+    // une fois "generee" elle est stockee dans this.db.listesCourses (cf.
+    // genererListeCourses) et devient alors retrouvable depuis la section
+    // "Tes listes de courses" ci-dessous.
+    this._aideRepasSelection = new Set();
+    this.renderAideRepasListesSauvegardees();
     this.renderAideRepasResultats();
   },
   renderAideRepasResultats(){
+    if(!this._aideRepasSelection) this._aideRepasSelection = new Set();
     const q = normalize(document.getElementById('aide-repas-search').value);
     const repasFiltre = document.getElementById('aide-repas-filtre-repas').value;
     const regimeFiltre = document.getElementById('aide-repas-filtre-regime').value;
     const cuisineFiltre = document.getElementById('aide-repas-filtre-cuisine').value;
+    const proteineFiltre = document.getElementById('aide-repas-filtre-proteine').checked;
     const tokens = q.split(' ').filter(Boolean);
     const results = RECIPES.filter(r=>{
       if(repasFiltre && !(r.repas||[]).includes(repasFiltre)) return false;
       if(regimeFiltre && !(r.regimes||[]).includes(regimeFiltre)) return false;
       if(cuisineFiltre && r.cuisine!==cuisineFiltre) return false;
+      if(proteineFiltre && recetteProtPortion(r) < PROTEIN_RICHE_SEUIL) return false;
       if(tokens.length){
         const v = normalize(r.ingredientVedette||'');
         if(!tokens.every(t=>v.includes(t))) return false;
@@ -2729,17 +2779,167 @@ const app = {
     const wrap = document.getElementById('aide-repas-resultats');
     if(!results.length){
       wrap.innerHTML = `<p class="empty">${tokens.length ? "Aucune recette dont l'ingrédient principal correspond à « "+escapeHtml(document.getElementById('aide-repas-search').value)+" » avec ces filtres." : "Aucune recette avec ces filtres."}</p>`;
-      return;
+    } else {
+      wrap.innerHTML = results.map(r=>{
+        const tags = [cuisineLabel(r.cuisine), ...(r.regimes||[]).map(g=>REGIME_LABELS[g]||g)].filter(Boolean);
+        const checked = this._aideRepasSelection.has(r.id);
+        const protPortion = Math.round(recetteProtPortion(r));
+        // La case a cocher SELECTIONNE la recette pour la liste de courses ;
+        // toucher le reste de la ligne OUVRE la recette (mode "courses" :
+        // detail + etapes, sans rapport avec la selection en cours).
+        return `<div class="card" style="margin-bottom:10px;display:flex;align-items:stretch;">
+          <label style="display:flex;align-items:center;padding:0 4px 0 12px;cursor:pointer;" title="Sélectionner pour la liste de courses">
+            <input type="checkbox" value="${escapeHtml(r.id)}" ${checked?'checked':''} onchange="app.toggleAideRepasSelection(this.value, this.checked)" style="width:19px;height:19px;flex-shrink:0;">
+          </label>
+          <div class="list-row" style="cursor:pointer;flex:1;" onclick="app.openRecetteDetail('${r.id}', 'courses')">
+            <div class="meta"><div class="t1">${escapeHtml(r.nom)}</div><div class="t2">${escapeHtml(r.ingredientVedette||'')} · ${tags.map(escapeHtml).join(' · ')}${r.tempsPreparation!=null?' · '+(r.tempsPreparation+(r.tempsCuisson||0))+' min':''} · ${protPortion} g prot./portion</div></div>
+            <div class="chev">›</div>
+          </div>
+        </div>`;
+      }).join('');
     }
-    wrap.innerHTML = results.map(r=>{
-      const tags = [cuisineLabel(r.cuisine), ...(r.regimes||[]).map(g=>REGIME_LABELS[g]||g)].filter(Boolean);
-      return `<div class="card" style="margin-bottom:10px;">
-        <div class="list-row" style="cursor:pointer;" onclick="app.openRecetteDetail('${r.id}', 'courses')">
-          <div class="meta"><div class="t1">${escapeHtml(r.nom)}</div><div class="t2">${escapeHtml(r.ingredientVedette||'')} · ${tags.map(escapeHtml).join(' · ')}${r.tempsPreparation!=null?' · '+(r.tempsPreparation+(r.tempsCuisson||0))+' min':''}</div></div>
+    this.renderAideRepasSelectionBar();
+  },
+  toggleAideRepasSelection(id, checked){
+    if(!this._aideRepasSelection) this._aideRepasSelection = new Set();
+    if(checked) this._aideRepasSelection.add(id); else this._aideRepasSelection.delete(id);
+    this.renderAideRepasSelectionBar();
+  },
+  renderAideRepasSelectionBar(){
+    const wrap = document.getElementById('aide-repas-selection-bar');
+    if(!wrap) return;
+    const n = this._aideRepasSelection ? this._aideRepasSelection.size : 0;
+    wrap.innerHTML = n ? `<button class="btn btn-primary" onclick="app.genererListeCourses()">🛒 Générer la liste de courses (${n} recette${n>1?'s':''} sélectionnée${n>1?'s':''})</button>` : '';
+  },
+  // Cree et stocke une liste de courses a partir des recettes cochees, pour
+  // pouvoir la retrouver facilement le jour ou on veut cuisiner (demande
+  // explicite de Christophe) -- une simple selection en memoire ne survivrait
+  // pas a la fermeture de l'appli.
+  genererListeCourses(){
+    const ids = Array.from(this._aideRepasSelection||[]);
+    if(!ids.length) return;
+    const recettes = ids.map(id=>RECIPES.find(r=>r.id===id)).filter(Boolean);
+    if(!recettes.length) return;
+    // Nombre de personnes par defaut : le plus grand nombre de portions parmi
+    // les recettes choisies (repere raisonnable, modifiable ensuite).
+    const nombrePersonnes = Math.max(1, ...recettes.map(r=>r.portions||1));
+    const liste = { id: uid(), creeLe: todayISO(), recetteIds: ids, nombrePersonnes, itemsCoches: {} };
+    this.db.listesCourses.push(liste);
+    if(!saveDBOrWarn(this.db)){ this.db.listesCourses.pop(); return; }
+    this._aideRepasSelection = new Set();
+    this.openListeCourses(liste.id);
+  },
+  renderAideRepasListesSauvegardees(){
+    const wrap = document.getElementById('aide-repas-listes-sauvegardees');
+    if(!wrap) return;
+    const listes = (this.db.listesCourses||[]).slice().sort((a,b)=>(b.creeLe||'').localeCompare(a.creeLe||''));
+    if(!listes.length){ wrap.innerHTML = ''; return; }
+    const have = new Set(this.db.settings.ingredientsDisponibles||[]);
+    wrap.innerHTML = `<div class="section-title" style="margin-top:0;">Tes listes de courses</div>` + listes.map(liste=>{
+      const recettes = liste.recetteIds.map(id=>RECIPES.find(r=>r.id===id)).filter(Boolean);
+      const noms = recettes.map(r=>r.nom).join(', ') || 'Recette(s) supprimée(s) depuis';
+      const ingredientsUniques = new Set();
+      recettes.forEach(r=>(r.ingredients||[]).forEach(ing=>{
+        if(isStapleIngredient(ing.nom) || have.has(ing.nom)) return;
+        ingredientsUniques.add(ing.nom);
+      }));
+      const total = ingredientsUniques.size;
+      const restants = Array.from(ingredientsUniques).filter(nom=>!liste.itemsCoches[nom]).length;
+      return `<div class="card" style="margin-bottom:8px;">
+        <div class="list-row" style="cursor:pointer;" onclick="app.openListeCourses('${liste.id}')">
+          <div class="meta"><div class="t1">${escapeHtml(noms)}</div><div class="t2">${fmtDateHuman(liste.creeLe)} · ${restants}/${total} ingrédient${total>1?'s':''} restant${restants>1?'s':''} · pour ${liste.nombrePersonnes} personne${liste.nombrePersonnes>1?'s':''}</div></div>
           <div class="chev">›</div>
         </div>
       </div>`;
     }).join('');
+  },
+  openListeCourses(id){
+    this._listeCoursesId = id;
+    nav.push('view-liste-courses');
+    this.renderListeCoursesDetail();
+  },
+  // La liste affichee est TOUJOURS recalculee a partir des recettes + du
+  // nombre de personnes (jamais stockee telle quelle) : seuls l'identite des
+  // recettes, le nombre de personnes et l'etat coche/pas coche de chaque
+  // ingredient sont persistes -- cf. genererListeCourses/toggleListeCoursesItem.
+  renderListeCoursesDetail(){
+    const liste = this.db.listesCourses.find(x=>x.id===this._listeCoursesId);
+    if(!liste){ nav.back(); return; }
+    const recettes = liste.recetteIds.map(id=>RECIPES.find(r=>r.id===id)).filter(Boolean);
+    document.getElementById('liste-courses-recettes').innerHTML = recettes.length
+      ? recettes.map(r=>`<button type="button" class="link" style="display:block;text-align:left;padding:8px 0;width:100%;" onclick="app.openRecetteDetail('${r.id}', 'courses')">${escapeHtml(r.nom)}</button>`).join('')
+      : '<p class="small-note" style="margin:8px 0;">Recette(s) introuvable(s) (peut-être supprimée depuis une mise à jour de l\'appli).</p>';
+
+    const personnesInput = document.getElementById('liste-courses-personnes');
+    if(document.activeElement !== personnesInput) personnesInput.value = liste.nombrePersonnes;
+
+    // Agrege les ingredients de toutes les recettes choisies, chacune mise a
+    // l'echelle du nombre de personnes indique (facteur propre a chaque
+    // recette : nombrePersonnes / ses propres portions de base), en excluant
+    // les basiques (toujours supposes disponibles) et ce qui est deja coche
+    // comme disponible dans "Recettes a partir de mon frigo".
+    const have = new Set(this.db.settings.ingredientsDisponibles||[]);
+    const agg = new Map();
+    const dejaChezToi = new Set();
+    recettes.forEach(r=>{
+      const facteur = liste.nombrePersonnes / (r.portions||1);
+      (r.ingredients||[]).forEach(ing=>{
+        if(isStapleIngredient(ing.nom)) return;
+        if(have.has(ing.nom)){ dejaChezToi.add(ing.nom); return; }
+        const q = (Number(ing.quantite)||0) * facteur;
+        if(agg.has(ing.nom)){
+          const cur = agg.get(ing.nom);
+          cur.quantite += q;
+          cur.optionnel = cur.optionnel && !!ing.optionnel; // requis des qu'une recette en a besoin fermement
+        } else {
+          agg.set(ing.nom, {nom: ing.nom, quantite: q, optionnel: !!ing.optionnel});
+        }
+      });
+    });
+    const items = Array.from(agg.values()).sort((a,b)=> (a.optionnel-b.optionnel) || a.nom.localeCompare(b.nom,'fr'));
+    const wrap = document.getElementById('liste-courses-items');
+    wrap.innerHTML = items.length ? items.map(it=>{
+      const coche = !!liste.itemsCoches[it.nom];
+      return `<label class="list-row" style="cursor:pointer;padding:9px 12px;${coche?'opacity:.45;':''}">
+        <input type="checkbox" value="${escapeHtml(it.nom)}" ${coche?'checked':''} onchange="app.toggleListeCoursesItem(this.value, this.checked)" style="width:19px;height:19px;flex-shrink:0;margin-right:10px;">
+        <div class="meta"><div class="t1" style="font-weight:400;${coche?'text-decoration:line-through;':''}">${escapeHtml(it.nom)}${it.optionnel?' <span class="small-note" style="display:inline;">(optionnel)</span>':''}</div></div>
+        <div class="chev" style="font-size:13px;color:var(--text-dim);">${Math.round(it.quantite)} g</div>
+      </label>`;
+    }).join('') : '<p class="empty">Tout ce qu\'il faut est déjà dans ton frigo !</p>';
+    const dejaWrap = document.getElementById('liste-courses-deja');
+    dejaWrap.innerHTML = dejaChezToi.size
+      ? `<p class="small-note">✅ Déjà chez toi, non ajoutés à la liste : ${Array.from(dejaChezToi).map(n=>escapeHtml(n.toLowerCase())).join(', ')}</p>`
+      : '';
+    // Tient a jour le compteur "restants" affiche sur la carte de cette liste
+    // dans "Tes listes de courses", au cas ou l'utilisateur y revient sans
+    // repasser par l'ecran Aide au repas entre-temps.
+    this.renderAideRepasListesSauvegardees();
+  },
+  changeListeCoursesPersonnes(v){
+    const liste = this.db.listesCourses.find(x=>x.id===this._listeCoursesId);
+    if(!liste) return;
+    const n = Math.max(1, parseInt(v,10)||1);
+    liste.nombrePersonnes = n;
+    saveDBOrWarn(this.db);
+    this.renderListeCoursesDetail();
+  },
+  toggleListeCoursesItem(nom, checked){
+    const liste = this.db.listesCourses.find(x=>x.id===this._listeCoursesId);
+    if(!liste) return;
+    if(checked) liste.itemsCoches[nom] = true; else delete liste.itemsCoches[nom];
+    saveDBOrWarn(this.db);
+    this.renderListeCoursesDetail();
+  },
+  supprimerListeCourses(){
+    const liste = this.db.listesCourses.find(x=>x.id===this._listeCoursesId);
+    if(!liste) return;
+    showConfirm('Supprimer cette liste de courses ?', ()=>{
+      const prev = this.db.listesCourses;
+      this.db.listesCourses = this.db.listesCourses.filter(x=>x.id!==liste.id);
+      if(!saveDBOrWarn(this.db)){ this.db.listesCourses = prev; return; }
+      nav.back();
+      this.renderAideRepasListesSauvegardees();
+    });
   },
 
   // mode 'frigo' (defaut) : ouverte depuis l'ecran "Recettes a partir de mon
