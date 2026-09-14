@@ -663,7 +663,10 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
       <input type="text" id="recette-ing-search" placeholder="Ex : poulet, tomate, riz…" oninput="app.renderRecetteIngredientsListe()">
     </div>
     <div id="recette-ingredients-liste" class="card" style="max-height:260px;overflow-y:auto;"></div>
-    <p class="small-note" id="recette-ing-count" style="margin:8px 0 0;"></p>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 0;">
+      <p class="small-note" id="recette-ing-count" style="margin:0;"></p>
+      <button type="button" class="link" id="recette-raz-btn" style="white-space:nowrap;" onclick="app.razIngredientsDisponibles()">Tout décocher</button>
+    </div>
 
     <div class="section-title">Filtres</div>
     <div class="surface">
@@ -965,7 +968,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260914093200';
+const APP_BUILD_VERSION = '20260914094006';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -2512,6 +2515,8 @@ const app = {
       }).join('');
     }
     document.getElementById('recette-ing-count').textContent = have.size ? have.size+' ingrédient'+(have.size>1?'s':'')+' coché'+(have.size>1?'s':'') : 'Aucun ingrédient coché pour le moment.';
+    const razBtn = document.getElementById('recette-raz-btn');
+    if(razBtn) razBtn.hidden = have.size===0;
   },
   toggleIngredientDisponible(nom){
     const set = new Set(this.db.settings.ingredientsDisponibles||[]);
@@ -2519,6 +2524,18 @@ const app = {
     this.db.settings.ingredientsDisponibles = Array.from(set);
     saveDBOrWarn(this.db);
     document.getElementById('recette-ing-count').textContent = set.size ? set.size+' ingrédient'+(set.size>1?'s':'')+' coché'+(set.size>1?'s':'') : 'Aucun ingrédient coché pour le moment.';
+    const razBtn = document.getElementById('recette-raz-btn');
+    if(razBtn) razBtn.hidden = set.size===0;
+  },
+  // Decoche d'un coup tous les ingredients selectionnes (touche "Tout
+  // décocher" demandee par l'utilisateur, pour ne pas avoir a decocher un a
+  // un apres avoir teste une combinaison).
+  razIngredientsDisponibles(){
+    this.db.settings.ingredientsDisponibles = [];
+    saveDBOrWarn(this.db);
+    this._recetteAlmostOverrides = {};
+    this.renderRecetteIngredientsListe();
+    document.getElementById('recette-suggestions').innerHTML = '<p class="empty">Coche ce que tu as puis appuie sur "Voir les recettes possibles".</p>';
   },
   toggleRecetteAlmost(recipeId, nom){
     if(!this._recetteAlmostOverrides[recipeId]) this._recetteAlmostOverrides[recipeId] = new Set();
@@ -2550,17 +2567,27 @@ const app = {
     pool.forEach(r=>{
       const additional = this._recetteAlmostOverrides[r.id];
       const m = matchRecipe(r, have, additional);
+      // couverts = combien d'ingredients requis de la recette sont deja
+      // coches. Sans ce garde-fou, une recette courte (2-3 ingredients requis)
+      // dont AUCUN n'est coche pouvait quand meme tomber dans "presque"/
+      // "proches" simplement parce qu'il lui manquait peu de choses au total
+      // -- ce qui donnait des suggestions sans rapport avec ce que l'utilisateur
+      // a reellement selectionne. On exige donc au moins 1 ingredient en
+      // commun pour qu'une recette soit consideree comme "proche".
+      const couverts = m.requisCount - m.manquants.length;
       if(m.manquants.length===0) realisables.push(m);
-      else if(m.manquants.length===1) presque.push(m);
-      else if(m.manquants.length>=2 && m.manquants.length<=5) proches.push(m);
+      else if(couverts>=1 && m.manquants.length===1) presque.push(m);
+      else if(couverts>=1 && m.manquants.length>=2 && m.manquants.length<=5) proches.push(m);
     });
     realisables.sort((a,b)=>a.recipe.nom.localeCompare(b.recipe.nom,'fr'));
     presque.sort((a,b)=>a.recipe.nom.localeCompare(b.recipe.nom,'fr'));
-    // Classees par nombre d'ingredients manquants croissant : les plus proches
-    // du realisable en premier. N'est affichee que si les deux sections
-    // ci-dessus fournissent peu de resultats — sinon elle noierait des choix
-    // deja tres pertinents sous une longue liste "pour info".
-    proches.sort((a,b)=> a.manquants.length-b.manquants.length || a.recipe.nom.localeCompare(b.recipe.nom,'fr'));
+    // Classees par nombre d'ingredients manquants croissant (puis par taux de
+    // couverture decroissant) : les plus proches du realisable, et les plus
+    // en phase avec ce que l'utilisateur a coche, en premier. N'est affichee
+    // que si les deux sections ci-dessus fournissent peu de resultats —
+    // sinon elle noierait des choix deja tres pertinents sous une longue
+    // liste "pour info".
+    proches.sort((a,b)=> a.manquants.length-b.manquants.length || (b.requisCount-b.manquants.length)-(a.requisCount-a.manquants.length) || a.recipe.nom.localeCompare(b.recipe.nom,'fr'));
     const wrap = wrap0;
     if(!realisables.length && !presque.length && !proches.length){
       wrap.innerHTML = `<p class="empty">Aucune recette ne s'approche de ce que tu as coché avec ces filtres (il manquerait plus de 5 ingrédients à chacune). Coche d'autres ingrédients — notamment une protéine (viande/poisson/légumineuse/œuf) et un féculent/légume — ou élargis les filtres.</p>`;
