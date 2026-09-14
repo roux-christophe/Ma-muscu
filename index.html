@@ -647,7 +647,11 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
       </button>
       <input type="date" id="nutri-date" onchange="app.changeNutriDate(this.value)">
     </div>
-    <div class="week-strip" id="nutri-week-strip"></div>
+    <div style="display:flex;align-items:center;gap:6px;margin:12px 0 18px;">
+      <button type="button" class="icon-btn" title="Semaine précédente" onclick="app.prevNutriWeek()" style="flex-shrink:0;">‹</button>
+      <div class="week-strip" id="nutri-week-strip" style="margin:0;flex:1;"></div>
+      <button type="button" class="icon-btn" title="Semaine suivante" onclick="app.nextNutriWeek()" style="flex-shrink:0;">›</button>
+    </div>
     <div id="nutri-summary"></div>
     <div id="nutri-hydratation"></div>
     <div id="nutri-detail-jour"></div>
@@ -708,6 +712,7 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
     <p class="small-note" style="margin-top:0;">Différent de l'écran « Recettes » : ici tu choisis une ou plusieurs recettes pour ce que tu as ENVIE de manger, et l'appli te donne la liste de courses — sans ce que tu as déjà.</p>
 
     <div id="aide-repas-listes-sauvegardees"></div>
+    <div id="aide-repas-recettes-a-cuisiner"></div>
 
     <div class="field" style="margin-top:10px;">
       <label>Ingrédient principal souhaité</label>
@@ -760,7 +765,7 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
 
   <!-- ===== NUTRITION : LISTE DE COURSES (une ou plusieurs recettes) ===== -->
   <div class="view" id="view-liste-courses">
-    <div class="topbar"><button class="back" onclick="nav.back(); app.renderAideRepasListesSauvegardees();">‹</button><h1>Liste de courses</h1></div>
+    <div class="topbar"><button class="back" onclick="nav.back(); app.renderAideRepasListesSauvegardees(); app.renderRecettesACuisiner(); app.renderAideRepasResultats();">‹</button><h1>Liste de courses</h1></div>
     <div class="section-title" style="margin-top:0;">Recette(s)</div>
     <div id="liste-courses-recettes" class="card" style="padding:6px 12px;"></div>
 
@@ -875,6 +880,15 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
   <!-- ===== NUTRITION : AJOUT D'ALIMENT ===== -->
   <div class="view" id="view-nutri-add">
     <div class="topbar"><button class="back" onclick="nav.back()">‹</button><h1 id="nutri-add-title">Ajouter un aliment</h1></div>
+    <div class="field" id="nutri-add-meal-wrap" style="display:none;margin-bottom:12px;">
+      <label>Repas</label>
+      <select id="nutri-add-meal" onchange="app.changeNutriAddMeal(this.value)">
+        <option value="petit-dej">Petit-déjeuner</option>
+        <option value="dejeuner">Déjeuner</option>
+        <option value="diner">Dîner</option>
+        <option value="collation">Collation</option>
+      </select>
+    </div>
     <div class="row" style="margin-bottom:12px;">
       <button class="btn btn-secondary" onclick="app.startBarcodeScan()">📷 Scanner un code-barres</button>
     </div>
@@ -1037,7 +1051,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260914114823';
+const APP_BUILD_VERSION = '20260914140256';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1055,6 +1069,8 @@ const SVG_TIMER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const SVG_APPLE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8c0-3-2-6-6-6-1 2-1 4 0 6"/><path d="M12 8c-5 0-8 4-8 9 0 3 2 6 5 6 2 0 2.5-1 3-1s1 1 3 1c3 0 5-3 5-6 0-2-1-3-2-4"/></svg>';
 const SVG_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg>';
 const SVG_PLATE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg>';
+// Bouton "ajouter au suivi" pose sur chaque ligne de la liste de courses.
+const SVG_PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>';
 function seanceIconSVG(isCardio){ return isCardio ? SVG_HEART : SVG_DUMBBELL; }
 // Categorisation visuelle des programmes de la bibliotheque (force = rouge,
 // femme = rose, callisthenie = bleu, perte-de-poids = ambre) : un simple
@@ -1183,7 +1199,7 @@ function defaultSettings(){
   };
 }
 function defaultDB(){
-  return { version: 1, settings: defaultSettings(), seances: [], pesees: [], mensurations: [], journalAlimentaire: [], alimentsFavoris: [], hydratation: [], repasTypes: [], listesCourses: [] };
+  return { version: 1, settings: defaultSettings(), seances: [], pesees: [], mensurations: [], journalAlimentaire: [], alimentsFavoris: [], hydratation: [], repasTypes: [], listesCourses: [], recettesACuisiner: [] };
 }
 function tryParseDB(raw){
   if(!raw) return null;
@@ -1203,6 +1219,12 @@ function tryParseDB(raw){
       // de chaque ligne -- stockees pour les retrouver facilement le jour ou
       // on veut cuisiner (cf. demande explicite de Christophe).
       listesCourses: Array.isArray(data.listesCourses) ? data.listesCourses : [],
+      // Recettes choisies lors d'une "Aide au repas" (cf. genererListeCourses) :
+      // survit volontairement a la suppression de la liste de courses qui les
+      // a generees, pour rester facilement retrouvable ("qu'est-ce que je
+      // cuisine avec ce que j'ai achete ?") et supprimable une a une une fois
+      // la recette realisee.
+      recettesACuisiner: Array.isArray(data.recettesACuisiner) ? data.recettesACuisiner : [],
     });
   }catch(e){ return null; }
 }
@@ -2755,6 +2777,7 @@ const app = {
     // "Tes listes de courses" ci-dessous.
     this._aideRepasSelection = new Set();
     this.renderAideRepasListesSauvegardees();
+    this.renderRecettesACuisiner();
     this.renderAideRepasResultats();
   },
   renderAideRepasResultats(){
@@ -2831,9 +2854,48 @@ const app = {
     const nombrePersonnes = Math.max(1, ...recettes.map(r=>r.portions||1));
     const liste = { id: uid(), creeLe: todayISO(), recetteIds: ids, nombrePersonnes, itemsCoches: {} };
     this.db.listesCourses.push(liste);
-    if(!saveDBOrWarn(this.db)){ this.db.listesCourses.pop(); return; }
+    // Trace independante des recettes choisies (cf. recettesACuisiner dans
+    // tryParseDB/defaultDB) : reste consultable/supprimable meme apres que
+    // cette liste de courses precise soit supprimee une fois les courses
+    // faites. On evite les doublons si une recette est deja suivie.
+    const dejaSuivies = new Set(this.db.recettesACuisiner.map(x=>x.recetteId));
+    const nouvelles = ids.filter(id=>!dejaSuivies.has(id)).map(id=>({id:uid(), recetteId:id, ajouteLe: todayISO()}));
+    this.db.recettesACuisiner.push(...nouvelles);
+    if(!saveDBOrWarn(this.db)){
+      this.db.listesCourses.pop();
+      if(nouvelles.length) this.db.recettesACuisiner.splice(this.db.recettesACuisiner.length - nouvelles.length, nouvelles.length);
+      return;
+    }
     this._aideRepasSelection = new Set();
     this.openListeCourses(liste.id);
+  },
+  // Section "Recettes a cuisiner" de l'ecran Aide au repas : independante des
+  // listes de courses (cf. genererListeCourses) -- volontairement, pour que
+  // supprimer une liste de courses une fois les courses faites ne fasse pas
+  // perdre la trace de la recette a cuisiner.
+  renderRecettesACuisiner(){
+    const wrap = document.getElementById('aide-repas-recettes-a-cuisiner');
+    if(!wrap) return;
+    const entries = (this.db.recettesACuisiner||[]).slice().sort((a,b)=>(b.ajouteLe||'').localeCompare(a.ajouteLe||''));
+    if(!entries.length){ wrap.innerHTML = ''; return; }
+    wrap.innerHTML = `<div class="section-title" style="margin-top:0;">Recettes à cuisiner</div>
+      <p class="small-note" style="margin-top:-6px;">Recettes pour lesquelles tu as fait les courses — supprime-les une fois cuisinées.</p>
+      <div class="card">` + entries.map(e=>{
+        const r = RECIPES.find(x=>x.id===e.recetteId);
+        const nom = r ? r.nom : 'Recette supprimée depuis';
+        return `<div class="list-row">
+          <div class="meta" style="${r?'cursor:pointer;':''}" ${r?`onclick="app.openRecetteDetail('${r.id}', 'courses')"`:''}><div class="t1">${escapeHtml(nom)}</div><div class="t2">Ajoutée le ${fmtDateHuman(e.ajouteLe)}</div></div>
+          <button class="icon-btn" title="Supprimer (recette cuisinée)" onclick="event.stopPropagation(); app.supprimerRecetteACuisiner('${e.id}')">${SVG_TRASH}</button>
+        </div>`;
+      }).join('') + `</div>`;
+  },
+  supprimerRecetteACuisiner(id){
+    showConfirm('Retirer cette recette de « Recettes à cuisiner » ?', ()=>{
+      const prev = this.db.recettesACuisiner;
+      this.db.recettesACuisiner = this.db.recettesACuisiner.filter(x=>x.id!==id);
+      if(!saveDBOrWarn(this.db)){ this.db.recettesACuisiner = prev; return; }
+      this.renderRecettesACuisiner();
+    });
   },
   renderAideRepasListesSauvegardees(){
     const wrap = document.getElementById('aide-repas-listes-sauvegardees');
@@ -2904,13 +2966,20 @@ const app = {
     });
     const items = Array.from(agg.values()).sort((a,b)=> (a.optionnel-b.optionnel) || a.nom.localeCompare(b.nom,'fr'));
     const wrap = document.getElementById('liste-courses-items');
+    // Le bouton "+" (ajout direct au suivi nutritionnel) n'a de sens que pour
+    // un ingredient dont le nom EXACT existe dans FOOD_DB -- meme contrainte
+    // de matching exact que le reste de l'appli (cf. openAddAlimentFromIngredient).
     wrap.innerHTML = items.length ? items.map(it=>{
       const coche = !!liste.itemsCoches[it.nom];
-      return `<label class="list-row" style="cursor:pointer;padding:9px 12px;${coche?'opacity:.45;':''}">
-        <input type="checkbox" value="${escapeHtml(it.nom)}" ${coche?'checked':''} onchange="app.toggleListeCoursesItem(this.value, this.checked)" style="width:19px;height:19px;flex-shrink:0;margin-right:10px;">
-        <div class="meta"><div class="t1" style="font-weight:400;${coche?'text-decoration:line-through;':''}">${escapeHtml(it.nom)}${it.optionnel?' <span class="small-note" style="display:inline;">(optionnel)</span>':''}</div></div>
-        <div class="chev" style="font-size:13px;color:var(--text-dim);">${Math.round(it.quantite)} g</div>
-      </label>`;
+      const dansFoodDB = !!foodDbByName(it.nom);
+      return `<div class="list-row" style="padding:9px 12px;${coche?'opacity:.45;':''}">
+        <label style="display:flex;align-items:center;flex:1;min-width:0;cursor:pointer;">
+          <input type="checkbox" value="${escapeHtml(it.nom)}" ${coche?'checked':''} onchange="app.toggleListeCoursesItem(this.value, this.checked)" style="width:19px;height:19px;flex-shrink:0;margin-right:10px;">
+          <div class="meta"><div class="t1" style="font-weight:400;${coche?'text-decoration:line-through;':''}">${escapeHtml(it.nom)}${it.optionnel?' <span class="small-note" style="display:inline;">(optionnel)</span>':''}</div></div>
+        </label>
+        <div class="chev" style="font-size:13px;color:var(--text-dim);flex-shrink:0;">${Math.round(it.quantite)} g</div>
+        ${dansFoodDB ? `<button class="icon-btn" title="Ajouter au suivi nutritionnel" data-nom="${escapeHtml(it.nom)}" data-qte="${Math.round(it.quantite)}" onclick="app.openAddAlimentFromIngredient(this.dataset.nom, this.dataset.qte)">${SVG_PLUS}</button>` : ''}
+      </div>`;
     }).join('') : '<p class="empty">Tout ce qu\'il faut est déjà dans ton frigo !</p>';
     const dejaWrap = document.getElementById('liste-courses-deja');
     dejaWrap.innerHTML = dejaChezToi.size
@@ -3163,6 +3232,24 @@ const app = {
       </div>`;
   },
   changeNutriDate(v){ this._nutriDate = v || todayISO(); this.renderNutrition(); },
+  // Fleches ‹ › autour de la bande de semaine : jusqu'ici, une fois sorti de
+  // la semaine en cours, le seul moyen de consulter le journal etait le
+  // selecteur de date natif cache derriere le libelle "Aujourd'hui ▾" — pas
+  // assez visible/fiable selon les appareils (demande explicite de
+  // Christophe : il n'arrivait pas a retrouver ses entrées passées une fois
+  // la semaine terminee). Decale la date affichee de 7 jours, en conservant
+  // le meme jour de la semaine, ce qui deplace la bande vers la semaine
+  // precedente/suivante.
+  prevNutriWeek(){
+    const d = new Date((this._nutriDate||todayISO())+'T00:00:00');
+    d.setDate(d.getDate()-7);
+    this.changeNutriDate(dateToISO(d));
+  },
+  nextNutriWeek(){
+    const d = new Date((this._nutriDate||todayISO())+'T00:00:00');
+    d.setDate(d.getDate()+7);
+    this.changeNutriDate(dateToISO(d));
+  },
   // Bande "L M M J V S D" de la semaine contenant la date affichee, pour
   // acceder rapidement aux jours precedents (comme le selecteur de semaine
   // MyFitnessPal) sans passer par le calendrier natif. Le point sous la
@@ -3347,6 +3434,11 @@ const app = {
   openAddAliment(mealId){
     this._nutriAdd = {mealId, product100g:null, editId:null};
     document.getElementById('nutri-add-title').textContent = 'Ajouter — ' + (MEALS.find(m=>m.id===mealId)||{}).label;
+    // Le selecteur de repas ne s'affiche que pour l'ajout depuis un
+    // ingredient de liste de courses (cf. openAddAlimentFromIngredient) : ici
+    // le repas est deja fixe par le bouton "+" sur lequel on a appuye, pas
+    // besoin de le reproposer.
+    document.getElementById('nutri-add-meal-wrap').style.display = 'none';
     ['nom','cal','prot','gluc','lip','portion'].forEach(k=>{ const el=document.getElementById('nutri-add-'+k); if(el) el.value=''; });
     document.getElementById('nutri-add-quantite').value = '';
     document.getElementById('nutri-add-quantite-wrap').style.display = 'none';
@@ -3377,6 +3469,7 @@ const app = {
     // deja mises a l'echelle, sans moyen de les rescaler proprement.
     this._nutriAdd = {mealId:e.mealId, product100g:e.product100g||null, editId:id};
     document.getElementById('nutri-add-title').textContent = 'Modifier — ' + (MEALS.find(m=>m.id===e.mealId)||{}).label;
+    document.getElementById('nutri-add-meal-wrap').style.display = 'none';
     document.getElementById('nutri-add-nom').value = e.nom||'';
     document.getElementById('nutri-add-cal').value = e.cal||'';
     document.getElementById('nutri-add-prot').value = e.prot||'';
@@ -3497,6 +3590,57 @@ const app = {
     document.getElementById('nutri-db-search').value = f.nom;
     document.getElementById('nutri-db-results').innerHTML = '';
     this.recalcFromQuantite();
+  },
+  // Repere raisonnable pour l'heure a laquelle on ajoute un ingredient au
+  // suivi (l'utilisateur peut toujours changer via le selecteur affiche) --
+  // evite de systematiquement retomber sur "Petit-dejeuner" par defaut.
+  defaultMealIdNow(){
+    const h = new Date().getHours();
+    if(h < 11) return 'petit-dej';
+    if(h < 15) return 'dejeuner';
+    if(h < 19) return 'collation';
+    return 'diner';
+  },
+  // Ajout direct au journal depuis un ingredient de la liste de courses (cf.
+  // #liste-courses-items) : on connait deja le nom EXACT (celui de la
+  // recette / FOOD_DB), donc pas besoin de repasser par la recherche --
+  // seule nouveaute par rapport aux autres points d'entree du formulaire, il
+  // faut laisser choisir le repas (petit-dej/dejeuner/diner/collation)
+  // puisqu'il n'est pas deja fixe par un bouton "+" de repas particulier.
+  openAddAlimentFromIngredient(nom, quantite){
+    const f = foodDbByName(nom);
+    if(!f){ toast("Aliment introuvable dans la base — ajoute-le manuellement depuis Nutrition."); return; }
+    const mealId = this.defaultMealIdNow();
+    this.openAddAliment(mealId);
+    // Contrairement au "+" depuis l'onglet Nutrition (un seul niveau de
+    // pile), on arrive ici depuis "Aide au repas" > "Liste de courses" >
+    // "Ajouter un aliment" (3 niveaux) : apres enregistrement, on revient a
+    // la liste de courses plutot que de sauter sur l'onglet Nutrition, pour
+    // pouvoir enchainer l'ajout d'autres ingredients de la meme liste sans
+    // perdre le fil. Cf. saveAliment().
+    this._nutriAdd.returnTo = 'liste-courses';
+    document.getElementById('nutri-add-title').textContent = 'Ajouter au suivi';
+    document.getElementById('nutri-add-meal-wrap').style.display = 'block';
+    document.getElementById('nutri-add-meal').value = mealId;
+    const product100g = {
+      cal:f.kcal, prot:f.prot, gluc:f.gluc, lip:f.lip, portionG:f.portionG||null,
+      sucres: f.sucres!=null?f.sucres:null,
+      agSatures: f.agSatures!=null?f.agSatures:null,
+      fibres: f.fibres!=null?f.fibres:null,
+      sel: f.sel!=null?f.sel:null,
+    };
+    this._nutriAdd.product100g = product100g;
+    document.getElementById('nutri-add-nom').value = f.nom;
+    document.getElementById('nutri-add-quantite-wrap').style.display = 'block';
+    const q = Math.max(1, Math.round(parseFloat(quantite)||100));
+    document.getElementById('nutri-add-quantite').value = q;
+    document.getElementById('nutri-db-search').value = f.nom;
+    document.getElementById('nutri-add-hint').textContent = "Quantité reprise de la liste de courses — ajuste-la si tu en as mangé plus ou moins, et choisis le repas.";
+    this.recalcFromQuantite();
+  },
+  changeNutriAddMeal(mealId){
+    if(!this._nutriAdd) return;
+    this._nutriAdd.mealId = mealId;
   },
   // Recherche EN LIGNE dans Open Food Facts par nom (contrairement au scan
   // code-barres, qui cible un produit precis par son code). Complement
@@ -3651,8 +3795,16 @@ const app = {
       toast('Ajouté ✅');
     }
     this.stopBarcodeScan();
+    // Ajout depuis un ingredient de la liste de courses (cf.
+    // openAddAlimentFromIngredient) : on revient sur la liste de courses
+    // plutot que sur l'onglet Nutrition, pour pouvoir enchainer d'autres
+    // ingredients de la meme liste. L'onglet Nutrition se remettra a jour
+    // tout seul a la prochaine ouverture (nav.tab appelle toujours
+    // renderNutrition()).
+    const returnToListe = this._nutriAdd && this._nutriAdd.returnTo === 'liste-courses';
     nav.back();
-    this.renderNutrition();
+    if(returnToListe) this.renderListeCoursesDetail();
+    else this.renderNutrition();
   },
   recalcFromQuantite(){
     const ctx = this._nutriAdd;
