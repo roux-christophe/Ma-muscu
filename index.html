@@ -748,8 +748,8 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
 
     <div class="section-title">Recettes correspondantes</div>
     <p class="small-note" style="margin-top:-6px;">Coche une ou plusieurs recettes pour construire ta liste de courses ; touche le nom pour voir la recette en détail.</p>
-    <div id="aide-repas-resultats"></div>
-    <div id="aide-repas-selection-bar" style="position:sticky;bottom:8px;margin-top:10px;"></div>
+    <div id="aide-repas-resultats" style="padding-bottom:70px;"></div>
+    <div class="bottom-bar" id="aide-repas-selection-bar" style="display:none;"><div class="app"><div id="aide-repas-selection-bar-inner"></div></div></div>
   </div>
 
   <!-- ===== NUTRITION : DETAIL D'UNE RECETTE ===== -->
@@ -1037,7 +1037,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260914112829';
+const APP_BUILD_VERSION = '20260914114823';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -2806,10 +2806,16 @@ const app = {
     this.renderAideRepasSelectionBar();
   },
   renderAideRepasSelectionBar(){
-    const wrap = document.getElementById('aide-repas-selection-bar');
-    if(!wrap) return;
+    const bar = document.getElementById('aide-repas-selection-bar');
+    const inner = document.getElementById('aide-repas-selection-bar-inner');
+    if(!bar || !inner) return;
     const n = this._aideRepasSelection ? this._aideRepasSelection.size : 0;
-    wrap.innerHTML = n ? `<button class="btn btn-primary" onclick="app.genererListeCourses()">🛒 Générer la liste de courses (${n} recette${n>1?'s':''} sélectionnée${n>1?'s':''})</button>` : '';
+    // Meme mecanisme que la barre "Enregistrer la seance" (classe .bottom-bar,
+    // position fixed au-dessus de la barre de navigation) : un simple
+    // position:sticky se faisait recouvrir par le menu du bas (fixed, z-index
+    // superieur), rendant le bouton invisible/inaccessible en bas de liste.
+    bar.style.display = n ? 'block' : 'none';
+    inner.innerHTML = n ? `<button class="btn btn-primary" onclick="app.genererListeCourses()">🛒 Générer la liste de courses (${n} recette${n>1?'s':''} sélectionnée${n>1?'s':''})</button>` : '';
   },
   // Cree et stocke une liste de courses a partir des recettes cochees, pour
   // pouvoir la retrouver facilement le jour ou on veut cuisiner (demande
