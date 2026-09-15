@@ -1074,7 +1074,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260915052022';
+const APP_BUILD_VERSION = '20260915103839';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1124,7 +1124,7 @@ function relativeDateLabel(iso){
   if(!iso) return '';
   const today = todayISO();
   if(iso===today) return "Aujourd'hui";
-  const y = new Date(new Date(today+'T00:00:00').getTime()-86400000).toISOString().slice(0,10);
+  const y = addDaysISO(today, -1);
   if(iso===y) return 'Hier';
   return fmtDateHuman(iso);
 }
@@ -1140,8 +1140,8 @@ function computeSportQuickstats(){
     return computeTotalPoidsSouleve(l, s);
   };
   const totalVolume = Math.round(logs.reduce((sum,l)=> sum + volOf(l), 0));
-  const today = new Date(new Date().toDateString());
-  const since7 = (()=>{ const d=new Date(today); d.setDate(d.getDate()-7); return d.toISOString().slice(0,10); })();
+  const today = todayISO();
+  const since7 = addDaysISO(today, -7);
   const seancesThisWeek = logs.filter(l=>l.date>=since7).length;
   const volByWeek = {};
   logs.forEach(l=>{
@@ -1150,9 +1150,8 @@ function computeSportQuickstats(){
     const wk = isoWeekKey(l.date);
     volByWeek[wk] = (volByWeek[wk]||0) + vol;
   });
-  const curWeek = isoWeekKey(todayISO());
-  const prevWeekDate = new Date(today); prevWeekDate.setDate(prevWeekDate.getDate()-7);
-  const prevWeek = isoWeekKey(prevWeekDate.toISOString().slice(0,10));
+  const curWeek = isoWeekKey(today);
+  const prevWeek = isoWeekKey(addDaysISO(today, -7));
   const curVol = volByWeek[curWeek]||0;
   const prevVol = volByWeek[prevWeek]||0;
   const progressionPct = prevVol>0 ? Math.round(((curVol-prevVol)/prevVol)*100) : null;
@@ -1310,6 +1309,18 @@ function todayISO(){ const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezo
 // composantes calendaires LOCALES (pas de conversion UTC via toISOString qui
 // peut decaler le jour selon le fuseau) — utilise pour la bande "semaine".
 function dateToISO(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+// Decale une date ISO (YYYY-MM-DD) de n jours (n negatif = dans le passe),
+// en restant entierement en heure LOCALE (new Date(iso+'T00:00:00') puis
+// dateToISO) -- jamais de .toISOString() direct sur le resultat, qui
+// reinterprete en UTC et decale le jour en zone UTC+ (ex : Europe/Paris :
+// minuit local le 15 = 22h UTC le 14, donc toISOString() renverrait "14"
+// pour "aujourd'hui", et systematiquement un jour de trop tot pour tout
+// calcul de date relative). Voir aussi le commentaire sur dateToISO().
+function addDaysISO(iso, n){
+  const d = new Date(iso+'T00:00:00');
+  d.setDate(d.getDate()+n);
+  return dateToISO(d);
+}
 function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function normalize(s){
   s = String(s||'').normalize('NFKD').replace(/[̀-ͯ]/g,'');
@@ -3537,7 +3548,7 @@ const app = {
   // veut juste rejouer les memes aliments puis ajuster les quantites.
   openCopierRepas(targetMealId){
     const targetDate = this._nutriDate || todayISO();
-    const veille = new Date(new Date(targetDate+'T00:00:00').getTime()-86400000).toISOString().slice(0,10);
+    const veille = addDaysISO(targetDate, -1);
     this._copierRepas = {targetDate, targetMealId, sourceDate: veille, sourceMealId: targetMealId};
     nav.push('view-copier-repas');
     this.renderCopierRepasScreen();
@@ -3550,7 +3561,7 @@ const app = {
     const cibleLabel = (MEALS.find(m=>m.id===st.targetMealId)||{}).label || '';
     document.getElementById('copier-repas-cible').textContent = `${cibleLabel} — ${relativeDateLabel(st.targetDate)}`;
     const quickWrap = document.getElementById('copier-repas-quick-dates');
-    const dOffset = n => new Date(new Date(st.targetDate+'T00:00:00').getTime()-n*86400000).toISOString().slice(0,10);
+    const dOffset = n => addDaysISO(st.targetDate, -n);
     const quick = [{label:'Hier', date:dOffset(1)}, {label:'Avant-hier', date:dOffset(2)}];
     quickWrap.innerHTML = quick.map(q=>`<button type="button" class="pill ${st.sourceDate===q.date?'active':''}" onclick="app.setCopierRepasQuickDate('${q.date}')">${q.label}</button>`).join('');
     this.renderCopierRepasPreview();
@@ -4342,19 +4353,18 @@ const app = {
   },
   renderRegularity(){
     const logs = this.db.seances;
-    const today = new Date(new Date().toDateString());
-    const days = n => { const d=new Date(today); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); };
-    const since7 = days(7), since30 = days(30);
+    const today = todayISO();
+    const since7 = addDaysISO(today, -7), since30 = addDaysISO(today, -30);
     const c7 = logs.filter(l=>l.date>=since7).length;
     const c30 = logs.filter(l=>l.date>=since30).length;
     const weekKeys = new Set(logs.map(l=>isoWeekKey(l.date)));
     let streak = 0;
     if(logs.length){
       const mostRecentDate = logs.slice().sort((a,b)=> a.date<b.date?1:-1)[0].date;
-      let cursor = new Date(mostRecentDate+'T00:00:00');
+      let cursorISO = mostRecentDate;
       while(true){
-        const k = isoWeekKey(cursor.toISOString().slice(0,10));
-        if(weekKeys.has(k)){ streak++; cursor.setDate(cursor.getDate()-7); } else break;
+        const k = isoWeekKey(cursorISO);
+        if(weekKeys.has(k)){ streak++; cursorISO = addDaysISO(cursorISO, -7); } else break;
       }
     }
     document.getElementById('stats-regularity').innerHTML = `
