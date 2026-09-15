@@ -661,7 +661,7 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
   <!-- ===== NUTRITION : RECETTES (a partir du frigo/placard) ===== -->
   <div class="view" id="view-recettes">
     <div class="topbar"><button class="back" onclick="nav.back(); app.renderNutrition();">‹</button><h1>Recettes</h1></div>
-    <p class="small-note" style="margin-top:0;">Coche ce que tu as dans ton frigo et tes placards : l'appli te propose des recettes équilibrées réalisables avec — pas besoin de tout avoir. Le sel, le poivre, l'huile et l'eau sont supposés toujours disponibles.</p>
+    <p class="small-note" style="margin-top:0;">Coche ce que tu as dans ton frigo et tes placards : l'appli te propose des recettes équilibrées réalisables avec — pas besoin de tout avoir. Le sel, le poivre, l'huile, l'eau, le vinaigre, ainsi que les épices sèches et condiments courants (cumin, curcuma, paprika, curry, cannelle, origan et thym séchés, gingembre en poudre, coriandre en graine, laurier, moutarde, miel, sauce soja, sauce teriyaki, vinaigrette balsamique) sont supposés toujours disponibles.</p>
 
     <div class="field" style="margin-top:10px;">
       <label>Rechercher un ingrédient à cocher</label>
@@ -938,6 +938,29 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
     <button class="btn btn-primary" id="nutri-add-save-btn" onclick="app.saveAliment()">Ajouter au repas</button>
   </div>
 
+  <!-- ===== NUTRITION : COPIER UN REPAS (restes de la veille etc.) ===== -->
+  <div class="view" id="view-copier-repas">
+    <div class="topbar"><button class="back" onclick="nav.back()">‹</button><h1>Copier un repas</h1></div>
+    <p class="small-note" style="margin-top:0;">Reprend tous les aliments d'un repas déjà enregistré pour un autre jour — pratique pour les restes, il ne restera qu'à ajuster les quantités.</p>
+    <div class="section-title" style="margin-top:14px;">Depuis quel jour ?</div>
+    <div class="pill-row" id="copier-repas-quick-dates" style="margin-bottom:10px;"></div>
+    <div class="field" style="max-width:220px;"><input type="date" id="copier-repas-date" onchange="app.changeCopierRepasDate(this.value)"></div>
+    <div class="field" style="margin-top:14px;">
+      <label>Quel repas copier</label>
+      <select id="copier-repas-meal" onchange="app.changeCopierRepasMeal(this.value)">
+        <option value="petit-dej">Petit-déjeuner</option>
+        <option value="dejeuner">Déjeuner</option>
+        <option value="diner">Dîner</option>
+        <option value="collation">Collation</option>
+      </select>
+    </div>
+    <div class="section-title">Vers</div>
+    <div class="card" style="padding:12px 14px;"><div class="t1" id="copier-repas-cible"></div></div>
+    <div class="section-title">Contenu de ce repas</div>
+    <div id="copier-repas-apercu" class="card"></div>
+    <button class="btn btn-primary" id="copier-repas-btn" style="margin-top:16px;" onclick="app.confirmCopierRepas()" disabled>Copier ici</button>
+  </div>
+
   <!-- ===== REGLAGES ===== -->
   <div class="view" id="view-settings">
     <div class="topbar" style="margin:0 -16px 4px;"><h1>Réglages</h1></div>
@@ -1051,7 +1074,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260914140256';
+const APP_BUILD_VERSION = '20260915052022';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1305,10 +1328,85 @@ function normalize(s){
 // "huile d'olive"/"huile de tournesol" comme manquante et de fausser tous
 // les calculs de recettes proches/presque (bug signale par l'utilisateur :
 // des recettes semblaient manquer de "presque tout").
-const STAPLE_KEYWORDS = ['sel', 'poivre', 'eau', 'vinaigre', 'huile'];
+// Extension demandee par Christophe (diagnostic du 15/09 : il fallait cocher
+// 20+ produits avant la premiere suggestion) -- epices seches, herbes
+// sechees et condiments/sauces embouteilles a longue conservation, que la
+// plupart des cuisines ont "souvent" au placard. On qualifie precisement la
+// forme SECHE/EN POUDRE de chaque epice quand un doublon FRAIS existe dans
+// les recettes (gingembre poudre vs racine crue, coriandre graine vs
+// fraiche, thym seche vs frais) : un ingredient frais ne doit JAMAIS etre
+// suppose "toujours disponible", sous peine d'annoncer une recette
+// "realisable maintenant" alors qu'il manque un frais decouvert seulement
+// au moment de cuisiner -- ca casserait la confiance dans la fonction.
+const STAPLE_KEYWORDS = [
+  'sel', 'poivre', 'eau', 'vinaigre', 'huile',
+  'cumin, graine', 'curcuma, poudre', 'paprika', 'curry, poudre',
+  'cannelle, poudre', 'origan, séché', 'gingembre, poudre',
+  'coriandre, graine', 'thym, séché', 'laurier',
+  'moutarde', 'miel', 'sauce soja', 'sauce teriyaki',
+  'vinaigrette balsamique au miel',
+];
 function isStapleIngredient(nom){
   const n = normalize(nom);
   return STAPLE_KEYWORDS.some(k => n === normalize(k) || n.startsWith(normalize(k)+' '));
+}
+// Regroupement d'ingredients "generiquement equivalents" pour la
+// correspondance frigo/liste de courses (ex: n'importe quelle coupe de
+// poulet cru compte comme "avoir du poulet") -- demande explicite de
+// Christophe. Liste CURATEE A LA MAIN (pas de regroupement automatique par
+// mot-cle) : un rapprochement automatique aurait fusionne a tort des
+// aliments tres differents partageant un mot (ex: "Pomme" et "Pomme de
+// terre", "Lait" et "Lait de coco", des pates AVEC gluten et SANS gluten,
+// ou "Bœuf" cru et "Boeuf, steak haché, cuit"). Chaque groupe ci-dessous a
+// ete verifie un par un pour ne rapprocher que des variantes reellement
+// substituables en cuisine (coupes crues d'une meme viande, cru/cuit d'un
+// meme aliment) -- les varietes culinairement distinctes (types de riz,
+// couleurs d'oignon/olives, especes de noix, pain, pates avec/sans gluten,
+// laits vegetaux vs animal, thon frais vs en boite, saumon fume vs cru...)
+// restent volontairement des ingredients separes.
+const INGREDIENT_GROUPS = [
+  ['Poulet, blanc (filet), cru', 'Poulet, cuisse sans peau, crue', 'Poulet, filet, sans peau, cru', 'Poulet, haut de cuisse, viande, cru'],
+  ['Dinde, blanc (escalope), cru', 'Dinde, escalope, crue', 'Dinde, haché, cru'],
+  ['Porc, échine, crue', 'Porc, longe, crue', 'Porc, filet mignon, cru'],
+  ['Bœuf, bavette, crue', 'Bœuf, faux-filet, cru', 'Bœuf, rumsteck, cru', 'Boeuf, à bourguignon ou pot-au-feu, cru', 'Boeuf, steak haché, cuit (aliment moyen)'],
+  ['Boulgour, cru', 'Boulgour, cuit'],
+  ['Quinoa, cru', 'Quinoa, cuit'],
+  ['Riz basmati, cru', 'Riz basmati, cuit'],
+  ['Riz complet, cru', 'Riz complet, cuit'],
+  ['Pomme de terre, crue', 'Pomme de terre nouvelle, cuite'],
+  ['Lentilles vertes, crues', 'Lentilles vertes, cuites'],
+  ['Champignon de Paris, cru', 'Champignon, tout type, cru', 'Champignon, lentin comestible ou shiitaké, cuit'],
+  ['Comté', 'Comté râpé'],
+  ['Épinards, crus', 'Épinard, jeunes pousses pour salades, cru'],
+  ['Oeuf, cru', 'Oeuf, dur', 'Oeuf, poché', 'Oeuf, à la coque'],
+  ['Crevette, crue', 'Crevette rose, crue'],
+  ['Jambon blanc, standard', 'Jambon blanc, découenné dégraissé'],
+  ['Haricot vert, surgelé, cru', 'Haricot vert, cuit'],
+  ['Avocat, cru', 'Avocat'],
+  ['Amande', 'Amande effilée'],
+  ['Olives noires', 'Olives noires dénoyautées'],
+  ['Pomme', 'Pomme Granny Smith'],
+  ['Tomate, crue', 'Tomate ronde, crue'],
+  ['Saumon, cru', 'Saumon, cru, élevage', "Saumon d'élevage, cru"],
+  ['Oignon, cru', 'Oignon jaune, cru', 'Oignon rouge, cru'],
+];
+const INGREDIENT_GROUP_LOOKUP = (()=>{
+  const map = {};
+  INGREDIENT_GROUPS.forEach(group=>{ group.forEach(nom=>{ map[nom] = group; }); });
+  return map;
+})();
+// "Have" generique : vrai si l'ingredient exact est coche, OU si un autre
+// membre de son groupe d'equivalence (cf. INGREDIENT_GROUPS) l'est. Utilise
+// partout ou l'on evalue "cette recette compte-t-elle cet ingredient comme
+// possede" (matchRecipe, ecran frigo, "deja chez toi" de Aide au repas) --
+// JAMAIS pour le calcul des macros (computeRecipeTotals/foodDbByName restent
+// intentionnellement en matching exact, une coupe de poulet n'a pas les
+// memes calories qu'une autre).
+function haveIngredient(nom, haveSet){
+  if(haveSet.has(nom)) return true;
+  const group = INGREDIENT_GROUP_LOOKUP[nom];
+  if(!group) return false;
+  return group.some(alt => alt!==nom && haveSet.has(alt));
 }
 // Index nom exact -> entree FOOD_DB, construit une seule fois (plusieurs
 // milliers d'entrees, une recherche lineaire a chaque ingredient de chaque
@@ -1349,7 +1447,7 @@ function computeRecipeTotals(recipe){
 // realisables), sans modifier la selection persistee de l'utilisateur.
 function matchRecipe(recipe, haveSet, additionalHave){
   const requis = (recipe.ingredients||[]).filter(i => !i.optionnel && !isStapleIngredient(i.nom));
-  const manquants = requis.filter(i => !haveSet.has(i.nom) && !(additionalHave && additionalHave.has(i.nom)));
+  const manquants = requis.filter(i => !haveIngredient(i.nom, haveSet) && !(additionalHave && additionalHave.has(i.nom)));
   return {recipe, requisCount: requis.length, manquants};
 }
 // Seuil "riche en proteines" utilise par le filtre de l'ecran Aide au repas :
@@ -2696,9 +2794,16 @@ const app = {
       // un vrai indice de pertinence, pas juste un hasard de liste de courses.
       const couverts = m.requisCount - m.manquants.length;
       const ratioCouverture = m.requisCount>0 ? couverts/m.requisCount : 0;
+      // Seuils assouplis (demande explicite de Christophe, diagnostic du
+      // 15/09) : "presque" tolere desormais 1 OU 2 ingredients manquants
+      // (au lieu d'exactement 1), et "proches" va jusqu'a 7 manquants avec
+      // 40% de couverture (au lieu de 5 et 50%). "Realisable maintenant"
+      // reste volontairement a 0 manquant : c'est la seule section qui
+      // promet de pouvoir cuisiner sans repasser par les courses, on ne
+      // transige pas dessus.
       if(m.manquants.length===0) realisables.push(m);
-      else if(couverts>=1 && m.manquants.length===1) presque.push(m);
-      else if(m.manquants.length>=2 && m.manquants.length<=5 && ratioCouverture>=0.5) proches.push(m);
+      else if(couverts>=1 && m.manquants.length<=2) presque.push(m);
+      else if(m.manquants.length>=2 && m.manquants.length<=7 && ratioCouverture>=0.4) proches.push(m);
     });
     realisables.sort((a,b)=>a.recipe.nom.localeCompare(b.recipe.nom,'fr'));
     presque.sort((a,b)=>a.recipe.nom.localeCompare(b.recipe.nom,'fr'));
@@ -2711,7 +2816,7 @@ const app = {
     proches.sort((a,b)=> a.manquants.length-b.manquants.length || (b.requisCount-b.manquants.length)-(a.requisCount-a.manquants.length) || a.recipe.nom.localeCompare(b.recipe.nom,'fr'));
     const wrap = wrap0;
     if(!realisables.length && !presque.length && !proches.length){
-      wrap.innerHTML = `<p class="empty">Aucune recette ne s'approche de ce que tu as coché avec ces filtres (il manquerait plus de 5 ingrédients à chacune). Coche d'autres ingrédients — notamment une protéine (viande/poisson/légumineuse/œuf) et un féculent/légume — ou élargis les filtres.</p>`;
+      wrap.innerHTML = `<p class="empty">Aucune recette ne s'approche de ce que tu as coché avec ces filtres (il manquerait plus de 7 ingrédients à chacune). Coche d'autres ingrédients — notamment une protéine (viande/poisson/légumineuse/œuf) et un féculent/légume — ou élargis les filtres.</p>`;
       return;
     }
     const cardHtml = (m, mode)=>{
@@ -2719,12 +2824,15 @@ const app = {
       const tags = [cuisineLabel(r.cuisine), ...(r.regimes||[]).map(g=>REGIME_LABELS[g]||g)].filter(Boolean);
       let bas = '';
       if(mode==='presque'){
-        bas = `<div style="padding:0 12px 12px;">
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-dim);cursor:pointer;">
-            <input type="checkbox" data-recipe="${escapeHtml(r.id)}" value="${escapeHtml(m.manquants[0].nom)}" style="width:16px;height:16px;flex-shrink:0;" onchange="app.toggleRecetteAlmost(this.dataset.recipe, this.value)">
-            Tu es sûr de ne pas avoir de ${escapeHtml(m.manquants[0].nom.toLowerCase())} ?
-          </label>
-        </div>`;
+        // "Presque" tolere maintenant 1 OU 2 manquants (cf. seuils
+        // ci-dessus) : une case "tu es sur de ne pas avoir de X ?" par
+        // ingredient manquant, plutot que la seule premiere comme avant.
+        bas = `<div style="padding:0 12px 12px;display:flex;flex-direction:column;gap:6px;">` +
+          m.manquants.map(ing => `<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-dim);cursor:pointer;">
+            <input type="checkbox" data-recipe="${escapeHtml(r.id)}" value="${escapeHtml(ing.nom)}" style="width:16px;height:16px;flex-shrink:0;" onchange="app.toggleRecetteAlmost(this.dataset.recipe, this.value)">
+            Tu es sûr de ne pas avoir de ${escapeHtml(ing.nom.toLowerCase())} ?
+          </label>`).join('') +
+          `</div>`;
       } else if(mode==='proche'){
         bas = `<div style="padding:0 12px 12px;"><p class="small-note" style="margin:0;">Il te manque ${m.manquants.length} ingrédients : ${m.manquants.map(i=>escapeHtml(i.nom.toLowerCase())).join(', ')}</p></div>`;
       }
@@ -2741,7 +2849,7 @@ const app = {
       html += `<div class="section-title" style="margin-top:0;">Réalisables maintenant (${realisables.length})</div>` + realisables.map(m=>cardHtml(m,'realisable')).join('');
     }
     if(presque.length){
-      html += `<div class="section-title">Presque — il te manque juste un ingrédient (${presque.length})</div>` + presque.map(m=>cardHtml(m,'presque')).join('');
+      html += `<div class="section-title">Presque — il te manque 1 ou 2 ingrédients (${presque.length})</div>` + presque.map(m=>cardHtml(m,'presque')).join('');
     }
     // La liste "proches" ne sert qu'a orienter/inspirer (liste de courses
     // possible) : affichee seulement quand les deux sections precedentes ne
@@ -2908,7 +3016,7 @@ const app = {
       const noms = recettes.map(r=>r.nom).join(', ') || 'Recette(s) supprimée(s) depuis';
       const ingredientsUniques = new Set();
       recettes.forEach(r=>(r.ingredients||[]).forEach(ing=>{
-        if(isStapleIngredient(ing.nom) || have.has(ing.nom)) return;
+        if(isStapleIngredient(ing.nom) || haveIngredient(ing.nom, have)) return;
         ingredientsUniques.add(ing.nom);
       }));
       const total = ingredientsUniques.size;
@@ -2953,7 +3061,7 @@ const app = {
       const facteur = liste.nombrePersonnes / (r.portions||1);
       (r.ingredients||[]).forEach(ing=>{
         if(isStapleIngredient(ing.nom)) return;
-        if(have.has(ing.nom)){ dejaChezToi.add(ing.nom); return; }
+        if(haveIngredient(ing.nom, have)){ dejaChezToi.add(ing.nom); return; }
         const q = (Number(ing.quantite)||0) * facteur;
         if(agg.has(ing.nom)){
           const cur = agg.get(ing.nom);
@@ -3048,12 +3156,12 @@ const app = {
         <div class="meta"><div class="t1" style="font-weight:400;">🛒 ${escapeHtml(i.nom)}${i.optionnel?' <span class="small-note" style="display:inline;">(optionnel)</span>':''}</div></div>
         <div class="chev" style="font-size:13px;color:var(--text-dim);">${i.quantite?i.quantite+' g':''}</div>
       </div>`).join('');
-      legendeHtml = `<p class="small-note" style="margin:0 0 6px;">🛒 à acheter · le sel, le poivre, l'huile et l'eau sont supposés déjà disponibles et ne sont pas listés</p>`;
+      legendeHtml = `<p class="small-note" style="margin:0 0 6px;">🛒 à acheter · les basiques (sel, poivre, huile, eau, épices sèches et condiments courants) sont supposés déjà disponibles et ne sont pas listés</p>`;
       titreIngredients = `Liste de courses (pour ${portions} portion${portions>1?'s':''})`;
     } else {
       const ingHtmlArr = (r.ingredients||[]).map(i=>{
         const staple = isStapleIngredient(i.nom);
-        const ok = staple || have.has(i.nom);
+        const ok = staple || haveIngredient(i.nom, have);
         // Un ingredient optionnel manquant ne bloque jamais la recette (cf.
         // matchRecipe, qui l'exclut des "requis") : lui mettre une croix rouge
         // au meme titre qu'un ingredient vraiment necessaire donnait
@@ -3359,6 +3467,7 @@ const app = {
         ${rows}
         <div class="row" style="gap:8px;flex-wrap:wrap;">
           <button class="btn btn-ghost" style="width:auto;padding:9px 2px;" onclick="app.openAddAliment('${m.id}')">＋ Ajouter un aliment</button>
+          <button class="btn btn-ghost" style="width:auto;padding:9px 2px;" onclick="app.openCopierRepas('${m.id}')">📋 Copier un repas</button>
           ${entries.length?`<button class="btn btn-ghost" style="width:auto;padding:9px 2px;" onclick="app.promptSaveRepasType('${m.id}')">💾 Enregistrer comme repas type</button>`:''}
         </div>
       </div>`;
@@ -3420,6 +3529,85 @@ const app = {
           <button class="icon-btn" title="Supprimer ce repas type" onclick="event.stopPropagation(); app.deleteRepasType('${rt.id}')">${SVG_TRASH}</button>
         </div>`;
       }).join('')}</div>`;
+  },
+  /* ---------- NUTRITION : COPIER UN REPAS (restes de la veille) ---------- */
+  // Contrairement au repas type (bloc reutilisable manuellement nomme), ceci
+  // copie directement le contenu REEL d'un repas deja enregistre a une autre
+  // date -- pense pour le cas "il me reste du gratin d'hier soir", ou l'on
+  // veut juste rejouer les memes aliments puis ajuster les quantites.
+  openCopierRepas(targetMealId){
+    const targetDate = this._nutriDate || todayISO();
+    const veille = new Date(new Date(targetDate+'T00:00:00').getTime()-86400000).toISOString().slice(0,10);
+    this._copierRepas = {targetDate, targetMealId, sourceDate: veille, sourceMealId: targetMealId};
+    nav.push('view-copier-repas');
+    this.renderCopierRepasScreen();
+  },
+  renderCopierRepasScreen(){
+    const st = this._copierRepas;
+    if(!st) return;
+    document.getElementById('copier-repas-date').value = st.sourceDate;
+    document.getElementById('copier-repas-meal').value = st.sourceMealId;
+    const cibleLabel = (MEALS.find(m=>m.id===st.targetMealId)||{}).label || '';
+    document.getElementById('copier-repas-cible').textContent = `${cibleLabel} — ${relativeDateLabel(st.targetDate)}`;
+    const quickWrap = document.getElementById('copier-repas-quick-dates');
+    const dOffset = n => new Date(new Date(st.targetDate+'T00:00:00').getTime()-n*86400000).toISOString().slice(0,10);
+    const quick = [{label:'Hier', date:dOffset(1)}, {label:'Avant-hier', date:dOffset(2)}];
+    quickWrap.innerHTML = quick.map(q=>`<button type="button" class="pill ${st.sourceDate===q.date?'active':''}" onclick="app.setCopierRepasQuickDate('${q.date}')">${q.label}</button>`).join('');
+    this.renderCopierRepasPreview();
+  },
+  setCopierRepasQuickDate(date){
+    if(!this._copierRepas) return;
+    this._copierRepas.sourceDate = date;
+    this.renderCopierRepasScreen();
+  },
+  changeCopierRepasDate(v){
+    if(!this._copierRepas || !v) return;
+    this._copierRepas.sourceDate = v;
+    this.renderCopierRepasScreen();
+  },
+  changeCopierRepasMeal(v){
+    if(!this._copierRepas) return;
+    this._copierRepas.sourceMealId = v;
+    this.renderCopierRepasPreview();
+  },
+  renderCopierRepasPreview(){
+    const st = this._copierRepas;
+    if(!st) return;
+    const wrap = document.getElementById('copier-repas-apercu');
+    const btn = document.getElementById('copier-repas-btn');
+    const entries = this.db.journalAlimentaire.filter(e=>e.date===st.sourceDate && e.mealId===st.sourceMealId);
+    if(!entries.length){
+      const mealLabel = (MEALS.find(m=>m.id===st.sourceMealId)||{}).label || '';
+      wrap.innerHTML = `<p class="empty">Rien d'enregistré pour "${escapeHtml(mealLabel)}" le ${fmtDateHuman(st.sourceDate).toLowerCase()}.</p>`;
+      btn.disabled = true;
+      btn.textContent = 'Copier ici';
+      return;
+    }
+    const totalCal = entries.reduce((s,e)=>s+(Number(e.cal)||0),0);
+    wrap.innerHTML = entries.map(e=>`
+      <div class="list-row">
+        <div class="meta"><div class="t1">${escapeHtml(e.nom)}</div><div class="t2">${Math.round(e.cal)||0} kcal${e.portion?' · '+escapeHtml(e.portion):''}</div></div>
+      </div>`).join('') + `<div class="list-row"><div class="meta"><div class="t1">Total</div></div><div class="t2" style="font-weight:600;">${Math.round(totalCal)} kcal</div></div>`;
+    btn.disabled = false;
+    btn.textContent = `Copier ici (${entries.length} aliment${entries.length>1?'s':''})`;
+  },
+  confirmCopierRepas(){
+    const st = this._copierRepas;
+    if(!st) return;
+    const sourceEntries = this.db.journalAlimentaire.filter(e=>e.date===st.sourceDate && e.mealId===st.sourceMealId);
+    if(!sourceEntries.length) return;
+    const prev = this.db.journalAlimentaire.slice();
+    sourceEntries.forEach(e=>{
+      this.db.journalAlimentaire.push({
+        id: uid(), date: st.targetDate, mealId: st.targetMealId,
+        nom: e.nom, cal: e.cal, prot: e.prot, gluc: e.gluc, lip: e.lip,
+        portion: e.portion, product100g: e.product100g, quantite: e.quantite,
+      });
+    });
+    if(!saveDBOrWarn(this.db)){ this.db.journalAlimentaire = prev; return; }
+    toast(`Repas copié ✅ (${sourceEntries.length} aliment${sourceEntries.length>1?'s':''})`);
+    nav.back();
+    this.renderNutrition();
   },
   deleteAliment(id){
     showConfirm('Supprimer cet aliment du journal ?', ()=>{
