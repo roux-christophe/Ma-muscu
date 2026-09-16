@@ -376,6 +376,13 @@ button{font-family:inherit;}
 }
 .icon-btn:active{transform:scale(.92);}
 .icon-btn svg{width:17px;height:17px;}
+/* Variante pour la rangee d'icones en haut des pages Sport/Nutrition
+   (navigation vers Historique/Stats/Recettes/Profil...) : plus grande et en
+   pleine opacite (vs. la version de base, volontairement discrete pour les
+   actions secondaires type modifier/supprimer sur une ligne de liste) --
+   ce sont des entrees de navigation principales, elles doivent se voir. */
+.icon-btn-topbar{ width:40px; height:40px; color:var(--text); }
+.icon-btn-topbar svg{ width:20px; height:20px; }
 
 .field{margin-bottom:12px;}
 .field label{display:block; font-size:13px; color:var(--text-dim); margin-bottom:6px; font-weight:700;}
@@ -561,8 +568,8 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
     <div class="topbar" style="margin:0 -16px 4px;justify-content:space-between;">
       <h1>Sport</h1>
       <div style="display:flex;gap:8px;">
-        <button class="icon-btn" title="Historique" onclick="nav.push('view-history'); app.renderHistory();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></button>
-        <button class="icon-btn" title="Statistiques" onclick="nav.push('view-stats'); app.renderStats();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg></button>
+        <button class="icon-btn icon-btn-topbar" title="Historique" onclick="nav.push('view-history'); app.renderHistory();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></button>
+        <button class="icon-btn icon-btn-topbar" title="Statistiques" onclick="nav.push('view-stats'); app.renderStats();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg></button>
       </div>
     </div>
     <div class="quickstats" id="sport-quickstats"></div>
@@ -633,11 +640,11 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
     <div class="topbar" style="margin:0 -16px 4px;justify-content:space-between;">
       <h1>Nutrition</h1>
       <div style="display:flex;gap:8px;">
-        <button class="icon-btn" title="Recettes à partir de mon frigo" onclick="nav.push('view-recettes'); app.renderRecettes();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18"/><path d="M5 11V6a2 2 0 012-2h1"/><path d="M12 4v7"/><path d="M19 11V6a2 2 0 00-2-2h-1"/><path d="M4 11l1 9h14l1-9"/></svg></button>
-        <button class="icon-btn" title="Aide au repas : choisir une recette et obtenir la liste de courses" onclick="nav.push('view-aide-repas'); app.renderAideRepas();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg></button>
-        <button class="icon-btn" title="Suivi corporel (poids, mensurations)" onclick="nav.push('view-nutri-corps'); app.renderNutriCorps();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="8" rx="1.5"/><path d="M7 8v3M11 8v4M15 8v3"/></svg></button>
-        <button class="icon-btn" title="Statistiques nutrition" onclick="nav.push('view-nutri-stats'); app.renderNutriStats();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg></button>
-        <button class="icon-btn" title="Profil & objectif" onclick="nav.push('view-nutri-profil'); app.renderNutriProfil();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9c.14.32.22.66.24 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
+        <button class="icon-btn icon-btn-topbar" title="Recettes à partir de mon frigo" onclick="nav.push('view-recettes'); app.renderRecettes();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18"/><path d="M5 11V6a2 2 0 012-2h1"/><path d="M12 4v7"/><path d="M19 11V6a2 2 0 00-2-2h-1"/><path d="M4 11l1 9h14l1-9"/></svg></button>
+        <button class="icon-btn icon-btn-topbar" title="Aide au repas : choisir une recette et obtenir la liste de courses" onclick="nav.push('view-aide-repas'); app.renderAideRepas();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg></button>
+        <button class="icon-btn icon-btn-topbar" title="Suivi corporel (poids, mensurations)" onclick="nav.push('view-nutri-corps'); app.renderNutriCorps();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="8" rx="1.5"/><path d="M7 8v3M11 8v4M15 8v3"/></svg></button>
+        <button class="icon-btn icon-btn-topbar" title="Statistiques nutrition" onclick="nav.push('view-nutri-stats'); app.renderNutriStats();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg></button>
+        <button class="icon-btn icon-btn-topbar" title="Profil & objectif" onclick="nav.push('view-nutri-profil'); app.renderNutriProfil();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9c.14.32.22.66.24 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
       </div>
     </div>
     <div class="nutri-day-head">
@@ -1074,7 +1081,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260915103839';
+const APP_BUILD_VERSION = '20260916053326';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1969,8 +1976,15 @@ function barChartSVG(points, color){
     const bx = pad + i*((w-2*pad)/points.length) + ((w-2*pad)/points.length-bw)/2;
     const bh = (p.value/max)*(h-2*pad);
     const by = h-pad-bh;
-    const lbl = i%step===0 ? `<text x="${(bx+bw/2).toFixed(1)}" y="${h-8}" font-size="9.5" text-anchor="middle" style="fill:var(--text-faint)">${p.label}</text>` : '';
-    return `<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(2,bh).toFixed(1)}" rx="4" style="fill:${fill}"/>${lbl}`;
+    const cx = (bx+bw/2).toFixed(1);
+    const lbl = i%step===0 ? `<text x="${cx}" y="${h-8}" font-size="9.5" text-anchor="middle" style="fill:var(--text-faint)">${p.label}</text>` : '';
+    // Valeur affichee au-dessus de CHAQUE barre (pas seulement les dates en
+    // abscisse) -- sans ca l'utilisateur ne peut comparer les barres qu'a
+    // l'oeil, jamais lire le chiffre exact. Clampee a 11 pour ne jamais
+    // sortir du SVG par le haut sur une barre au maximum.
+    const valY = Math.max(11, by-6).toFixed(1);
+    const valLbl = `<text x="${cx}" y="${valY}" font-size="9.5" font-weight="700" text-anchor="middle" style="fill:var(--text)">${p.value}</text>`;
+    return `<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(2,bh).toFixed(1)}" rx="4" style="fill:${fill}"/>${valLbl}${lbl}`;
   }).join('');
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${bars}</svg>`;
 }
