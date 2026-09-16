@@ -1081,7 +1081,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260916053326';
+const APP_BUILD_VERSION = '20260916061028';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1986,7 +1986,26 @@ function barChartSVG(points, color){
     const valLbl = `<text x="${cx}" y="${valY}" font-size="9.5" font-weight="700" text-anchor="middle" style="fill:var(--text)">${p.value}</text>`;
     return `<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(2,bh).toFixed(1)}" rx="4" style="fill:${fill}"/>${valLbl}${lbl}`;
   }).join('');
-  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${bars}</svg>`;
+  // Ligne de moyenne en pointilles, au-dessus des barres (donc toujours
+  // visible en travers, meme sur une barre plus haute qu'elle). Son chiffre
+  // n'est PAS pose a l'interieur du SVG : sur un graphique etroit (peu de
+  // points), une etiquette "Moy. X" ancree pres du bord droit finit
+  // systematiquement par chevaucher le chiffre d'une des dernieres barres,
+  // quelle que soit la barre dont la hauteur se rapproche de la moyenne --
+  // essaye et verifie visuellement, pas fiable en pur SVG hors-contexte
+  // (pas de mesure de largeur de texte disponible pour detecter tous les
+  // chevauchements possibles). Le chiffre part donc en HTML normal
+  // au-dessus du graphique, hors de la zone dessinee : jamais de collision
+  // possible, quelles que soient les donnees. Inutile a 1 seule barre (la
+  // moyenne == la barre, ca n'apporte rien).
+  let avgLine = '', avgLabel = '';
+  if(points.length>1){
+    const avg = points.reduce((s,p)=>s+p.value,0)/points.length;
+    const avgY = (h-pad-(avg/max)*(h-2*pad)).toFixed(1);
+    avgLine = `<line x1="${pad}" y1="${avgY}" x2="${w-pad}" y2="${avgY}" stroke="var(--text-faint)" stroke-width="1.3" stroke-dasharray="4 3"/>`;
+    avgLabel = `<div style="font-size:12px;font-weight:700;color:var(--text-dim);margin-bottom:4px;">Moyenne : ${Math.round(avg)}</div>`;
+  }
+  return `${avgLabel}<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${bars}${avgLine}</svg>`;
 }
 // Les graphiques (ligne/barres) sont construits du plus ancien au plus
 // recent et deviennent plus larges que leur conteneur au-dela de quelques
