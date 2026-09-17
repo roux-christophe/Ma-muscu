@@ -1082,7 +1082,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260917163913';
+const APP_BUILD_VERSION = '20260917164803';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -4103,21 +4103,20 @@ const app = {
       toast("Impossible d'accéder à la caméra"+reason);
       this.stopBarcodeScan();
     };
-    // 1ere tentative avec une resolution "ideal" plus elevee (jamais
-    // "exact" : ne doit jamais a elle seule faire echouer l'ouverture) --
-    // sur certains iPhone ca influence le choix d'objectif arriere fait par
-    // iOS et peut ameliorer la mise au point de pres. Si ca echoue pour
-    // n'importe quelle raison, on retente aussitot avec la configuration
-    // minimale qui fonctionnait avant cet essai, plutot que d'abandonner :
-    // cette tentative d'amelioration ne doit jamais faire regresser un
-    // telephone qui marchait deja.
+    // Un seul essai, avec la contrainte minimale (facingMode uniquement).
+    // Historique : une version precedente tentait d'abord une resolution
+    // "ideal" plus elevee puis retentait sur la MEME instance Html5Qrcode
+    // en cas d'echec, dans l'espoir d'ameliorer la mise au point sur
+    // certains iPhone. Sur le terrain ca a provoque une regression plus
+    // grave : sur iOS, quand le 1er essai echoue en cours de demarrage, le
+    // flux camera qu'il a deja obtenu peut ne pas etre libere avant le 2e
+    // essai, qui trouve alors la camera "occupee" et echoue a son tour --
+    // meme sur un telephone qui fonctionnait tres bien avant. Un seul essai
+    // simple est plus fiable que deux essais qui se marchent dessus.
     this._html5Qrcode.start(
-      {facingMode:'environment', width:{ideal:1920}, height:{ideal:1080}},
+      {facingMode:'environment'},
       scanConfig, onDecode, ()=>{}
-    ).catch((err1)=>{
-      console.warn('Scan code-barres — echec avec contrainte de resolution, nouvel essai sans :', err1);
-      this._html5Qrcode.start({facingMode:'environment'}, scanConfig, onDecode, ()=>{}).catch(fail);
-    });
+    ).catch(fail);
   },
   stopBarcodeScan(){
     document.getElementById('nutri-scan-zone').style.display = 'none';
