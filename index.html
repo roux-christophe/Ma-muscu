@@ -1082,7 +1082,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260917162747';
+const APP_BUILD_VERSION = '20260917163913';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -4090,22 +4090,34 @@ const app = {
     const wrap = document.getElementById('nutri-scan-video-wrap');
     wrap.innerHTML = '<div id="nutri-scan-video"></div>';
     this._html5Qrcode = new Html5Qrcode('nutri-scan-video');
+    const onDecode = (code)=>this.onBarcodeDecoded(code);
+    const scanConfig = {fps:10, qrbox:{width:250,height:150}};
+    // .catch() garde le vrai type d'erreur (err.name : NotAllowedError,
+    // NotFoundError, NotReadableError, OverconstrainedError, SecurityError,
+    // ...) au lieu de tout regrouper sous un seul message generique --
+    // indispensable pour diagnostiquer a distance un telephone qu'on n'a
+    // pas sous la main.
+    const fail = (err)=>{
+      console.error('Scan code-barres — echec ouverture camera :', err);
+      const reason = err && err.name ? ' ('+err.name+')' : '';
+      toast("Impossible d'accéder à la caméra"+reason);
+      this.stopBarcodeScan();
+    };
+    // 1ere tentative avec une resolution "ideal" plus elevee (jamais
+    // "exact" : ne doit jamais a elle seule faire echouer l'ouverture) --
+    // sur certains iPhone ca influence le choix d'objectif arriere fait par
+    // iOS et peut ameliorer la mise au point de pres. Si ca echoue pour
+    // n'importe quelle raison, on retente aussitot avec la configuration
+    // minimale qui fonctionnait avant cet essai, plutot que d'abandonner :
+    // cette tentative d'amelioration ne doit jamais faire regresser un
+    // telephone qui marchait deja.
     this._html5Qrcode.start(
-      // width/height en "ideal" (jamais "exact", pour ne pas faire echouer
-      // l'ouverture de la camera sur un telephone qui ne peut pas fournir
-      // cette resolution) : sur certains iPhone, demander une resolution
-      // plus elevee influence le choix interne fait par iOS entre les
-      // differents objectifs arriere et peut ameliorer la mise au point de
-      // pres. Aucune garantie -- Safari ne supporte pas de contrainte
-      // focusMode explicite comme Chrome/Android, donc pas de vrai controle
-      // possible depuis une page web (limite documentee, pas un bug de
-      // cette appli) -- mais sans risque de regression sur les telephones
-      // qui fonctionnaient deja bien.
       {facingMode:'environment', width:{ideal:1920}, height:{ideal:1080}},
-      {fps:10, qrbox:{width:250,height:150}},
-      (code)=>this.onBarcodeDecoded(code),
-      ()=>{}
-    ).catch(()=>{ toast("Impossible d'accéder à la caméra"); this.stopBarcodeScan(); });
+      scanConfig, onDecode, ()=>{}
+    ).catch((err1)=>{
+      console.warn('Scan code-barres — echec avec contrainte de resolution, nouvel essai sans :', err1);
+      this._html5Qrcode.start({facingMode:'environment'}, scanConfig, onDecode, ()=>{}).catch(fail);
+    });
   },
   stopBarcodeScan(){
     document.getElementById('nutri-scan-zone').style.display = 'none';
