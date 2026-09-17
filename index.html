@@ -903,12 +903,12 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
       <div class="card"><div id="nutri-scan-video-wrap" style="border-radius:12px;overflow:hidden;"></div>
         <p class="small-note" style="margin-top:8px;margin-bottom:0;">Si l'image reste floue, éloigne légèrement le téléphone du code-barres (10-15 cm) au lieu de le coller — certains téléphones ne savent pas faire la mise au point de très près.</p>
         <button class="btn btn-secondary" style="margin-top:10px;" onclick="app.stopBarcodeScan()">Annuler le scan</button>
-        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
-          <p class="small-note" style="margin-bottom:6px;">La caméra ne fait pas la mise au point ? Saisis les chiffres sous le code-barres à la main :</p>
-          <div class="row" style="gap:8px;">
-            <input type="text" inputmode="numeric" pattern="[0-9]*" id="nutri-scan-manual-code" placeholder="Ex : 3017620422003" style="flex:1;">
-            <button class="btn btn-primary" style="flex:0 0 auto;" onclick="app.submitManualBarcode()">Valider</button>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--card-border);">
+          <div class="field" style="margin-bottom:8px;">
+            <label for="nutri-scan-manual-code">La caméra ne fait pas la mise au point ? Saisis les chiffres sous le code-barres à la main :</label>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" id="nutri-scan-manual-code" placeholder="Ex : 3017620422003">
           </div>
+          <button class="btn btn-primary" onclick="app.submitManualBarcode()">Valider le code saisi</button>
         </div>
       </div>
     </div>
@@ -1089,7 +1089,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260917170023';
+const APP_BUILD_VERSION = '20260917173732';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
