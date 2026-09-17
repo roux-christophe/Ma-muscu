@@ -901,6 +901,7 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
     </div>
     <div id="nutri-scan-zone" style="display:none;">
       <div class="card"><div id="nutri-scan-video-wrap" style="border-radius:12px;overflow:hidden;"></div>
+        <p class="small-note" style="margin-top:8px;margin-bottom:0;">Si l'image reste floue, éloigne légèrement le téléphone du code-barres (10-15 cm) au lieu de le coller — certains téléphones ne savent pas faire la mise au point de très près.</p>
         <button class="btn btn-secondary" style="margin-top:10px;" onclick="app.stopBarcodeScan()">Annuler le scan</button>
       </div>
     </div>
@@ -1081,7 +1082,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260916061028';
+const APP_BUILD_VERSION = '20260917162747';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -4090,7 +4091,17 @@ const app = {
     wrap.innerHTML = '<div id="nutri-scan-video"></div>';
     this._html5Qrcode = new Html5Qrcode('nutri-scan-video');
     this._html5Qrcode.start(
-      {facingMode:'environment'},
+      // width/height en "ideal" (jamais "exact", pour ne pas faire echouer
+      // l'ouverture de la camera sur un telephone qui ne peut pas fournir
+      // cette resolution) : sur certains iPhone, demander une resolution
+      // plus elevee influence le choix interne fait par iOS entre les
+      // differents objectifs arriere et peut ameliorer la mise au point de
+      // pres. Aucune garantie -- Safari ne supporte pas de contrainte
+      // focusMode explicite comme Chrome/Android, donc pas de vrai controle
+      // possible depuis une page web (limite documentee, pas un bug de
+      // cette appli) -- mais sans risque de regression sur les telephones
+      // qui fonctionnaient deja bien.
+      {facingMode:'environment', width:{ideal:1920}, height:{ideal:1080}},
       {fps:10, qrbox:{width:250,height:150}},
       (code)=>this.onBarcodeDecoded(code),
       ()=>{}
