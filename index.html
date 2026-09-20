@@ -1016,7 +1016,7 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
   <!-- ===== NUTRITION : COPIER UN REPAS (restes de la veille etc.) ===== -->
   <div class="view" id="view-copier-repas">
     <div class="topbar"><button class="back" onclick="nav.back()">‹</button><h1>Copier un repas</h1></div>
-    <p class="small-note" style="margin-top:0;">Reprend tous les aliments d'un repas déjà enregistré pour un autre jour — pratique pour les restes, il ne restera qu'à ajuster les quantités.</p>
+    <p class="small-note" style="margin-top:0;">Reprend les aliments d'un repas déjà enregistré pour un autre jour — pratique pour les restes. Décoche ceux qui ont un peu changé, il ne restera qu'à ajuster les quantités sur le reste.</p>
     <div class="section-title" style="margin-top:14px;">Depuis quel jour ?</div>
     <div class="pill-row" id="copier-repas-quick-dates" style="margin-bottom:10px;"></div>
     <div class="field" style="max-width:220px;"><input type="date" id="copier-repas-date" onchange="app.changeCopierRepasDate(this.value)"></div>
@@ -1153,7 +1153,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260920162240';
+const APP_BUILD_VERSION = '20260920172658';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -3743,7 +3743,7 @@ const app = {
   openCopierRepas(targetMealId){
     const targetDate = this._nutriDate || todayISO();
     const veille = addDaysISO(targetDate, -1);
-    this._copierRepas = {targetDate, targetMealId, sourceDate: veille, sourceMealId: targetMealId};
+    this._copierRepas = {targetDate, targetMealId, sourceDate: veille, sourceMealId: targetMealId, selected: null};
     nav.push('view-copier-repas');
     this.renderCopierRepasScreen();
   },
@@ -3758,6 +3758,10 @@ const app = {
     const dOffset = n => addDaysISO(st.targetDate, -n);
     const quick = [{label:'Hier', date:dOffset(1)}, {label:'Avant-hier', date:dOffset(2)}];
     quickWrap.innerHTML = quick.map(q=>`<button type="button" class="pill ${st.sourceDate===q.date?'active':''}" onclick="app.setCopierRepasQuickDate('${q.date}')">${q.label}</button>`).join('');
+    // Nouvelle recherche (changement de jour/repas source) : on reinitialise
+    // la selection, elle sera re-remplie (tout coche par defaut) au prochain
+    // renderCopierRepasPreview.
+    st.selected = null;
     this.renderCopierRepasPreview();
   },
   setCopierRepasQuickDate(date){
@@ -3773,6 +3777,20 @@ const app = {
   changeCopierRepasMeal(v){
     if(!this._copierRepas) return;
     this._copierRepas.sourceMealId = v;
+    this._copierRepas.selected = null;
+    this.renderCopierRepasPreview();
+  },
+  toggleCopierRepasItem(id, checked){
+    const st = this._copierRepas;
+    if(!st || !st.selected) return;
+    if(checked) st.selected.add(id); else st.selected.delete(id);
+    this.renderCopierRepasPreview();
+  },
+  toggleCopierRepasAll(allSelected){
+    const st = this._copierRepas;
+    if(!st) return;
+    const entries = this.db.journalAlimentaire.filter(e=>e.date===st.sourceDate && e.mealId===st.sourceMealId);
+    st.selected = new Set(allSelected ? entries.map(e=>e.id) : []);
     this.renderCopierRepasPreview();
   },
   renderCopierRepasPreview(){
@@ -3788,18 +3806,29 @@ const app = {
       btn.textContent = 'Copier ici';
       return;
     }
-    const totalCal = entries.reduce((s,e)=>s+(Number(e.cal)||0),0);
-    wrap.innerHTML = entries.map(e=>`
+    // Par defaut (premier affichage pour cette recherche) : tout est coche,
+    // pour ne pas changer le comportement habituel -- l'utilisateur decoche
+    // ensuite ce qu'il ne veut pas reprendre (aliments qui different un peu).
+    if(!st.selected) st.selected = new Set(entries.map(e=>e.id));
+    const nbSel = entries.filter(e=>st.selected.has(e.id)).length;
+    const totalCal = entries.filter(e=>st.selected.has(e.id)).reduce((s,e)=>s+(Number(e.cal)||0),0);
+    const toutCoche = nbSel===entries.length;
+    wrap.innerHTML = `
+      <div class="list-row" style="padding-top:2px;">
+        <div class="meta"><button type="button" class="btn btn-ghost btn-sm" style="padding:4px 0;" onclick="app.toggleCopierRepasAll(${!toutCoche})">${toutCoche ? 'Tout décocher' : 'Tout cocher'}</button></div>
+      </div>` +
+      entries.map(e=>`
       <div class="list-row">
+        <input type="checkbox" ${st.selected.has(e.id)?'checked':''} onchange="app.toggleCopierRepasItem('${e.id}', this.checked)" style="width:19px;height:19px;flex-shrink:0;">
         <div class="meta"><div class="t1">${escapeHtml(e.nom)}</div><div class="t2">${Math.round(e.cal)||0} kcal${e.portion?' · '+escapeHtml(e.portion):''}</div></div>
-      </div>`).join('') + `<div class="list-row"><div class="meta"><div class="t1">Total</div></div><div class="t2" style="font-weight:600;">${Math.round(totalCal)} kcal</div></div>`;
-    btn.disabled = false;
-    btn.textContent = `Copier ici (${entries.length} aliment${entries.length>1?'s':''})`;
+      </div>`).join('') + `<div class="list-row"><div class="meta"><div class="t1">Total sélectionné</div></div><div class="t2" style="font-weight:600;">${Math.round(totalCal)} kcal</div></div>`;
+    btn.disabled = nbSel===0;
+    btn.textContent = nbSel>0 ? `Copier ici (${nbSel} aliment${nbSel>1?'s':''})` : 'Copier ici';
   },
   confirmCopierRepas(){
     const st = this._copierRepas;
-    if(!st) return;
-    const sourceEntries = this.db.journalAlimentaire.filter(e=>e.date===st.sourceDate && e.mealId===st.sourceMealId);
+    if(!st || !st.selected) return;
+    const sourceEntries = this.db.journalAlimentaire.filter(e=>e.date===st.sourceDate && e.mealId===st.sourceMealId && st.selected.has(e.id));
     if(!sourceEntries.length) return;
     const prev = this.db.journalAlimentaire.slice();
     sourceEntries.forEach(e=>{
