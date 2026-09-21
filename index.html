@@ -555,6 +555,15 @@ button{font-family:inherit;}
 .cal-card .cc-remain.over b{color:var(--accent-warn);}
 .cal-card .cc-track{background:var(--card-2); border-radius:8px; height:9px; margin-top:13px; overflow:hidden;}
 .cal-card .cc-fill{height:100%; border-radius:8px; background:var(--grad); transition:width .3s ease;}
+.cal-card .cc-ring-row{display:flex; align-items:center; gap:18px; margin-top:14px;}
+.cal-card .cc-ring{width:88px; height:88px; flex-shrink:0; transform:rotate(-90deg);}
+.cal-card .cc-ring-track{fill:none; stroke:var(--card-2); stroke-width:9;}
+.cal-card .cc-ring-fill{fill:none; stroke:var(--accent); stroke-width:9; stroke-linecap:round; transition:stroke-dashoffset .3s ease; filter:drop-shadow(0 0 5px color-mix(in srgb, var(--accent) 60%, transparent));}
+.cal-card .cc-ring-fill.over{stroke:var(--accent-warn); filter:drop-shadow(0 0 5px color-mix(in srgb, var(--accent-warn) 60%, transparent));}
+.cal-card .cc-ring-text{flex:1; min-width:0;}
+.cal-card .cc-ring-text .cc-main{font-size:26px;}
+.cal-card .cc-ring-text .cc-remain{text-align:left; margin-top:6px;}
+.cal-card .cc-ring-text .cc-remain b{display:inline; font-size:14px;}
 .macro-row{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-top:18px;}
 .macro-col{text-align:center;}
 .macro-col .mc-label{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); font-weight:800;}
@@ -710,9 +719,9 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
     <div class="topbar" style="margin:0 -16px 4px;justify-content:space-between;">
       <h1>Nutrition</h1>
       <div style="display:flex;gap:1px;">
-        <button class="icon-btn icon-btn-topbar" title="Recettes à partir de mon frigo" onclick="nav.push('view-recettes'); app.renderRecettes();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18"/><path d="M5 11V6a2 2 0 012-2h1"/><path d="M12 4v7"/><path d="M19 11V6a2 2 0 00-2-2h-1"/><path d="M4 11l1 9h14l1-9"/></svg>Frigo</button>
+        <button class="icon-btn icon-btn-topbar" title="Recettes à partir de mon frigo" onclick="nav.push('view-recettes'); app.renderRecettes();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M5 9h14"/><path d="M8.5 4.5v2.5"/><path d="M8.5 11.5v2.5"/></svg>Frigo</button>
         <button class="icon-btn icon-btn-topbar" title="Aide au repas : choisir une recette et obtenir la liste de courses" onclick="nav.push('view-aide-repas'); app.renderAideRepas();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>Repas</button>
-        <button class="icon-btn icon-btn-topbar" title="Suivi corporel (poids, mensurations)" onclick="nav.push('view-nutri-corps'); app.renderNutriCorps();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="8" rx="1.5"/><path d="M7 8v3M11 8v4M15 8v3"/></svg>Corps</button>
+        <button class="icon-btn icon-btn-topbar" title="Suivi corporel (poids, mensurations)" onclick="nav.push('view-nutri-corps'); app.renderNutriCorps();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="12" cy="13" r="3.2"/><path d="M12 13l1.6-1.6"/></svg>Corps</button>
         <button class="icon-btn icon-btn-topbar" title="Statistiques nutrition" onclick="nav.push('view-nutri-stats'); app.renderNutriStats();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>Stats</button>
         <button class="icon-btn icon-btn-topbar" title="Profil & objectif" onclick="nav.push('view-nutri-profil'); app.renderNutriProfil();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9c.14.32.22.66.24 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Profil</button>
       </div>
@@ -1155,7 +1164,7 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
 <nav class="navbar">
   <button data-view="home" onclick="nav.tab('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Accueil</button>
   <button data-view="sport" onclick="nav.tab('sport')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M2.5 9.5v5M21.5 9.5v5M6.5 12h11"/></svg>Sport</button>
-  <button data-view="nutrition" onclick="nav.tab('nutrition')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8c0-3-2-6-6-6-1 2-1 4 0 6"/><path d="M12 8c-5 0-8 4-8 9 0 3 2 6 5 6 2 0 2.5-1 3-1s1 1 3 1c3 0 5-3 5-6 0-2-1-3-2-4"/></svg>Nutrition</button>
+  <button data-view="nutrition" onclick="nav.tab('nutrition')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>Nutrition</button>
   <button data-view="settings" onclick="nav.tab('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9c.14.32.22.66.24 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Réglages</button>
 </nav>
 
@@ -1173,7 +1182,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260921192537';
+const APP_BUILD_VERSION = '20260921203551';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -3797,15 +3806,27 @@ const app = {
     const budget = profil.objectifCal + sport;
     const solde = budget - cal;
     const pct = budget>0 ? Math.min(100, Math.round(cal/budget*100)) : 0;
+    // Anneau de calories (remplace l'ancienne barre horizontale cc-track) --
+    // demande de Christophe apres avoir vu une proposition visuelle : un
+    // anneau epais et lumineux pour la mesure principale (calories), les 3
+    // barres de macros restent inchangees en-dessous (glucides/lipides/
+    // proteines) pour ne rien perdre de ce qui est deja suivi.
+    const ringCirc = 263.9; // 2*PI*42 (rayon fixe, cf. CSS .cc-ring)
+    const ringOffset = (ringCirc - ringCirc*pct/100).toFixed(1);
     wrap.innerHTML = `<div class="cal-card">
       ${profil.plancherApplique?'<p class="small-note" style="margin-bottom:8px;">⚠️ Objectif ajusté au minimum sûr.</p>':''}
       <div class="cc-head"><span>Calories</span>${sport>0?`<span>🔥 +${sport} kcal sport</span>`:''}</div>
-      <div class="cc-row">
-        <div class="cc-main">${Math.round(cal)}<small> / ${budget} kcal</small></div>
-        <div class="cc-remain ${solde<0?'over':''}"><b>${Math.abs(Math.round(solde)).toLocaleString('fr-FR')} kcal</b>${solde>=0?'restantes':'dépassées'}</div>
+      <div class="cc-ring-row">
+        <svg class="cc-ring" viewBox="0 0 100 100" aria-hidden="true">
+          <circle class="cc-ring-track" cx="50" cy="50" r="42"/>
+          <circle class="cc-ring-fill ${solde<0?'over':''}" cx="50" cy="50" r="42" stroke-dasharray="${ringCirc}" stroke-dashoffset="${ringOffset}"/>
+        </svg>
+        <div class="cc-ring-text">
+          <div class="cc-main">${Math.round(cal)}<small> / ${budget} kcal</small></div>
+          <div class="cc-remain ${solde<0?'over':''}"><b>${Math.abs(Math.round(solde)).toLocaleString('fr-FR')} kcal</b> ${solde>=0?'restantes':'dépassées'}</div>
+        </div>
       </div>
-      <p class="small-note" style="margin-top:8px;">Budget = ${profil.objectifCal} kcal (objectif)${sport>0?` + ${sport} kcal brûlés en séance aujourd'hui`:''}.</p>
-      <div class="cc-track"><div class="cc-fill" style="width:${pct}%;"></div></div>
+      <p class="small-note" style="margin-top:12px;">Budget = ${profil.objectifCal} kcal (objectif)${sport>0?` + ${sport} kcal brûlés en séance aujourd'hui`:''}.</p>
       <div class="macro-row">
         ${this.macroColHTML('Glucides', gluc, profil.macros.glucides, 'var(--accent-2)')}
         ${this.macroColHTML('Lipides', lip, profil.macros.lipides, 'color-mix(in srgb, var(--accent) 45%, var(--accent-2))')}
