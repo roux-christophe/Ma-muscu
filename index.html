@@ -561,30 +561,34 @@ button{font-family:inherit;}
 /* ---------- NUTRITION : carte calories (barre) + macros parametrables ---------- */
 .cal-card{background:var(--card); border:1px solid var(--card-border); border-radius:var(--radius-card); padding:18px;}
 .cal-card .cc-head{display:flex; justify-content:space-between; align-items:baseline; font-size:12px; color:var(--text-faint); font-weight:800; text-transform:uppercase; letter-spacing:.05em;}
-.cal-card .cc-row{display:flex; justify-content:space-between; align-items:baseline; margin-top:9px; gap:10px; flex-wrap:wrap;}
+.cal-card .cc-main-line{display:flex; justify-content:space-between; align-items:baseline; margin-top:9px; gap:10px; flex-wrap:wrap;}
 .cal-card .cc-main{font-size:28px; font-weight:900; letter-spacing:-.02em;}
 .cal-card .cc-main small{font-size:14px; font-weight:700; color:var(--text-dim);}
 .cal-card .cc-remain{font-size:12px; font-weight:700; color:var(--text-dim); text-align:right;}
-.cal-card .cc-remain b{color:var(--accent); font-size:16px; font-weight:900; display:block;}
+.cal-card .cc-remain b{color:var(--accent); font-size:16px; font-weight:900;}
 .cal-card .cc-remain.over b{color:var(--accent-warn);}
-.cal-card .cc-track{background:var(--card-2); border-radius:8px; height:9px; margin-top:13px; overflow:hidden;}
-.cal-card .cc-fill{height:100%; border-radius:8px; background:var(--grad); transition:width .3s ease;}
-.cal-card .cc-ring-row{display:flex; align-items:center; gap:18px; margin-top:14px;}
-.cal-card .cc-ring{width:88px; height:88px; flex-shrink:0; transform:rotate(-90deg);}
-.cal-card .cc-ring-track{fill:none; stroke:var(--card-2); stroke-width:9;}
-.cal-card .cc-ring-fill{fill:none; stroke:var(--accent); stroke-width:9; stroke-linecap:round; transition:stroke-dashoffset .3s ease; filter:drop-shadow(0 0 5px color-mix(in srgb, var(--accent) 60%, transparent));}
-.cal-card .cc-ring-fill.over{stroke:var(--accent-warn); filter:drop-shadow(0 0 5px color-mix(in srgb, var(--accent-warn) 60%, transparent));}
-.cal-card .cc-ring-text{flex:1; min-width:0;}
-.cal-card .cc-ring-text .cc-main{font-size:26px;}
-.cal-card .cc-ring-text .cc-remain{text-align:left; margin-top:6px;}
-.cal-card .cc-ring-text .cc-remain b{display:inline; font-size:14px;}
-.macro-row{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-top:18px;}
-.macro-col{text-align:center;}
-.macro-col .mc-label{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); font-weight:800;}
-.macro-col .mc-val{font-size:13.5px; font-weight:800; margin-top:5px;}
-.macro-col .mc-val span{color:var(--text-faint); font-weight:600;}
-.macro-col .mc-track{background:var(--card-2); border-radius:6px; height:6px; margin-top:7px; overflow:hidden;}
-.macro-col .mc-fill{height:100%; border-radius:6px;}
+/* 4 anneaux concentriques (calories/glucides/lipides/proteines), style
+   "anneaux d'activite" -- une seule vue synthetique au lieu de l'ancien
+   anneau calories + 3 barres de macros separees. */
+.cal-card .cc-rings-row{display:flex; align-items:center; gap:18px; margin-top:16px;}
+.cal-card .cc-rings-wrap{width:112px; height:112px; flex-shrink:0;}
+.cal-card .cc-rings{width:100%; height:100%; transform:rotate(-90deg);}
+.cal-card .cc-rings circle{fill:none;}
+.cal-card .cc-rings .track{stroke:var(--card-2); stroke-width:7;}
+.cal-card .cc-rings .fill{stroke-width:7; stroke-linecap:round; transition:stroke-dashoffset .3s ease;}
+.cal-card .cc-rings .fill.cal{stroke:var(--accent); filter:drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 55%, transparent));}
+.cal-card .cc-rings .fill.cal.over{stroke:var(--accent-warn); filter:drop-shadow(0 0 4px color-mix(in srgb, var(--accent-warn) 55%, transparent));}
+.cal-card .cc-rings .fill.gluc{stroke:var(--accent-2); filter:drop-shadow(0 0 3px color-mix(in srgb, var(--accent-2) 50%, transparent));}
+.cal-card .cc-rings .fill.lip{stroke:color-mix(in srgb, var(--accent) 45%, var(--accent-2)); filter:drop-shadow(0 0 3px color-mix(in srgb, var(--accent) 35%, transparent));}
+.cal-card .cc-rings .fill.prot{stroke:color-mix(in srgb, var(--accent) 75%, var(--text) 25%); filter:drop-shadow(0 0 3px color-mix(in srgb, var(--accent) 45%, transparent));}
+.cal-card .cc-legend{flex:1; min-width:0; display:flex; flex-direction:column; gap:10px;}
+.cal-card .cc-legend-item{display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:var(--text-dim);}
+.cal-card .cc-legend-item .dot{width:9px; height:9px; border-radius:50%; flex-shrink:0;}
+.cal-card .cc-legend-item .dot.cal{background:var(--accent);}
+.cal-card .cc-legend-item .dot.gluc{background:var(--accent-2);}
+.cal-card .cc-legend-item .dot.lip{background:color-mix(in srgb, var(--accent) 45%, var(--accent-2));}
+.cal-card .cc-legend-item .dot.prot{background:color-mix(in srgb, var(--accent) 75%, var(--text) 25%);}
+.cal-card .cc-legend-item b{color:var(--text); font-weight:800;}
 
 .toast{
   position:fixed; left:50%; bottom:calc(92px + env(safe-area-inset-bottom)); transform:translateX(-50%);
@@ -1185,7 +1189,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260921210615';
+const APP_BUILD_VERSION = '20260921211440';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -2362,7 +2366,7 @@ const app = {
       items = [
         {onclick:"nav.toHome()", active:false, label:'Accueil', icon:SVG_HOME},
         {onclick:"nav.toSport()", active: viewId==='view-sport', label:'Séance', icon:SVG_DUMBBELL},
-        {onclick:"nav.toSport()", active:false, label:'Programmes', icon:SVG_CLIPBOARD},
+        {onclick:"nav.tab('settings')", active:false, label:'Programmes', icon:SVG_CLIPBOARD},
         {onclick:"nav.push('view-history'); app.renderHistory();", active: viewId==='view-history', label:'Historique', icon:SVG_CLOCK},
         {onclick:"nav.push('view-stats'); app.renderStats();", active: viewId==='view-stats', label:'Stats', icon:SVG_BARS},
       ];
@@ -3872,42 +3876,55 @@ const app = {
     const sport = this.db.settings.ajouterCaloriesSport ? caloriesSportDuJour(date) : 0;
     const budget = profil.objectifCal + sport;
     const solde = budget - cal;
-    const pct = budget>0 ? Math.min(100, Math.round(cal/budget*100)) : 0;
-    // Anneau de calories (remplace l'ancienne barre horizontale cc-track) --
-    // demande de Christophe apres avoir vu une proposition visuelle : un
-    // anneau epais et lumineux pour la mesure principale (calories), les 3
-    // barres de macros restent inchangees en-dessous (glucides/lipides/
-    // proteines) pour ne rien perdre de ce qui est deja suivi.
-    const ringCirc = 263.9; // 2*PI*42 (rayon fixe, cf. CSS .cc-ring)
-    const ringOffset = (ringCirc - ringCirc*pct/100).toFixed(1);
+    const pctCal = budget>0 ? Math.min(100, Math.round(cal/budget*100)) : 0;
+    const pctGluc = profil.macros.glucides>0 ? Math.min(100, Math.round(gluc/profil.macros.glucides*100)) : 0;
+    const pctLip = profil.macros.lipides>0 ? Math.min(100, Math.round(lip/profil.macros.lipides*100)) : 0;
+    const pctProt = profil.macros.proteines>0 ? Math.min(100, Math.round(prot/profil.macros.proteines*100)) : 0;
+    // 4 anneaux concentrics (calories + les 3 macros), style "anneaux
+    // d'activite" -- demande de Christophe pour voir les 4 mesures d'un
+    // coup d'oeil au lieu de l'anneau calories + 3 barres separees.
+    // Rayons fixes, cf. CSS .cc-rings (44/34/24/14, meme espacement).
+    const ring = (r, val)=>{
+      const circ = 2*Math.PI*r;
+      const pct = Math.max(0, Math.min(100, val));
+      return { circ: circ.toFixed(1), offset: (circ - circ*pct/100).toFixed(1) };
+    };
+    const rCal = ring(44, pctCal), rGluc = ring(34, pctGluc), rLip = ring(24, pctLip), rProt = ring(14, pctProt);
     wrap.innerHTML = `<div class="cal-card">
       ${profil.plancherApplique?'<p class="small-note" style="margin-bottom:8px;">⚠️ Objectif ajusté au minimum sûr.</p>':''}
       <div class="cc-head"><span>Calories</span>${sport>0?`<span>🔥 +${sport} kcal sport</span>`:''}</div>
-      <div class="cc-ring-row">
-        <svg class="cc-ring" viewBox="0 0 100 100" aria-hidden="true">
-          <circle class="cc-ring-track" cx="50" cy="50" r="42"/>
-          <circle class="cc-ring-fill ${solde<0?'over':''}" cx="50" cy="50" r="42" stroke-dasharray="${ringCirc}" stroke-dashoffset="${ringOffset}"/>
-        </svg>
-        <div class="cc-ring-text">
-          <div class="cc-main">${Math.round(cal)}<small> / ${budget} kcal</small></div>
-          <div class="cc-remain ${solde<0?'over':''}"><b>${Math.abs(Math.round(solde)).toLocaleString('fr-FR')} kcal</b> ${solde>=0?'restantes':'dépassées'}</div>
+      <div class="cc-main-line">
+        <div class="cc-main">${Math.round(cal)}<small> / ${budget} kcal</small></div>
+        <div class="cc-remain ${solde<0?'over':''}"><b>${Math.abs(Math.round(solde)).toLocaleString('fr-FR')} kcal</b> ${solde>=0?'restantes':'dépassées'}</div>
+      </div>
+      <div class="cc-rings-row">
+        <div class="cc-rings-wrap">
+          <svg class="cc-rings" viewBox="0 0 100 100" aria-hidden="true">
+            <circle class="track" cx="50" cy="50" r="44"/>
+            <circle class="track" cx="50" cy="50" r="34"/>
+            <circle class="track" cx="50" cy="50" r="24"/>
+            <circle class="track" cx="50" cy="50" r="14"/>
+            <circle class="fill cal ${solde<0?'over':''}" cx="50" cy="50" r="44" stroke-dasharray="${rCal.circ}" stroke-dashoffset="${rCal.offset}"/>
+            <circle class="fill gluc" cx="50" cy="50" r="34" stroke-dasharray="${rGluc.circ}" stroke-dashoffset="${rGluc.offset}"/>
+            <circle class="fill lip" cx="50" cy="50" r="24" stroke-dasharray="${rLip.circ}" stroke-dashoffset="${rLip.offset}"/>
+            <circle class="fill prot" cx="50" cy="50" r="14" stroke-dasharray="${rProt.circ}" stroke-dashoffset="${rProt.offset}"/>
+          </svg>
+        </div>
+        <div class="cc-legend">
+          ${this.legendItemHTML('cal', 'Calories', cal, budget, 'kcal')}
+          ${this.legendItemHTML('gluc', 'Glucides', gluc, profil.macros.glucides, 'g')}
+          ${this.legendItemHTML('lip', 'Lipides', lip, profil.macros.lipides, 'g')}
+          ${this.legendItemHTML('prot', 'Protéines', prot, profil.macros.proteines, 'g')}
         </div>
       </div>
       <p class="small-note" style="margin-top:12px;">Budget = ${profil.objectifCal} kcal (objectif)${sport>0?` + ${sport} kcal brûlés en séance aujourd'hui`:''}.</p>
-      <div class="macro-row">
-        ${this.macroColHTML('Glucides', gluc, profil.macros.glucides, 'var(--accent-2)')}
-        ${this.macroColHTML('Lipides', lip, profil.macros.lipides, 'color-mix(in srgb, var(--accent) 45%, var(--accent-2))')}
-        ${this.macroColHTML('Protéines', prot, profil.macros.proteines, 'var(--accent)')}
-      </div>
       <button class="link" style="margin-top:15px;" onclick="nav.push('view-nutri-profil'); app.renderNutriProfil();">Paramétrer mes objectifs de macros</button>
     </div>`;
   },
-  macroColHTML(label, val, target, color){
-    const pct = target>0 ? Math.min(100, Math.round(val/target*100)) : 0;
-    return `<div class="macro-col">
-      <div class="mc-label">${label}</div>
-      <div class="mc-val">${Math.round(val)}<span> / ${target}g</span></div>
-      <div class="mc-track"><div class="mc-fill" style="width:${pct}%;background:${color||'var(--accent)'};"></div></div>
+  legendItemHTML(key, label, val, target, unit){
+    return `<div class="cc-legend-item">
+      <span class="dot ${key}"></span>
+      <span>${label} <b>${Math.round(val)} / ${target}${unit}</b></span>
     </div>`;
   },
   // Sections ouvertes par repas (plus de carte encadrant chaque repas) :
