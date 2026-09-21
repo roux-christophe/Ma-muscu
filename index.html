@@ -425,8 +425,15 @@ button{font-family:inherit;}
    pleine opacite (vs. la version de base, volontairement discrete pour les
    actions secondaires type modifier/supprimer sur une ligne de liste) --
    ce sont des entrees de navigation principales, elles doivent se voir. */
-.icon-btn-topbar{ width:40px; height:40px; color:var(--text); }
-.icon-btn-topbar svg{ width:20px; height:20px; }
+.icon-btn-topbar{
+  width:auto; height:auto; color:var(--text-dim);
+  background:none; border:none; border-radius:12px;
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  padding:6px 5px 5px; font-size:9.5px; font-weight:700; font-family:inherit;
+  line-height:1.1; white-space:nowrap;
+}
+.icon-btn-topbar svg{ width:19px; height:19px; color:var(--text); }
+.icon-btn-topbar:active{ background:var(--chip-bg); transform:scale(.95); }
 
 .field{margin-bottom:12px;}
 .field label{display:block; font-size:13px; color:var(--text-dim); margin-bottom:6px; font-weight:700;}
@@ -630,9 +637,9 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
   <div class="view" id="view-sport">
     <div class="topbar" style="margin:0 -16px 4px;justify-content:space-between;">
       <h1>Sport</h1>
-      <div style="display:flex;gap:8px;">
-        <button class="icon-btn icon-btn-topbar" title="Historique" onclick="nav.push('view-history'); app.renderHistory();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></button>
-        <button class="icon-btn icon-btn-topbar" title="Statistiques" onclick="nav.push('view-stats'); app.renderStats();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg></button>
+      <div style="display:flex;gap:2px;">
+        <button class="icon-btn icon-btn-topbar" title="Historique" onclick="nav.push('view-history'); app.renderHistory();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Historique</button>
+        <button class="icon-btn icon-btn-topbar" title="Statistiques" onclick="nav.push('view-stats'); app.renderStats();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>Stats</button>
       </div>
     </div>
     <div class="quickstats" id="sport-quickstats"></div>
@@ -702,12 +709,12 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
   <div class="view" id="view-nutrition">
     <div class="topbar" style="margin:0 -16px 4px;justify-content:space-between;">
       <h1>Nutrition</h1>
-      <div style="display:flex;gap:8px;">
-        <button class="icon-btn icon-btn-topbar" title="Recettes à partir de mon frigo" onclick="nav.push('view-recettes'); app.renderRecettes();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18"/><path d="M5 11V6a2 2 0 012-2h1"/><path d="M12 4v7"/><path d="M19 11V6a2 2 0 00-2-2h-1"/><path d="M4 11l1 9h14l1-9"/></svg></button>
-        <button class="icon-btn icon-btn-topbar" title="Aide au repas : choisir une recette et obtenir la liste de courses" onclick="nav.push('view-aide-repas'); app.renderAideRepas();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg></button>
-        <button class="icon-btn icon-btn-topbar" title="Suivi corporel (poids, mensurations)" onclick="nav.push('view-nutri-corps'); app.renderNutriCorps();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="8" rx="1.5"/><path d="M7 8v3M11 8v4M15 8v3"/></svg></button>
-        <button class="icon-btn icon-btn-topbar" title="Statistiques nutrition" onclick="nav.push('view-nutri-stats'); app.renderNutriStats();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg></button>
-        <button class="icon-btn icon-btn-topbar" title="Profil & objectif" onclick="nav.push('view-nutri-profil'); app.renderNutriProfil();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9c.14.32.22.66.24 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
+      <div style="display:flex;gap:1px;">
+        <button class="icon-btn icon-btn-topbar" title="Recettes à partir de mon frigo" onclick="nav.push('view-recettes'); app.renderRecettes();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18"/><path d="M5 11V6a2 2 0 012-2h1"/><path d="M12 4v7"/><path d="M19 11V6a2 2 0 00-2-2h-1"/><path d="M4 11l1 9h14l1-9"/></svg>Frigo</button>
+        <button class="icon-btn icon-btn-topbar" title="Aide au repas : choisir une recette et obtenir la liste de courses" onclick="nav.push('view-aide-repas'); app.renderAideRepas();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>Repas</button>
+        <button class="icon-btn icon-btn-topbar" title="Suivi corporel (poids, mensurations)" onclick="nav.push('view-nutri-corps'); app.renderNutriCorps();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="8" rx="1.5"/><path d="M7 8v3M11 8v4M15 8v3"/></svg>Corps</button>
+        <button class="icon-btn icon-btn-topbar" title="Statistiques nutrition" onclick="nav.push('view-nutri-stats'); app.renderNutriStats();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>Stats</button>
+        <button class="icon-btn icon-btn-topbar" title="Profil & objectif" onclick="nav.push('view-nutri-profil'); app.renderNutriProfil();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9c.14.32.22.66.24 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Profil</button>
       </div>
     </div>
     <div class="nutri-day-head">
@@ -1166,7 +1173,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260921063821';
+const APP_BUILD_VERSION = '20260921192537';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
