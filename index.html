@@ -281,6 +281,8 @@ button{font-family:inherit;}
 .exo-header{display:flex; gap:12px; align-items:flex-start;}
 .exo-header .exo-ic{width:38px;height:38px;border-radius:12px;background:var(--card-2);color:var(--text-dim);display:flex;align-items:center;justify-content:center;flex:none;}
 .exo-header .exo-ic svg{width:18px;height:18px;}
+.exo-header .exo-ic.has-img{padding:0;overflow:hidden;cursor:pointer;border:none;}
+.exo-header .exo-ic.has-img img{width:100%;height:100%;object-fit:cover;display:block;}
 .exo-header .exo-info{flex:1; min-width:0;}
 .exo-header .exo-name{font-size:17px; font-weight:800; letter-spacing:-.01em; line-height:1.25;}
 .exo-header .exo-muscle{font-size:12.5px; color:var(--text-dim); margin-top:2px;}
@@ -581,6 +583,7 @@ button{font-family:inherit;}
 }
 .confirm-box p{font-size:15.5px; line-height:1.45; margin-bottom:18px; font-weight:600;}
 .confirm-box .row{gap:10px;}
+.exo-image-box{max-width:420px; max-height:90vh; overflow-y:auto;}
 hr.sep{border:none; border-top:1px solid var(--card-border); margin:14px 0;}
 .small-note{font-size:13px; color:var(--text-faint); line-height:1.5;}
 textarea.raw{width:100%; min-height:140px; font-family:ui-monospace,monospace; font-size:12px; background:var(--input-bg); color:var(--text); border:1px solid var(--card-border); border-radius:12px; padding:10px;}
@@ -1132,6 +1135,16 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
   </div>
 </div>
 
+<div class="confirm-overlay" id="exo-image-overlay" onclick="if(event.target===this) app.closeExoImage()">
+  <div class="confirm-box exo-image-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div style="font-size:15px;font-weight:800;" id="exo-image-title"></div>
+      <button class="icon-btn" title="Fermer" onclick="app.closeExoImage()">✕</button>
+    </div>
+    <img id="exo-image-full" src="" alt="" style="width:100%;border-radius:12px;display:block;">
+  </div>
+</div>
+
 <nav class="navbar">
   <button data-view="home" onclick="nav.tab('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Accueil</button>
   <button data-view="sport" onclick="nav.tab('sport')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M2.5 9.5v5M21.5 9.5v5M6.5 12h11"/></svg>Sport</button>
@@ -1153,7 +1166,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260920172658';
+const APP_BUILD_VERSION = '20260921053917';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1174,6 +1187,143 @@ const SVG_PLATE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 // Bouton "ajouter au suivi" pose sur chaque ligne de la liste de courses.
 const SVG_PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>';
 function seanceIconSVG(isCardio){ return isCardio ? SVG_HEART : SVG_DUMBBELL; }
+
+/* ===================== POSTERS ANATOMIQUES DES EXERCICES =====================
+   Associe le libelle exact d'un exercice (champ "exercice" tel qu'il apparait
+   dans PROGRAMS) a l'image de son poster anatomique (images/exercices/).
+   Table complete : 128 libelles bruts utilises dans PROGRAMS, ramenes aux
+   81 posters valides (plusieurs libelles peuvent pointer vers le meme
+   poster quand ils designent le meme mouvement). */
+const EXERCICE_IMAGES = {
+  'Abduction de hanche (élastique ou machine)': 'images/exercices/01-abduction-de-hanche.jpg',
+  'Abduction de hanche debout (élastique)': 'images/exercices/01-abduction-de-hanche.jpg',
+  'Biceps curl pupitre': 'images/exercices/43-biceps-curl-pupitre.jpg',
+  'Bulgarian split squat': 'images/exercices/02-fentes-bulgares.jpg',
+  'Burpees': 'images/exercices/73-burpees.jpg',
+  'Chestpress': 'images/exercices/52-chestpress-machine-plat.jpg',
+  'Chestpress incline': 'images/exercices/53-chestpress-incline.jpg',
+  'Corde à sauter sur place': 'images/exercices/74-corde-a-sauter.jpg',
+  'Crunch': 'images/exercices/63-crunch.jpg',
+  'Crunchs': 'images/exercices/63-crunch.jpg',
+  'Crunchs bicyclette': 'images/exercices/64-crunchs-bicyclette.jpg',
+  'Curl barre debout': 'images/exercices/44-curl-biceps-barre.jpg',
+  'Curl biceps': 'images/exercices/44-curl-biceps-barre.jpg',
+  'Curl biceps barre': 'images/exercices/44-curl-biceps-barre.jpg',
+  'Curl haltères alterné': 'images/exercices/45-curl-halteres-alterne.jpg',
+  'Curl marteau': 'images/exercices/46-curl-marteau.jpg',
+  'Developpe couche': 'images/exercices/54-developpe-couche-barre.jpg',
+  'Developpe incline barre': 'images/exercices/55-developpe-incline-barre.jpg',
+  'Developpe incline halteres': 'images/exercices/56-developpe-incline-halteres.jpg',
+  'Developpe incline machine': 'images/exercices/55-developpe-incline-barre.jpg',
+  'Developpe militaire': 'images/exercices/36-developpe-militaire-barre.jpg',
+  'Developpe militaire assis haltere': 'images/exercices/37-developpe-militaire-halteres.jpg',
+  'Dips machine triceps': 'images/exercices/49-dips-machine-assistee.jpg',
+  'Dips sur banc': 'images/exercices/47-dips-sur-banc.jpg',
+  'Dips triceps': 'images/exercices/48-dips-triceps-barres.jpg',
+  'Développé couché': 'images/exercices/54-developpe-couche-barre.jpg',
+  'Développé couché barre': 'images/exercices/54-developpe-couche-barre.jpg',
+  'Développé couché ou Pompes': 'images/exercices/54-developpe-couche-barre.jpg',
+  'Développé incliné haltères': 'images/exercices/56-developpe-incline-halteres.jpg',
+  'Développé militaire': 'images/exercices/36-developpe-militaire-barre.jpg',
+  'Développé militaire haltères': 'images/exercices/37-developpe-militaire-halteres.jpg',
+  'Ecarte couche poulie vis-a-vis': 'images/exercices/58-ecarte-poulie-visavis.jpg',
+  'Elevations assis 3D halteres': 'images/exercices/39-elevations-assises-3d.jpg',
+  'Elevations laterales halteres': 'images/exercices/38-elevation-laterale.jpg',
+  'Extension de hanche au sol (fire hydrant)': 'images/exercices/03-fire-hydrant.jpg',
+  'Extension lombaire': 'images/exercices/72-extension-lombaire.jpg',
+  'Extension triceps': 'images/exercices/50-extension-triceps.jpg',
+  'Extension triceps poulie': 'images/exercices/51-extension-triceps-poulie.jpg',
+  'Extension triceps à la poulie': 'images/exercices/51-extension-triceps-poulie.jpg',
+  'Farmer walk': 'images/exercices/75-farmer-walk.jpg',
+  'Fentes': 'images/exercices/04-fentes-avant.jpg',
+  'Fentes alternées': 'images/exercices/04-fentes-avant.jpg',
+  'Fentes arrière': 'images/exercices/05-fentes-arriere.jpg',
+  'Fentes arrière avec haltères': 'images/exercices/05-fentes-arriere.jpg',
+  'Fentes bulgares': 'images/exercices/02-fentes-bulgares.jpg',
+  'Fentes halteres': 'images/exercices/04-fentes-avant.jpg',
+  'Fentes haltères': 'images/exercices/04-fentes-avant.jpg',
+  'Fentes sautées': 'images/exercices/06-fentes-sautees.jpg',
+  'Flexion des mollets debout': 'images/exercices/12-mollets-debout.jpg',
+  'Front squat': 'images/exercices/07-front-squat.jpg',
+  'Gainage avec rotation': 'images/exercices/65-gainage-avec-rotation.jpg',
+  'Gainage dynamique': 'images/exercices/66-gainage-dynamique-touches-epaule.jpg',
+  'Gainage dynamique (planche avec touches d\'épaule)': 'images/exercices/66-gainage-dynamique-touches-epaule.jpg',
+  'Gainage latéral (planche latérale)': 'images/exercices/67-gainage-lateral.jpg',
+  'Hip thrust': 'images/exercices/08-hip-thrust.jpg',
+  'Hip thrust unilatéral': 'images/exercices/09-hip-thrust-unilateral.jpg',
+  'Jumping jacks': 'images/exercices/77-jumping-jacks.jpg',
+  'Kettlebell swing': 'images/exercices/78-kettlebell-swing.jpg',
+  'Leg curl': 'images/exercices/10-leg-curl.jpg',
+  'Leg curl (ischio-jambiers)': 'images/exercices/10-leg-curl.jpg',
+  'Leg curl couche': 'images/exercices/10-leg-curl.jpg',
+  'Leg extension': 'images/exercices/11-leg-extension.jpg',
+  'Low row unilateral': 'images/exercices/26-low-row-unilateral.jpg',
+  'Med-ball slam': 'images/exercices/79-med-ball-slam.jpg',
+  'Mollets assis': 'images/exercices/13-mollets-assis.jpg',
+  'Mollets debout': 'images/exercices/12-mollets-debout.jpg',
+  'Montées de genoux sur place': 'images/exercices/80-montees-de-genoux.jpg',
+  'Montées sur banc': 'images/exercices/25-montees-sur-banc.jpg',
+  'Mountain climbers': 'images/exercices/81-mountain-climbers.jpg',
+  'Oiseau (élévations arrière)': 'images/exercices/41-oiseau-elevations-arriere.jpg',
+  'Oiseau a la poulie haute unilateral': 'images/exercices/42-oiseau-poulie-haute.jpg',
+  'Pallof press': 'images/exercices/68-pallof-press.jpg',
+  'Planche': 'images/exercices/69-planche-gainage-frontal.jpg',
+  'Planche latérale': 'images/exercices/67-gainage-lateral.jpg',
+  'Planche sur les avant-bras': 'images/exercices/69-planche-gainage-frontal.jpg',
+  'Pompes': 'images/exercices/59-pompes-classiques.jpg',
+  'Pompes (à ton niveau)': 'images/exercices/59-pompes-classiques.jpg',
+  'Pompes en équilibre / Handstand push-ups (à ton niveau)': 'images/exercices/62-pompes-equilibre-handstand.jpg',
+  'Pompes genoux': 'images/exercices/60-pompes-genoux.jpg',
+  'Pompes larges': 'images/exercices/61-pompes-larges.jpg',
+  'Pont fessier au sol': 'images/exercices/14-pont-fessier-au-sol.jpg',
+  'Ponts / Bridges (à ton niveau)': 'images/exercices/14-pont-fessier-au-sol.jpg',
+  'Presse inclinee': 'images/exercices/15-presse-a-cuisses.jpg',
+  'Presse à cuisses': 'images/exercices/15-presse-a-cuisses.jpg',
+  'Presse à cuisses (pieds hauts)': 'images/exercices/15-presse-a-cuisses.jpg',
+  'Pull over poulie haute': 'images/exercices/27-pull-over-poulie-haute.jpg',
+  'Relevés de jambes': 'images/exercices/70-releves-de-jambes.jpg',
+  'Relevés de jambes / gainage abdominal (à ton niveau)': 'images/exercices/70-releves-de-jambes.jpg',
+  'Rowing': 'images/exercices/28-rowing-barre.jpg',
+  'Rowing barre': 'images/exercices/28-rowing-barre.jpg',
+  'Rowing haltère': 'images/exercices/29-rowing-haltere.jpg',
+  'Rowing haltère unilatéral': 'images/exercices/30-rowing-haltere-unilateral.jpg',
+  'Rowing menton': 'images/exercices/32-rowing-menton.jpg',
+  'Rowing élastique': 'images/exercices/31-rowing-elastique.jpg',
+  'Rowing élastique/haltères légers': 'images/exercices/31-rowing-elastique.jpg',
+  'Soulevé de terre': 'images/exercices/16-souleve-de-terre-conventionnel.jpg',
+  'Soulevé de terre jambes tendues': 'images/exercices/17-souleve-de-terre-jambes-tendues.jpg',
+  'Soulevé de terre roumain': 'images/exercices/18-souleve-de-terre-roumain.jpg',
+  'Squat': 'images/exercices/20-squat.jpg',
+  'Squat gobelet': 'images/exercices/21-squat-gobelet.jpg',
+  'Squat guide ou hack squat': 'images/exercices/22-squat-guide-hack-squat.jpg',
+  'Squats (à ton niveau)': 'images/exercices/20-squat.jpg',
+  'Squats bulgares': 'images/exercices/02-fentes-bulgares.jpg',
+  'Squats sautés': 'images/exercices/23-squats-sautes.jpg',
+  'Squats sumo': 'images/exercices/24-squats-sumo.jpg',
+  'Suitcase carry': 'images/exercices/76-suitcase-carry.jpg',
+  'Superman': 'images/exercices/71-superman.jpg',
+  'Superman (extension dos)': 'images/exercices/71-superman.jpg',
+  'Tirage horizontal': 'images/exercices/33-tirage-horizontal.jpg',
+  'Tirage horizontal poulie basse': 'images/exercices/33-tirage-horizontal.jpg',
+  'Tirage horizontal à la poulie basse': 'images/exercices/33-tirage-horizontal.jpg',
+  'Tirage serre horizontal': 'images/exercices/33-tirage-horizontal.jpg',
+  'Tirage vertical': 'images/exercices/34-tirage-vertical-lat-pulldown.jpg',
+  'Tirage vertical (poulie ou tractions)': 'images/exercices/34-tirage-vertical-lat-pulldown.jpg',
+  'Tirage vertical large': 'images/exercices/34-tirage-vertical-lat-pulldown.jpg',
+  'Tirage vertical poulie': 'images/exercices/34-tirage-vertical-lat-pulldown.jpg',
+  'Tirage vertical serre': 'images/exercices/34-tirage-vertical-lat-pulldown.jpg',
+  'Tractions': 'images/exercices/35-tractions.jpg',
+  'Tractions (à ton niveau)': 'images/exercices/35-tractions.jpg',
+  'Trap-bar deadlift': 'images/exercices/19-trap-bar-deadlift.jpg',
+  'Triceps corde extension': 'images/exercices/51-extension-triceps-poulie.jpg',
+  'Écarté couché': 'images/exercices/57-ecarte-couche-halteres.jpg',
+  'Écarté couché haltères': 'images/exercices/57-ecarte-couche-halteres.jpg',
+  'Écartés couché': 'images/exercices/57-ecarte-couche-halteres.jpg',
+  'Élévation frontale haltères': 'images/exercices/40-elevation-frontale.jpg',
+  'Élévation latérale': 'images/exercices/38-elevation-laterale.jpg',
+  'Élévation latérale haltères': 'images/exercices/38-elevation-laterale.jpg',
+  'Élévations latérales': 'images/exercices/38-elevation-laterale.jpg',
+};
 // Categorisation visuelle des programmes de la bibliotheque (force = rouge,
 // femme = rose, callisthenie = bleu, perte-de-poids = ambre) : un simple
 // libelle + une classe CSS appliquee sur l'icone haltere de la tuile et sur
@@ -2500,9 +2650,12 @@ const app = {
         const filledPoids = exState.series.filter(s=>s && s.poids!=null).map(s=>s.poids);
         const lastPoidsVals = last && last.series ? last.series.filter(s=>s && s.poids!=null).map(s=>s.poids) : [];
         const plateCalcPrefill = filledPoids.length ? Math.max(...filledPoids) : (lastPoidsVals.length ? Math.max(...lastPoidsVals) : null);
+        const exoImg = EXERCICE_IMAGES[exState.exercice];
         return `<div class="exo-block">
           <div class="exo-header">
-            <div class="exo-ic">${SVG_DUMBBELL}</div>
+            ${exoImg
+              ? `<div class="exo-ic has-img" title="Voir le poster anatomique" onclick="app.openExoImage('${encodeURIComponent(exState.exercice)}')"><img src="${exoImg}" alt="${escapeHtml(exState.exercice)}" loading="lazy"></div>`
+              : `<div class="exo-ic">${SVG_DUMBBELL}</div>`}
             <div class="exo-info">
               <div class="exo-name">${escapeHtml(exState.exercice)}</div>
               ${def.commentaire?`<div class="exo-muscle">${escapeHtml(def.commentaire)}</div>`:''}
@@ -2760,6 +2913,16 @@ const app = {
   },
   closePlateCalc(){ document.getElementById('plate-calc-overlay').style.display = 'none'; },
   setPlateCalcBar(kg){ this._plateCalcBar = kg; this.renderPlateCalc(); },
+  openExoImage(nameEncoded){
+    const name = decodeURIComponent(nameEncoded);
+    const src = EXERCICE_IMAGES[name];
+    if(!src) return;
+    document.getElementById('exo-image-title').textContent = name;
+    document.getElementById('exo-image-full').src = src;
+    document.getElementById('exo-image-full').alt = name;
+    document.getElementById('exo-image-overlay').style.display = 'flex';
+  },
+  closeExoImage(){ document.getElementById('exo-image-overlay').style.display = 'none'; },
   renderPlateCalc(){
     const barKg = this._plateCalcBar!=null ? this._plateCalcBar : 20;
     document.getElementById('plate-calc-bars').innerHTML = BAR_WEIGHTS_KG.map(b=>
