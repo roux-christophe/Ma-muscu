@@ -223,12 +223,23 @@ button{font-family:inherit;}
 .hero-empty{color:var(--accent-contrast); opacity:.85; font-size:14.5px; margin-top:4px;}
 
 /* ---------- QUICKSTATS (bare, pas de boite) ---------- */
-.quickstats{display:flex; margin:4px 0 8px;}
-.quickstats .qs{flex:1; text-align:center; padding:2px 4px; position:relative;}
-.quickstats .qs + .qs::before{content:''; position:absolute; left:0; top:14%; bottom:14%; width:1px; background:var(--card-border);}
-.quickstats .qs .v{font-size:21px; font-weight:900; letter-spacing:-.02em; font-variant-numeric:tabular-nums;}
-.quickstats .qs .l{font-size:10.5px; color:var(--text-faint); margin-top:3px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;}
+.quickstats{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin:4px 0 8px;}
+.quickstats .qs{background:var(--card-2); border:1px solid var(--card-border); border-radius:14px; padding:10px 5px; text-align:center;}
+.quickstats .qs .v{font-size:17px; font-weight:900; letter-spacing:-.02em; font-variant-numeric:tabular-nums;}
+.quickstats .qs .l{font-size:9px; color:var(--text-faint); margin-top:3px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; line-height:1.2;}
+.quickstats .qs.accent{background:color-mix(in srgb, var(--accent) 12%, var(--card-2)); border-color:color-mix(in srgb, var(--accent) 32%, var(--card-border));}
 .quickstats .qs.accent .v{color:var(--accent);}
+/* Carte "Activite recente" (ecran Sport uniquement) -- distincte de
+   .timeline/.timeline-item qui reste utilisee telle quelle par l'Historique
+   complet (avec ses groupes par date), pour ne rien changer la-bas. */
+.activity-card{background:var(--card); border:1px solid var(--card-border); border-radius:18px; padding:4px; overflow:hidden;}
+.activity-row{display:flex; align-items:center; gap:12px; padding:11px 10px; cursor:pointer;}
+.activity-row + .activity-row{border-top:1px solid var(--card-border);}
+.activity-row .a-icon{width:38px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+.activity-row .a-icon svg{width:18px; height:18px;}
+.activity-row .a-icon.muscu{background:color-mix(in srgb, var(--accent) 16%, transparent); color:var(--accent);}
+.activity-row .a-icon.cardio{background:color-mix(in srgb, var(--accent-2) 16%, transparent); color:var(--accent-2);}
+.activity-row .chev{color:var(--text-faint); flex-shrink:0;}
 
 /* ---------- TUILES PROGRAMMES ---------- */
 .tiles-row{display:flex; gap:12px; overflow-x:auto; padding:2px 2px 10px; margin:0 -2px; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch;}
@@ -602,6 +613,10 @@ button{font-family:inherit;}
 .exo-image-box{max-width:420px; max-height:90vh; overflow-y:auto;}
 hr.sep{border:none; border-top:1px solid var(--card-border); margin:14px 0;}
 .small-note{font-size:13px; color:var(--text-faint); line-height:1.5;}
+/* Bouton "ⓘ" a la demande, remplace un paragraphe d'explication toujours
+   visible (cf. infoBtnHTML() dans app.js). */
+.info-btn{width:19px; height:19px; border-radius:50%; border:1.5px solid var(--text-faint); background:none; color:var(--text-faint); font-size:11.5px; font-weight:800; font-style:italic; font-family:Georgia,serif; line-height:1; padding:0; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; vertical-align:middle;}
+.info-btn:active{background:var(--card-2); color:var(--text-dim); border-color:var(--text-dim);}
 textarea.raw{width:100%; min-height:140px; font-family:ui-monospace,monospace; font-size:12px; background:var(--input-bg); color:var(--text); border:1px solid var(--card-border); border-radius:12px; padding:10px;}
 select.native{appearance:none; -webkit-appearance:none; background-image:none;}
 .week-chip{font-size:12px; color:var(--text-faint); font-weight:700;}
@@ -659,7 +674,7 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
       <div class="chev">›</div>
     </div>
     <div class="section-title">Activité récente</div>
-    <div class="timeline" id="sport-recent"></div>
+    <div id="sport-recent"></div>
   </div>
 
   <!-- ===== LISTE DES SEANCES D'UN PROGRAMME ===== -->
@@ -746,8 +761,7 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
 
   <!-- ===== NUTRITION : RECETTES (a partir du frigo/placard) ===== -->
   <div class="view" id="view-recettes">
-    <div class="topbar"><button class="back" onclick="nav.back(); app.renderNutrition();">‹</button><h1>Recettes</h1></div>
-    <p class="small-note" style="margin-top:0;">Coche ce que tu as dans ton frigo et tes placards : l'appli te propose des recettes équilibrées réalisables avec — pas besoin de tout avoir. Le sel, le poivre, l'huile, l'eau, le vinaigre, ainsi que les épices sèches et condiments courants (cumin, curcuma, paprika, curry, cannelle, origan et thym séchés, gingembre en poudre, coriandre en graine, laurier, moutarde, miel, sauce soja, sauce teriyaki, vinaigrette balsamique) sont supposés toujours disponibles.</p>
+    <div class="topbar"><button class="back" onclick="nav.back(); app.renderNutrition();">‹</button><h1>Recettes</h1><button type="button" class="info-btn" title="Comment ça marche" onclick="app.openInfo(this)" data-info="Coche ce que tu as dans ton frigo et tes placards : l&#39;appli te propose des recettes équilibrées réalisables avec — pas besoin de tout avoir. Le sel, le poivre, l&#39;huile, l&#39;eau, le vinaigre, ainsi que les épices sèches et condiments courants (cumin, curcuma, paprika, curry, cannelle, origan et thym séchés, gingembre en poudre, coriandre en graine, laurier, moutarde, miel, sauce soja, sauce teriyaki, vinaigrette balsamique) sont supposés toujours disponibles." style="margin-left:6px;">i</button></div>
 
     <div class="field" style="margin-top:10px;">
       <label>Rechercher un ingrédient à cocher</label>
@@ -794,8 +808,7 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
 
   <!-- ===== NUTRITION : AIDE AU REPAS (choisir une recette -> liste de courses) ===== -->
   <div class="view" id="view-aide-repas">
-    <div class="topbar"><button class="back" onclick="nav.back(); app.renderNutrition();">‹</button><h1>Aide au repas</h1></div>
-    <p class="small-note" style="margin-top:0;">Différent de l'écran « Recettes » : ici tu choisis une ou plusieurs recettes pour ce que tu as ENVIE de manger, et l'appli te donne la liste de courses — sans ce que tu as déjà.</p>
+    <div class="topbar"><button class="back" onclick="nav.back(); app.renderNutrition();">‹</button><h1>Aide au repas</h1><button type="button" class="info-btn" title="Comment ça marche" onclick="app.openInfo(this)" data-info="Différent de l&#39;écran « Recettes » : ici tu choisis une ou plusieurs recettes pour ce que tu as ENVIE de manger, et l&#39;appli te donne la liste de courses — sans ce que tu as déjà." style="margin-left:6px;">i</button></div>
 
     <div id="aide-repas-listes-sauvegardees"></div>
     <div id="aide-repas-recettes-a-cuisiner"></div>
@@ -1151,6 +1164,13 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
   </div>
 </div>
 
+<div class="confirm-overlay" id="info-overlay" onclick="if(event.target===this) app.closeInfo()">
+  <div class="confirm-box">
+    <p id="info-message" style="white-space:pre-line;"></p>
+    <div class="row"><button class="btn btn-secondary" id="info-ok" onclick="app.closeInfo()">Compris</button></div>
+  </div>
+</div>
+
 <div class="confirm-overlay" id="exo-image-overlay" onclick="if(event.target===this) app.closeExoImage()">
   <div class="confirm-box exo-image-box">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
@@ -1182,7 +1202,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260921203551';
+const APP_BUILD_VERSION = '20260921204950';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -2181,6 +2201,13 @@ function showPrompt(message, placeholder, onConfirm){
   btnOk.onclick = ()=>{ const v = input.value.trim(); if(!v) return; cleanup(); onConfirm(v); };
   btnCancel.onclick = cleanup;
 }
+// Petit "ⓘ" affiche a la demande, a la place d'un paragraphe d'explication
+// toujours visible (retour de Christophe : trop de texte a l'ecran). Le
+// message passe en attribut data- (echappe) plutot qu'en JS inline, pour
+// eviter tout probleme de guillemets/apostrophes dans les textes francais.
+function infoBtnHTML(message){
+  return `<button type="button" class="info-btn" title="En savoir plus" onclick="app.openInfo(this)" data-info="${escapeHtml(message)}">i</button>`;
+}
 
 /* ===================== NAVIGATION ===================== */
 const nav = {
@@ -2425,7 +2452,7 @@ const app = {
     const rc = document.getElementById('sport-recent');
     if(!recent.length){ rc.innerHTML = '<p class="empty">Aucune séance enregistrée pour l\'instant. Commence par en noter une !</p>'; }
     else {
-      rc.innerHTML = recent.map(l=>{
+      rc.innerHTML = `<div class="activity-card">` + recent.map(l=>{
         const p = PROGRAMS.find(pp=>pp.id===l.programmeId);
         const s = p.seances.find(ss=>ss.numero===l.seanceNumero);
         const isCardio = s.type==='cardio';
@@ -2433,10 +2460,12 @@ const app = {
         const dur = computeDureeTotaleMin(l, s);
         const parts = [isCardio ? 'Cardio' : ((s.exercices?.length||0)+' exercices')];
         if(dur) parts.push(dur+' min');
-        return `<div class="timeline-item ${isCardio?'cardio':'muscu'}" onclick="app.openLog('${l.programmeId}',${l.seanceNumero},'${l.date}')">
+        return `<div class="activity-row" onclick="app.openLog('${l.programmeId}',${l.seanceNumero},'${l.date}')">
+          <div class="a-icon ${isCardio?'cardio':'muscu'}">${seanceIconSVG(isCardio)}</div>
           <div class="meta"><div class="t1">${label}</div><div class="t2">${relativeDateLabel(l.date)} · ${parts.join(' · ')}</div></div>
+          <div class="chev">›</div>
         </div>`;
-      }).join('');
+      }).join('') + `</div>`;
     }
   },
   renderSportQuickstats(){
@@ -2939,6 +2968,14 @@ const app = {
     document.getElementById('exo-image-overlay').style.display = 'flex';
   },
   closeExoImage(){ document.getElementById('exo-image-overlay').style.display = 'none'; },
+  // Ouvre le petit popover "ⓘ" avec le texte pose en attribut data-info du
+  // bouton clique (cf. infoBtnHTML) -- deja echappe au rendu, donc lu tel
+  // quel ici, pas de nouvel echappement.
+  openInfo(btn){
+    document.getElementById('info-message').textContent = btn.getAttribute('data-info') || '';
+    document.getElementById('info-overlay').style.display = 'flex';
+  },
+  closeInfo(){ document.getElementById('info-overlay').style.display = 'none'; },
   renderPlateCalc(){
     const barKg = this._plateCalcBar!=null ? this._plateCalcBar : 20;
     document.getElementById('plate-calc-bars').innerHTML = BAR_WEIGHTS_KG.map(b=>
@@ -3856,12 +3893,12 @@ const app = {
           <button class="icon-btn" title="Modifier" onclick="app.editAliment('${e.id}')">${SVG_EDIT}</button>
           <button class="icon-btn" title="Supprimer" onclick="app.deleteAliment('${e.id}')">${SVG_TRASH}</button>
         </div>`).join('') : '<p class="empty">Rien enregistré</p>';
-      return `<div class="section">
-        <div class="section-title with-action" style="margin:22px 0 8px;">
+      return `<div class="card meal-card" style="margin:14px 0 0;">
+        <div class="section-title with-action" style="margin:0 0 8px;">
           <span>${escapeHtml(m.label)}</span><span class="prog-badge">${Math.round(totalCal)} kcal</span>
         </div>
         ${rows}
-        <div class="row" style="gap:8px;flex-wrap:wrap;">
+        <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:${entries.length?'10px':'0'};">
           <button class="btn btn-ghost" style="width:auto;padding:9px 2px;" onclick="app.openAddAliment('${m.id}')">＋ Ajouter un aliment</button>
           <button class="btn btn-ghost" style="width:auto;padding:9px 2px;" onclick="app.openCopierRepas('${m.id}')">📋 Copier un repas</button>
           ${entries.length?`<button class="btn btn-ghost" style="width:auto;padding:9px 2px;" onclick="app.promptSaveRepasType('${m.id}')">💾 Enregistrer comme repas type</button>`:''}
