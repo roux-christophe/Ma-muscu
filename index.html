@@ -1289,7 +1289,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260922102630';
+const APP_BUILD_VERSION = '20260922102937';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1340,8 +1340,15 @@ function seanceIconSVG(isCardio){ return isCardio ? SVG_HEART : SVG_DUMBBELL; }
    81 posters valides (plusieurs libelles peuvent pointer vers le meme
    poster quand ils designent le meme mouvement). */
 const EXERCICE_IMAGES = {
-  'Bird-dog': '83-bird-dog.jpg',
-  'Dead bug': '82-dead-bug.jpg',
+  // ATTENTION : noms EXACTS tels que presents sur le depot GitHub de
+  // Christophe (verifie le 22/09 via l'API GitHub) -- underscore + casse
+  // d'origine, PAS le format tiret-minuscule des 81 autres posters. Il a
+  // uploade le zip original recu (82_Dead_bug.jpg / 83_Bird_dog.jpg) plutot
+  // que les copies renommees que je lui avais envoyees ensuite. Ne pas
+  // "corriger" vers 82-dead-bug.jpg/83-bird-dog.jpg sans avoir confirme que
+  // les fichiers ont ete renommes sur GitHub, sinon meme regression.
+  'Bird-dog': '83_Bird_dog.jpg',
+  'Dead bug': '82_Dead_bug.jpg',
   'Abduction de hanche (élastique ou machine)': '01-abduction-de-hanche.jpg',
   'Abduction de hanche debout (élastique)': '01-abduction-de-hanche.jpg',
   'Biceps curl pupitre': '43-biceps-curl-pupitre.jpg',
