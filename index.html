@@ -355,6 +355,9 @@ button{font-family:inherit;}
 .exo-header .exo-ic svg, .list-row .exo-ic svg{width:26px;height:26px;}
 .exo-header .exo-ic.has-img, .list-row .exo-ic.has-img{padding:0;overflow:hidden;cursor:pointer;border:none;}
 .exo-header .exo-ic.has-img img, .list-row .exo-ic.has-img img{width:100%;height:100%;object-fit:cover;display:block;}
+.cat-ic{width:34px;height:34px;border-radius:10px;background:var(--card-2);color:var(--text-dim);display:flex;align-items:center;justify-content:center;flex:none;overflow:hidden;margin-right:2px;}
+.cat-ic svg{width:17px;height:17px;}
+.cat-ic img{width:100%;height:100%;object-fit:cover;display:block;}
 .exo-header .exo-info{flex:1; min-width:0;}
 .exo-header .exo-name{font-size:17px; font-weight:800; letter-spacing:-.01em; line-height:1.25;}
 .exo-header .exo-muscle{font-size:12.5px; color:var(--text-dim); margin-top:2px;}
@@ -1286,7 +1289,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260922101004';
+const APP_BUILD_VERSION = '20260922102630';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1819,6 +1822,89 @@ function foodDbByName(nom){
     FOOD_DB.forEach(f=>_foodDbIndex.set(f.nom, f));
   }
   return _foodDbIndex.get(nom) || null;
+}
+// ---------- Icones de categorie aliment (24 illustrations, cf. FOOD_CATEGORY_IMAGES) ----------
+// Chaque entree FOOD_DB porte un champ "categorie" herite de sa source
+// (CIQUAL en minuscules type "viandes crues", ou nos fichiers custom en
+// Capitalise type "Fromages frais") -- 130+ valeurs brutes differentes, pas
+// question de les lister une a une. On les fait plutot correspondre a l'un
+// des 24 "buckets" illustres via des mots-cles (racines sans accent, sans
+// le "s" du pluriel pour matcher singulier/pluriel), dans un ordre precis :
+// les regles les plus specifiques (poisson, charcuterie, plats composes...)
+// passent avant les regles generiques (le mot "lait" apparait aussi dans
+// "produits laitiers frais", donc "produits laitiers" doit etre teste avant
+// la regle generique "lait"). Voir le script d'audit qui a valide cette
+// fonction sur les 130+ categories reelles de final_food_db.json (22/09).
+const FOOD_CATEGORY_IMAGES = {
+  '01-viande': 'cat-01-viande.jpg',
+  '02-charcuterie': 'cat-02-charcuterie.jpg',
+  '03-poisson-fruits-de-mer': 'cat-03-poisson-fruits-de-mer.jpg',
+  '04-oeufs': 'cat-04-oeufs.jpg',
+  '05-produits-laitiers-frais': 'cat-05-produits-laitiers-frais.jpg',
+  '06-fromages': 'cat-06-fromages.jpg',
+  '07-lait': 'cat-07-lait.jpg',
+  '08-matieres-grasses': 'cat-08-matieres-grasses.jpg',
+  '09-legumes': 'cat-09-legumes.jpg',
+  '10-pommes-de-terre': 'cat-10-pommes-de-terre.jpg',
+  '11-legumineuses': 'cat-11-legumineuses.jpg',
+  '12-fruits-frais': 'cat-12-fruits-frais.jpg',
+  '13-fruits-a-coque': 'cat-13-fruits-a-coque.jpg',
+  '14-pates-riz-cereales': 'cat-14-pates-riz-cereales.jpg',
+  '15-pain-viennoiseries': 'cat-15-pain-viennoiseries.jpg',
+  '16-cereales-petit-dejeuner': 'cat-16-cereales-petit-dejeuner.jpg',
+  '17-biscuits-gateaux': 'cat-17-biscuits-gateaux.jpg',
+  '18-chocolat-confiseries': 'cat-18-chocolat-confiseries.jpg',
+  '19-desserts-glaces': 'cat-19-desserts-glaces.jpg',
+  '20-plats-prepares': 'cat-20-plats-prepares.jpg',
+  '21-sauces-condiments': 'cat-21-sauces-condiments.jpg',
+  '22-boissons-sans-alcool': 'cat-22-boissons-sans-alcool.jpg',
+  '23-boissons-alcoolisees': 'cat-23-boissons-alcoolisees.jpg',
+  '24-fast-food': 'cat-24-fast-food.jpg',
+};
+function foodCategoryBucket(categorie){
+  if(!categorie) return null;
+  // normalize() ne decompose pas les ligatures francaises œ/æ (ce ne
+  // sont pas des compositions Unicode, cf. le meme constat deja fait pour
+  // searchFoodDB) -- sans ce remplacement manuel, "œufs" perdrait son
+  // œ et ne matcherait plus jamais la regle oeufs ci-dessous.
+  const n = normalize(String(categorie).replace(/[Œœ]/g,'oe').replace(/[Ææ]/g,'ae'));
+  if(n.includes('fast food') || n.includes('fastfood')) return '24-fast-food';
+  if(n.includes('charcuterie')) return '02-charcuterie';
+  if(['compose','cuisine du monde','sandwich','pizza','tarte','crepe sale','soupe','feuillete','plat infantile','snack','biscuit aperitif','petits pots'].some(k=>n.includes(k))) return '20-plats-prepares';
+  if(['poisson','mollusque','crustace','algue','surimi'].some(k=>n.includes(k))) return '03-poisson-fruits-de-mer';
+  if(n==='oeufs' || n==='oeuf') return '04-oeufs';
+  if(n.includes('volaille') || n.includes('viande')) return '01-viande';
+  if(['yaourt','produits laitiers frais','lacte','creme'].some(k=>n.includes(k))) return '05-produits-laitiers-frais';
+  if(n.includes('fromage')) return '06-fromages';
+  if(n.includes('lait')) return '07-lait';
+  if((n.includes('matiere') && n.includes('gras')) || ['huile','margarine','beurre','noix de coco'].some(k=>n.includes(k))) return '08-matieres-grasses';
+  if(n.includes('legumineuse') || n.includes('substitu')) return '11-legumineuses';
+  if(n.includes('legume')) return '09-legumes';
+  if(n.includes('pomme de terre') || n.includes('tubercule')) return '10-pommes-de-terre';
+  if(['fruit a coque','oleagine','fruit sec'].some(k=>n.includes(k))) return '13-fruits-a-coque';
+  if(n.includes('fruit')) return '12-fruits-frais';
+  if(n.includes('barre') && n.includes('cereal')) return '17-biscuits-gateaux';
+  if(n.includes('cereal') && (n.includes('petit dejeuner') || n.includes('petit dej'))) return '16-cereales-petit-dejeuner';
+  if(['riz','pate','cereal','feculent','farine','amidon'].some(k=>n.includes(k)) && !n.includes('patisserie')) return '14-pates-riz-cereales';
+  if(n.includes('pain') || n.includes('viennoiserie')) return '15-pain-viennoiseries';
+  if(['biscuit','gateau','patisserie'].some(k=>n.includes(k))) return '17-biscuits-gateaux';
+  if(['chocolat','confiserie','cacao'].some(k=>n.includes(k))) return '18-chocolat-confiseries';
+  if(['glace','sorbet'].some(k=>n.includes(k)) || (n.includes('dessert') && n.includes('infantile'))) return '19-desserts-glaces';
+  if(n.includes('alcool')) return '23-boissons-alcoolisees';
+  if(['sauce','condiment','epice','herbe','culinaire','ingredient','sucre','confiture','miel','edulcorant'].some(k=>n.includes(k)) || n.includes('sel')) return '21-sauces-condiments';
+  if(n.includes('boisson') || n.includes('eau') || n.includes('jus')) return '22-boissons-sans-alcool';
+  return null;
+}
+// Icone (img si categorie reconnue, pomme SVG generique sinon/si aliment
+// introuvable en base) a afficher devant un nom d'aliment -- utilisee dans
+// la liste "Frigo", le detail de recette et les resultats de recherche.
+function foodCategoryIconHTML(nomAliment){
+  const f = foodDbByName(nomAliment);
+  const bucket = f ? foodCategoryBucket(f.categorie) : null;
+  const file = bucket ? FOOD_CATEGORY_IMAGES[bucket] : null;
+  return file
+    ? `<div class="cat-ic"><img src="${file}" alt="" loading="lazy"></div>`
+    : `<div class="cat-ic">${SVG_APPLE}</div>`;
 }
 // Macros totales d'une recette (toutes portions confondues), calculees a
 // partir des valeurs /100g reelles de chaque ingredient dans FOOD_DB — jamais
@@ -3335,6 +3421,7 @@ const app = {
         // (ex: noms CIQUAL "Poulet, blanc (filet), cru").
         return `<label class="list-row" style="cursor:pointer;padding:9px 12px;">
           <input type="checkbox" value="${escapeHtml(nom)}" ${checked?'checked':''} onchange="app.toggleIngredientDisponible(this.value)" style="width:18px;height:18px;flex-shrink:0;margin-right:10px;">
+          ${foodCategoryIconHTML(nom)}
           <div class="meta"><div class="t1" style="font-weight:400;">${escapeHtml(nom)}</div></div>
         </label>`;
       }).join('');
@@ -3761,6 +3848,7 @@ const app = {
       // non -- l'optionnel est juste signale comme "pas indispensable".
       const aAcheter = (r.ingredients||[]).filter(i=>!isStapleIngredient(i.nom));
       ingHtml = aAcheter.map(i=>`<div class="list-row" style="padding:8px 12px;">
+        ${foodCategoryIconHTML(i.nom)}
         <div class="meta"><div class="t1" style="font-weight:400;">🛒 ${escapeHtml(i.nom)}${i.optionnel?' <span class="small-note" style="display:inline;">(optionnel)</span>':''}</div></div>
         <div class="chev" style="font-size:13px;color:var(--text-dim);">${i.quantite?i.quantite+' g':''}</div>
       </div>`).join('');
@@ -3779,6 +3867,7 @@ const app = {
         // manquant (➖, neutre).
         const icon = ok ? '✅' : (i.optionnel ? '➖' : '❌');
         return `<div class="list-row" style="padding:8px 12px;">
+          ${foodCategoryIconHTML(i.nom)}
           <div class="meta"><div class="t1" style="font-weight:400;">${icon} ${escapeHtml(i.nom)}${i.optionnel?' <span class="small-note" style="display:inline;">(optionnel)</span>':''}</div></div>
           <div class="chev" style="font-size:13px;color:var(--text-dim);">${i.quantite?i.quantite+' g':''}</div>
         </div>`;
@@ -4403,6 +4492,7 @@ const app = {
         ? `${Math.round(f.kcal*f.portionG/100)} kcal (portion ${f.portionG}g) · P ${Math.round(f.prot*f.portionG/100)}g · G ${Math.round(f.gluc*f.portionG/100)}g · L ${Math.round(f.lip*f.portionG/100)}g`
         : `${Math.round(f.kcal)} kcal /100g · P ${f.prot}g · G ${f.gluc}g · L ${f.lip}g`;
       return `<div class="list-row" style="cursor:pointer" onclick="app.selectFoodDBResult(${i})">
+        ${foodCategoryIconHTML(f.nom)}
         <div class="meta"><div class="t1">${escapeHtml(f.nom)}</div><div class="t2">${sub}</div></div>
         <div class="chev">›</div>
       </div>`;
