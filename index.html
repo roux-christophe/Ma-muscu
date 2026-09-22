@@ -1289,7 +1289,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260922103449';
+const APP_BUILD_VERSION = '20260922105159';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1849,7 +1849,6 @@ function foodDbByName(nom){
 // bug/Bird-dog. Ne pas "corriger" vers un prefixe cat- sans avoir confirme
 // un renommage cote GitHub, sinon meme regression.
 const FOOD_CATEGORY_IMAGES = {
-  '01-viande': '01-viande.jpg',
   '02-charcuterie': '02-charcuterie.jpg',
   '03-poisson-fruits-de-mer': '03-poisson-fruits-de-mer.jpg',
   '04-oeufs': '04-oeufs.jpg',
@@ -1868,28 +1867,67 @@ const FOOD_CATEGORY_IMAGES = {
   '17-biscuits-gateaux': '17-biscuits-gateaux.jpg',
   '18-chocolat-confiseries': '18-chocolat-confiseries.jpg',
   '19-desserts-glaces': '19-desserts-glaces.jpg',
-  '20-plats-prepares': '20-plats-prepares.jpg',
-  '21-sauces-condiments': '21-sauces-condiments.jpg',
   '22-boissons-sans-alcool': '22-boissons-sans-alcool.jpg',
   '23-boissons-alcoolisees': '23-boissons-alcoolisees.jpg',
   '24-fast-food': '24-fast-food.jpg',
+  // Categories eclatees le 22/09 (24 -> 30 images) : "viande" -> rouge/
+  // volaille (distingues par mots-cles dans le NOM de l'aliment, le champ
+  // categorie ne les separe pas), "plats-prepares" -> 4 sous-buckets,
+  // "sauces-condiments" -> 3 sous-buckets. Noms de fichiers = ceux utilises
+  // par Christophe sur GitHub (confirmes le 22/09), PAS de prefixe "cat-".
+  '25-viande-rouge': '25-viande-rouge.jpg',
+  '26-volaille': '26-volaille.jpg',
+  '27-plats-composes': '27-plats-composes.jpg',
+  '28-pizza-tarte-quiche': '28-pizza-tarte-quiche.jpg',
+  '29-sandwich-snacks': '29-sandwich-snacks.jpg',
+  '30-soupes': '30-soupes.jpg',
+  '31-epices-herbes': '31-epices-herbes.jpg',
+  '32-sauces-condiments': '32-sauces-condiments.jpg',
+  '33-sucre-confitures': '33-sucre-confitures.jpg',
 };
-function foodCategoryBucket(categorie){
+const FOOD_POULTRY_KEYWORDS = ['poulet','volaille','dinde','canard','oie','caille','pintade','poularde','chapon'];
+// nom est optionnel mais necessaire pour 2 distinctions que le champ
+// categorie seul ne permet pas : rouge/volaille (la categorie CIQUAL
+// "viandes crues"/"cuites" ne distingue pas le type de viande), et les
+// oeufs noyes dans la categorie mixte "Viandes, volailles, oeufs".
+function foodCategoryBucket(categorie, nom){
   if(!categorie) return null;
   // normalize() ne decompose pas les ligatures francaises œ/æ (ce ne
   // sont pas des compositions Unicode, cf. le meme constat deja fait pour
-  // searchFoodDB) -- sans ce remplacement manuel, "œufs" perdrait son
-  // œ et ne matcherait plus jamais la regle oeufs ci-dessous.
-  const n = normalize(String(categorie).replace(/[Œœ]/g,'oe').replace(/[Ææ]/g,'ae'));
+  // searchFoodDB) -- sans ce remplacement manuel (majuscule ET minuscule),
+  // "œufs"/"Œufs" perdrait son œ/Œ et ne matcherait plus
+  // jamais la regle oeufs ci-dessous.
+  const deligature = s => String(s||'').replace(/[Œœ]/g,'oe').replace(/[Ææ]/g,'ae');
+  const n = normalize(deligature(categorie));
+  const nn = normalize(deligature(nom||''));
+  const tk = n.split(' ');
+  const nnTk = nn.split(' ');
+  // Verifie le NOM avant la categorie : certains items de la categorie mixte
+  // "Viandes, volailles, oeufs" sont en realite des oeufs. Mot ENTIER
+  // obligatoire (nnTk.includes, pas nn.includes) : "boeuf" (bœuf normalise)
+  // contient "oeuf" comme sous-chaine et se faisait donc classer a tort
+  // parmi les oeufs avant ce correctif (bug trouve le 22/09, ~110 aliments
+  // "bœuf" concernes).
+  if(nnTk.includes('oeuf') || nnTk.includes('oeufs')) return '04-oeufs';
   if(n.includes('fast food') || n.includes('fastfood')) return '24-fast-food';
   if(n.includes('charcuterie')) return '02-charcuterie';
-  if(['compose','cuisine du monde','sandwich','pizza','tarte','crepe sale','soupe','feuillete','plat infantile','snack','biscuit aperitif','petits pots'].some(k=>n.includes(k))) return '20-plats-prepares';
+  if(n.includes('pizza') || n.includes('tarte') || n.includes('quiche') || n.includes('crepe sale')) return '28-pizza-tarte-quiche';
+  if(n.includes('sandwich') || n.includes('snack') || n.includes('biscuit aperitif')) return '29-sandwich-snacks';
+  if(n.includes('soupe')) return '30-soupes';
+  if(['compose','cuisine du monde','feuillete','plat infantile','petits pots'].some(k=>n.includes(k))) return '27-plats-composes';
   if(['poisson','mollusque','crustace','algue','surimi'].some(k=>n.includes(k))) return '03-poisson-fruits-de-mer';
   if(n==='oeufs' || n==='oeuf') return '04-oeufs';
-  if(n.includes('volaille') || n.includes('viande')) return '01-viande';
+  if(n.includes('volaille') || n.includes('viande')){
+    return FOOD_POULTRY_KEYWORDS.some(k=>nn.includes(k)) ? '26-volaille' : '25-viande-rouge';
+  }
   if(['yaourt','produits laitiers frais','lacte','creme'].some(k=>n.includes(k))) return '05-produits-laitiers-frais';
   if(n.includes('fromage')) return '06-fromages';
   if(n.includes('lait')) return '07-lait';
+  // "boissons SANS alcool" contient litteralement le mot "alcool" -- sans
+  // cette exclusion explicite, ces 77 aliments non-alcoolises se
+  // retrouvaient classes comme boissons alcoolisees (bug trouve le 22/09).
+  if(n.includes('alcool') && !n.includes('sans alcool')) return '23-boissons-alcoolisees';
+  if(n.includes('boisson') || tk.includes('eau') || tk.includes('eaux') || n.includes('jus')) return '22-boissons-sans-alcool';
   if((n.includes('matiere') && n.includes('gras')) || ['huile','margarine','beurre','noix de coco'].some(k=>n.includes(k))) return '08-matieres-grasses';
   if(n.includes('legumineuse') || n.includes('substitu')) return '11-legumineuses';
   if(n.includes('legume')) return '09-legumes';
@@ -1903,9 +1941,9 @@ function foodCategoryBucket(categorie){
   if(['biscuit','gateau','patisserie'].some(k=>n.includes(k))) return '17-biscuits-gateaux';
   if(['chocolat','confiserie','cacao'].some(k=>n.includes(k))) return '18-chocolat-confiseries';
   if(['glace','sorbet'].some(k=>n.includes(k)) || (n.includes('dessert') && n.includes('infantile'))) return '19-desserts-glaces';
-  if(n.includes('alcool')) return '23-boissons-alcoolisees';
-  if(['sauce','condiment','epice','herbe','culinaire','ingredient','sucre','confiture','miel','edulcorant'].some(k=>n.includes(k)) || n.includes('sel')) return '21-sauces-condiments';
-  if(n.includes('boisson') || n.includes('eau') || n.includes('jus')) return '22-boissons-sans-alcool';
+  if(n.includes('epice') || n.includes('herbe')) return '31-epices-herbes';
+  if(['sucre','confiture','miel','edulcorant'].some(k=>n.includes(k))) return '33-sucre-confitures';
+  if(['sauce','condiment','culinaire','ingredient'].some(k=>n.includes(k)) || n.includes('sel')) return '32-sauces-condiments';
   return null;
 }
 // Icone (img si categorie reconnue, pomme SVG generique sinon/si aliment
@@ -1913,7 +1951,7 @@ function foodCategoryBucket(categorie){
 // la liste "Frigo", le detail de recette et les resultats de recherche.
 function foodCategoryIconHTML(nomAliment){
   const f = foodDbByName(nomAliment);
-  const bucket = f ? foodCategoryBucket(f.categorie) : null;
+  const bucket = f ? foodCategoryBucket(f.categorie, f.nom) : null;
   const file = bucket ? FOOD_CATEGORY_IMAGES[bucket] : null;
   return file
     ? `<div class="cat-ic"><img src="${file}" alt="" loading="lazy"></div>`
