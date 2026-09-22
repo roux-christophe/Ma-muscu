@@ -412,6 +412,12 @@ button{font-family:inherit;}
 .seance-icon.cardio{background:linear-gradient(135deg, var(--accent-2), color-mix(in srgb, var(--accent-2) 55%, var(--card))); color:#06231b; border-color:transparent;}
 
 .pill-row{display:flex; flex-wrap:wrap; gap:8px;}
+/* 2 boutons fixes par ligne (au lieu du flex-wrap qui recompose selon la
+   largeur du texte) -- demande de Christophe pour que +150ml/+330ml et
+   +500ml/Annuler (et Ajouter un aliment/Copier un repas) restent toujours
+   groupes par paire, quelle que soit la largeur de l'ecran. */
+.pill-row-2{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+.pill-row-2 .pill{width:100%; box-sizing:border-box; justify-content:center;}
 .pill{
   border:1px solid var(--card-border); background:var(--card-2); color:var(--text-dim); border-radius:99px;
   padding:9px 14px; font-size:14px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;
@@ -422,6 +428,15 @@ button{font-family:inherit;}
 .pill.active.cardio{background:linear-gradient(135deg, var(--accent-2), var(--accent)); border-color:transparent; color:var(--accent-contrast);}
 .series-row input, .stat-tile .v, .exo-target, .week-chip, .prog-badge, #home-date, .cal-ring .v{font-variant-numeric:tabular-nums;}
 .pill svg{width:18px;height:18px;}
+/* Boutons d'action hydratation + repas (Nutrition) : teintes de la couleur
+   du contexte (violet), meme formule que les tuiles quickstats .qs.accent,
+   plutot que le gris neutre du .pill generique utilise ailleurs (filtres). */
+#nutri-hydratation .pill, .meal-card .pill{
+  background:color-mix(in srgb, var(--accent) 14%, var(--card-2));
+  border-color:color-mix(in srgb, var(--accent) 32%, var(--card-border));
+  color:var(--accent);
+}
+#nutri-hydratation .pill svg, .meal-card .pill svg{color:var(--accent);}
 
 .exo-title{font-size:16.5px; font-weight:700; line-height:1.25; letter-spacing:-.01em;}
 .exo-sub{font-size:13.5px; color:var(--text-dim); margin-top:2px;}
@@ -1198,7 +1213,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260922050342';
+const APP_BUILD_VERSION = '20260922051528';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -2528,7 +2543,7 @@ const app = {
     el.innerHTML = `
       <div class="qs"><div class="v">${q.totalSeances}</div><div class="l">Séances</div></div>
       <div class="qs"><div class="v">${q.totalVolume.toLocaleString('fr-FR')}</div><div class="l">Volume (kg)</div></div>
-      <div class="qs"><div class="v">${q.seancesThisWeek}</div><div class="l">Cette semaine</div></div>
+      <div class="qs"><div class="v">${q.seancesThisWeek}</div><div class="l">7 derniers jours</div></div>
       <div class="qs accent"><div class="v">${q.progressionPct!=null ? (q.progressionPct>=0?'+':'')+q.progressionPct+'%' : '—'}</div><div class="l">Volume vs sem. -1</div></div>
     `;
   },
@@ -3120,31 +3135,42 @@ const app = {
   // tri par date decroissante qu'avant, meme onclick app.openLog(...). Le
   // "poids total souleve" affiche a droite reutilise EXACTEMENT
   // computeTotalPoidsSouleve(), deja utilisee ailleurs (aucun nouveau calcul).
+  // Meme habillage que "Activité récente" sur le hub Sport (icone dans un
+  // badge teinte + carte arrondie) -- demande de Christophe pour que
+  // l'Historique complet ne detonne plus a cote de ce meme contenu deja
+  // restyle ailleurs, au lieu de garder l'ancienne liste a puce plate.
   renderHistory(){
     const logs = this.db.seances.slice().sort((a,b)=> a.date<b.date?1:(a.date>b.date?-1:0));
     const el = document.getElementById('history-list');
     if(!logs.length){ el.innerHTML = '<p class="empty">Aucune séance enregistrée pour l\'instant.</p>'; return; }
     const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
     const now = new Date();
-    let curKey = null, html = '';
+    let curKey = null, html = '', cardOpen = false;
     logs.forEach(l=>{
       const d = new Date(l.date+'T00:00:00');
       const key = d.getFullYear()+'-'+d.getMonth();
       if(key!==curKey){
         curKey = key;
         const label = d.getFullYear()===now.getFullYear() ? MONTHS[d.getMonth()] : MONTHS[d.getMonth()]+' '+d.getFullYear();
-        html += `<div class="timeline-group-title">${label}</div>`;
+        if(cardOpen) html += `</div>`;
+        html += `<div class="timeline-group-title">${label}</div><div class="activity-card">`;
+        cardOpen = true;
       }
       const p = PROGRAMS.find(pp=>pp.id===l.programmeId);
       const s = p.seances.find(ss=>ss.numero===l.seanceNumero);
       const isCardio = s.type==='cardio';
       const titre = l.programmeId===FREE_CARDIO_PROGRAM_ID ? 'Cardio libre' : (escapeHtml(p.nom)+' — Séance '+l.seanceNumero+' · '+escapeHtml(s.nom));
       const vol = computeTotalPoidsSouleve(l, s);
-      html += `<div class="timeline-item ${isCardio?'cardio':'muscu'}" onclick="app.openLog('${l.programmeId}',${l.seanceNumero},'${l.date}')">
-        <div class="meta"><div class="t1">${titre}</div><div class="t2">${relativeDateLabel(l.date)}${l.notes?' · 📝':''}</div></div>
-        ${vol>0?`<div class="tvol">${vol.toLocaleString('fr-FR')} kg</div>`:''}
+      const parts = [relativeDateLabel(l.date)];
+      if(vol>0) parts.push(vol.toLocaleString('fr-FR')+' kg');
+      if(l.notes) parts.push('📝');
+      html += `<div class="activity-row" onclick="app.openLog('${l.programmeId}',${l.seanceNumero},'${l.date}')">
+        <div class="a-icon ${isCardio?'cardio':'muscu'}">${seanceIconSVG(isCardio)}</div>
+        <div class="meta"><div class="t1">${titre}</div><div class="t2">${parts.join(' · ')}</div></div>
+        <div class="chev">›</div>
       </div>`;
     });
+    if(cardOpen) html += `</div>`;
     el.innerHTML = html;
   },
 
@@ -3750,11 +3776,11 @@ const app = {
     wrap.innerHTML = `<div class="section-title" style="margin:22px 0 8px;">💧 Hydratation</div>
       <div class="card">
         ${objectifBarHTML('Eau', totalMl/1000, objMl/1000, 'L', false)}
-        <div class="pill-row" style="margin-top:8px;">
+        <div class="pill-row-2" style="margin-top:8px;">
           <button type="button" class="pill" onclick="app.addEau(150)">${SVG_GLASS}+150ml (verre)</button>
           <button type="button" class="pill" onclick="app.addEau(330)">${SVG_CAN}+330ml (canette)</button>
           <button type="button" class="pill" onclick="app.addEau(500)">${SVG_BOTTLE}+500ml</button>
-          <button type="button" class="pill" onclick="app.undoLastEau()">${SVG_UNDO}Annuler la dernière</button>
+          <button type="button" class="pill" onclick="app.undoLastEau()" title="Annuler la dernière">${SVG_UNDO}Annuler</button>
         </div>
         <div class="field" style="margin-top:12px;"><label>Objectif quotidien (ml)</label>
           <input type="number" inputmode="numeric" value="${objMl}" onchange="app.setEauObjectif(this.value)"></div>
@@ -3964,11 +3990,13 @@ const app = {
           <span>${escapeHtml(m.label)}</span><span class="prog-badge">${Math.round(totalCal)} kcal</span>
         </div>
         ${rows}
-        <div class="pill-row" style="margin-top:${entries.length?'10px':'0'};">
+        <div class="pill-row-2" style="margin-top:${entries.length?'10px':'0'};">
           <button type="button" class="pill" onclick="app.openAddAliment('${m.id}')">${SVG_PLUS}Ajouter un aliment</button>
           <button type="button" class="pill" onclick="app.openCopierRepas('${m.id}')">${SVG_COPY}Copier un repas</button>
-          ${entries.length?`<button type="button" class="pill" onclick="app.promptSaveRepasType('${m.id}')">${SVG_BOOKMARK}Enregistrer comme repas type</button>`:''}
         </div>
+        ${entries.length?`<div class="pill-row" style="margin-top:8px;">
+          <button type="button" class="pill" onclick="app.promptSaveRepasType('${m.id}')">${SVG_BOOKMARK}Enregistrer comme repas type</button>
+        </div>`:''}
       </div>`;
     }).join('');
   },
