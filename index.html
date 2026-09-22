@@ -351,10 +351,10 @@ button{font-family:inherit;}
 }
 .exo-block:last-child{margin-bottom:0;}
 .exo-header{display:flex; gap:12px; align-items:flex-start;}
-.exo-header .exo-ic{width:68px;height:68px;border-radius:16px;background:var(--card-2);color:var(--text-dim);display:flex;align-items:center;justify-content:center;flex:none;}
-.exo-header .exo-ic svg{width:26px;height:26px;}
-.exo-header .exo-ic.has-img{padding:0;overflow:hidden;cursor:pointer;border:none;}
-.exo-header .exo-ic.has-img img{width:100%;height:100%;object-fit:cover;display:block;}
+.exo-header .exo-ic, .list-row .exo-ic{width:68px;height:68px;border-radius:16px;background:var(--card-2);color:var(--text-dim);display:flex;align-items:center;justify-content:center;flex:none;}
+.exo-header .exo-ic svg, .list-row .exo-ic svg{width:26px;height:26px;}
+.exo-header .exo-ic.has-img, .list-row .exo-ic.has-img{padding:0;overflow:hidden;cursor:pointer;border:none;}
+.exo-header .exo-ic.has-img img, .list-row .exo-ic.has-img img{width:100%;height:100%;object-fit:cover;display:block;}
 .exo-header .exo-info{flex:1; min-width:0;}
 .exo-header .exo-name{font-size:17px; font-weight:800; letter-spacing:-.01em; line-height:1.25;}
 .exo-header .exo-muscle{font-size:12.5px; color:var(--text-dim); margin-top:2px;}
@@ -1286,7 +1286,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260922062615';
+const APP_BUILD_VERSION = '20260922094459';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1425,6 +1425,10 @@ const EXERCICE_IMAGES = {
   'Pull over poulie haute': '27-pull-over-poulie-haute.jpg',
   'Relevés de jambes': '70-releves-de-jambes.jpg',
   'Relevés de jambes / gainage abdominal (à ton niveau)': '70-releves-de-jambes.jpg',
+  // Pas de photo dediee pour ce mouvement precis dans la bibliotheque : le
+  // crunch classique est le plus proche visuellement (meme famille de
+  // mouvement, flexion du tronc), plutot que de laisser l'icone generique.
+  'Reverse crunch': '63-crunch.jpg',
   'Rowing': '28-rowing-barre.jpg',
   'Rowing barre': '28-rowing-barre.jpg',
   'Rowing haltère': '29-rowing-haltere.jpg',
@@ -1466,6 +1470,15 @@ const EXERCICE_IMAGES = {
   'Élévation latérale haltères': '38-elevation-laterale.jpg',
   'Élévations latérales': '38-elevation-laterale.jpg',
 };
+// Les entrees ci-dessus sont de simples noms de fichier (ex. '69-planche-
+// gainage-frontal.jpg') -- les fichiers reels vivent dans images/exercices/.
+// Ce helper est le SEUL endroit qui connait ce prefixe : sans lui, un <img
+// src="..."> direct pointe a cote (a la racine du site) et l'image ne
+// charge jamais (404 silencieux, cf. bug corrige ici).
+function exoImageSrc(nomExercice){
+  const file = EXERCICE_IMAGES[nomExercice];
+  return file ? 'images/exercices/' + file : null;
+}
 // Categorisation visuelle des programmes de la bibliotheque (force = rouge,
 // femme = rose, callisthenie = bleu, perte-de-poids = ambre) : un simple
 // libelle + une classe CSS appliquee sur l'icone haltere de la tuile et sur
@@ -2842,7 +2855,7 @@ const app = {
         const filledPoids = exState.series.filter(s=>s && s.poids!=null).map(s=>s.poids);
         const lastPoidsVals = last && last.series ? last.series.filter(s=>s && s.poids!=null).map(s=>s.poids) : [];
         const plateCalcPrefill = filledPoids.length ? Math.max(...filledPoids) : (lastPoidsVals.length ? Math.max(...lastPoidsVals) : null);
-        const exoImg = EXERCICE_IMAGES[exState.exercice];
+        const exoImg = exoImageSrc(exState.exercice);
         return `<div class="exo-block">
           <div class="exo-header">
             ${exoImg
@@ -2902,13 +2915,23 @@ const app = {
   updateDureeMin(v){ this.currentLog.dureeMin = v===''?null:parseFloat(v); this.renderLog(); this.autosaveLog(); },
   updateCircuitAbdosDuree(v){ this.currentLog.circuitAbdosDureeMin = v===''?null:parseFloat(v); this.renderLog(); this.autosaveLog(); },
   circuitAbdosHTML(circuit, dureeMin){
-    const rows = circuit.exercices.map(e=>`
+    // Meme traitement icone/photo que les exercices avec charge (exo-block) :
+    // sans ca, le circuit au poids du corps etait le seul endroit du log de
+    // seance sans aucun repere visuel du mouvement.
+    const rows = circuit.exercices.map(e=>{
+      const img = exoImageSrc(e.nom);
+      const icon = img
+        ? `<div class="exo-ic has-img" title="Voir le poster anatomique" onclick="app.openExoImage('${encodeURIComponent(e.nom)}')"><img src="${img}" alt="${escapeHtml(e.nom)}" loading="lazy"></div>`
+        : `<div class="exo-ic">${SVG_DUMBBELL}</div>`;
+      return `
       <div class="list-row" style="align-items:flex-start;">
+        ${icon}
         <div class="meta">
           <div class="t1">${escapeHtml(e.nom)} <span style="font-weight:600;color:var(--text-dim);">— ${escapeHtml(e.consigne||'')}</span></div>
           ${e.commentaire?`<div class="t2">${escapeHtml(e.commentaire)}</div>`:''}
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     return `<div class="card" style="margin-top:12px;">
       <div class="exo-title">${escapeHtml(circuit.titre||'Circuit abdos')}</div>
       <div class="exo-sub" style="margin-bottom:6px;">À la suite du cardio, au poids du corps — pas de charge ni de séries à noter ici.</div>
@@ -3107,7 +3130,7 @@ const app = {
   setPlateCalcBar(kg){ this._plateCalcBar = kg; this.renderPlateCalc(); },
   openExoImage(nameEncoded){
     const name = decodeURIComponent(nameEncoded);
-    const src = EXERCICE_IMAGES[name];
+    const src = exoImageSrc(name);
     if(!src) return;
     document.getElementById('exo-image-title').textContent = name;
     document.getElementById('exo-image-full').src = src;
