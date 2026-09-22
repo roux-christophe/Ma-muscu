@@ -1286,7 +1286,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260922094459';
+const APP_BUILD_VERSION = '20260922095751';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1476,8 +1476,12 @@ const EXERCICE_IMAGES = {
 // src="..."> direct pointe a cote (a la racine du site) et l'image ne
 // charge jamais (404 silencieux, cf. bug corrige ici).
 function exoImageSrc(nomExercice){
-  const file = EXERCICE_IMAGES[nomExercice];
-  return file ? 'images/exercices/' + file : null;
+  // ATTENTION : revenu au chemin brut (sans prefixe) suite a une regression
+  // signalee par Christophe -- le prefixe 'images/exercices/' ajoute ici
+  // cassait l'affichage sur son appareil reel, alors que le chemin brut
+  // fonctionnait avant. Ne pas re-ajouter de prefixe sans confirmer d'abord
+  // la structure de dossiers reelle utilisee cote deploiement.
+  return EXERCICE_IMAGES[nomExercice] || null;
 }
 // Categorisation visuelle des programmes de la bibliotheque (force = rouge,
 // femme = rose, callisthenie = bleu, perte-de-poids = ambre) : un simple
