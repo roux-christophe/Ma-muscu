@@ -188,42 +188,44 @@ button{font-family:inherit;}
    ailleurs) : sans ca, le titre "IronNutra" remonte sous l'heure/l'encoche
    sur iPhone. */
 #view-home{padding-top:calc(env(safe-area-inset-top) + 10px);}
-.greeting{padding:2px 0 4px;}
-.greeting .hi{font-size:26px; font-weight:900; letter-spacing:-.02em; line-height:1.15;}
-.greeting .sub{color:var(--text-dim); font-size:14.5px; margin-top:4px;}
-/* Cartes hero de l'Accueil -- alignees sur le meme langage visuel sombre que
-   Sport/Nutrition (retour de Christophe : le degrade tranchait trop avec le
-   reste de l'appli une fois ces deux ecrans restyles). Seul le bouton CTA
-   garde une touche de couleur pleine (degrade), le reste de la carte est
-   sombre comme .card/.tile partout ailleurs. */
+.greeting{padding:4px 0 6px;}
+.greeting .hi{font-size:34px; font-weight:900; letter-spacing:-.02em; line-height:1.15;}
+.greeting .sub{color:var(--text-dim); font-size:15.5px; margin-top:5px;}
+/* Cartes hero de l'Accueil -- fond sombre comme Sport/Nutrition (retour de
+   Christophe : le degrade plein tranchait trop avec le reste de l'appli une
+   fois ces deux ecrans restyles), mais avec un contour de la couleur du
+   contexte (lime pour Sport, violet pour Nutrition via --accent) pour que la
+   carte reste identifiable au premier coup d'oeil -- et le bouton CTA garde
+   son degrade plein comme avant. Tailles agrandies (texte/paddings/rayons)
+   pour se rapprocher de la maquette de reference envoyee par Christophe. */
 .hero{
-  position:relative; overflow:hidden; border-radius:22px; padding:20px; margin:16px 0 22px;
-  background:var(--card); border:1px solid var(--card-border); box-shadow:var(--shadow);
+  position:relative; overflow:hidden; border-radius:28px; padding:24px; margin:18px 0 22px;
+  background:var(--card); border:1.5px solid color-mix(in srgb, var(--accent) 45%, var(--card-border)); box-shadow:var(--shadow);
   color:var(--text);
 }
-.hero .eyebrow{font-size:11.5px; text-transform:uppercase; letter-spacing:.09em; font-weight:800; color:var(--accent);}
+.hero .eyebrow{font-size:12.5px; text-transform:uppercase; letter-spacing:.09em; font-weight:800; color:var(--accent);}
 /* Bascule "quel programme ?" quand il y en a plusieurs : rend explicite et
    modifiable le choix — sinon impossible de savoir lequel des deux
    programmes la mise en avant a retenu. */
-.hero-switch{display:flex; gap:6px; margin-top:9px; flex-wrap:wrap;}
+.hero-switch{display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;}
 .hero-switch button{
-  border:none; border-radius:99px; padding:6px 12px; font-size:12px; font-weight:800; cursor:pointer;
+  border:none; border-radius:99px; padding:7px 13px; font-size:12.5px; font-weight:800; cursor:pointer;
   background:var(--card-2); color:var(--text-dim);
   transition:background .15s ease, color .15s ease;
 }
 .hero-switch button.active{background:color-mix(in srgb, var(--accent) 18%, var(--card-2)); color:var(--accent);}
-.hero .headline{font-size:24px; font-weight:900; letter-spacing:-.02em; margin-top:6px; line-height:1.2; color:var(--text);}
-.hero .meta{display:flex; gap:14px; margin-top:10px; font-size:13.5px; font-weight:700; color:var(--text-dim);}
+.hero .headline{font-size:28px; font-weight:900; letter-spacing:-.02em; margin-top:8px; line-height:1.2; color:var(--text);}
+.hero .meta{display:flex; gap:16px; margin-top:12px; font-size:14.5px; font-weight:700; color:var(--text-dim);}
 .hero .meta span{display:flex; align-items:center; gap:5px;}
 .hero .cta{
-  margin-top:18px; background:var(--grad); color:var(--accent-contrast);
-  border:none; border-radius:16px; padding:14px 22px; font-size:16px; font-weight:900; letter-spacing:-.01em;
-  display:inline-flex; align-items:center; gap:8px; cursor:pointer; transition:transform .12s ease;
+  margin-top:20px; background:var(--grad); color:var(--accent-contrast);
+  border:none; border-radius:18px; padding:16px 26px; font-size:17px; font-weight:900; letter-spacing:-.01em;
+  display:inline-flex; align-items:center; gap:9px; cursor:pointer; transition:transform .12s ease;
   box-shadow:0 12px 26px -14px color-mix(in srgb, var(--accent) 60%, transparent);
 }
 .hero .cta:active{transform:scale(.96);}
-.hero .cta svg{width:18px;height:18px;}
-.hero-empty{color:var(--text-dim); font-size:14.5px; margin-top:4px;}
+.hero .cta svg{width:19px;height:19px;}
+.hero-empty{color:var(--text-dim); font-size:15px; margin-top:4px;}
 
 /* ---------- QUICKSTATS (bare, pas de boite) ---------- */
 .quickstats{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin:4px 0 8px;}
@@ -635,7 +637,7 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
   <!-- ===== HOME ===== -->
   <div class="view active" id="view-home">
     <div class="greeting">
-      <div class="sub" id="home-title" style="text-transform:uppercase;letter-spacing:.09em;font-weight:800;font-size:11px;color:var(--text-faint);">💪 IronNutra</div>
+      <div class="sub" id="home-title" style="text-transform:uppercase;letter-spacing:.09em;font-weight:800;font-size:12px;color:var(--text-faint);">💪 IronNutra</div>
       <div class="hi">Bonjour</div>
       <div class="sub" id="home-date"></div>
       <div class="sub" style="margin-top:2px;">Prêt pour ta prochaine séance ?</div>
@@ -1196,7 +1198,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260922045214';
+const APP_BUILD_VERSION = '20260922050342';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
