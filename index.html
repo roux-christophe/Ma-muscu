@@ -58,6 +58,16 @@
   --chip-bg: color-mix(in srgb, var(--accent) 16%, var(--card));
   --chip-text: color-mix(in srgb, var(--accent) 82%, white);
   --grad: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, var(--accent-2)));
+  /* Degrade "vif" (2 teintes franches, sans att­enuation) pour les gros CTA
+     de l'Accueil -- --grad seul reste trop proche d'une teinte unique. */
+  --grad-vivid: linear-gradient(135deg, var(--accent), var(--accent-2));
+  /* Bordures degradees (theme) : memes 2 teintes que --grad mais tres
+     att­enuees vers --card-border, pour un contour discret qui reste un
+     vrai degrade (et bascule automatiquement Sport/Nutrition car base sur
+     var(--accent)/var(--accent-2), deja recolores dans le scope nutrition). */
+  --grad-border: linear-gradient(135deg, color-mix(in srgb, var(--accent) 50%, var(--card-border)), color-mix(in srgb, var(--accent-2) 30%, var(--card-border)));
+  --grad-border-hero: linear-gradient(135deg, color-mix(in srgb, var(--accent) 62%, var(--card-border)), color-mix(in srgb, var(--accent-2) 38%, var(--card-border)));
+  --grad-border-strong: linear-gradient(135deg, color-mix(in srgb, var(--accent) 75%, var(--card-border)), color-mix(in srgb, var(--accent-2) 48%, var(--card-border)));
 
   --shadow: 0 1px 2px rgba(0,0,0,.4), 0 16px 32px -20px rgba(0,0,0,.65);
   --shadow-sm: 0 1px 2px rgba(0,0,0,.35);
@@ -86,6 +96,14 @@
   --chip-bg: color-mix(in srgb, var(--accent-nutrition) 18%, var(--card));
   --chip-text: color-mix(in srgb, var(--accent-nutrition) 82%, white);
   --grad: linear-gradient(135deg, var(--accent-nutrition), var(--accent-nutrition-2));
+  /* Les degrades derives (CTA + bordures) sont re-declares ici : leur valeur
+     calculee se figerait sinon sur les teintes Sport de :root au lieu de se
+     recalculer avec --accent-nutrition (les custom properties ne re-substituent
+     pas leurs var() a chaque element hERITe, seulement la ou elles sont (re)declarees). */
+  --grad-vivid: linear-gradient(135deg, var(--accent-nutrition), var(--accent-nutrition-2));
+  --grad-border: linear-gradient(135deg, color-mix(in srgb, var(--accent-nutrition) 50%, var(--card-border)), color-mix(in srgb, var(--accent-nutrition-2) 30%, var(--card-border)));
+  --grad-border-hero: linear-gradient(135deg, color-mix(in srgb, var(--accent-nutrition) 62%, var(--card-border)), color-mix(in srgb, var(--accent-nutrition-2) 38%, var(--card-border)));
+  --grad-border-strong: linear-gradient(135deg, color-mix(in srgb, var(--accent-nutrition) 75%, var(--card-border)), color-mix(in srgb, var(--accent-nutrition-2) 48%, var(--card-border)));
 }
 .navbar button.active[data-view="nutrition"]{ color: var(--accent-nutrition); background:color-mix(in srgb, var(--accent-nutrition) 13%, transparent); }
 
@@ -168,7 +186,8 @@ button{font-family:inherit;}
    (hero, resultats de calcul, formulaires groupes, confirmation) —
    ce n'est plus l'unite structurelle par defaut de l'appli. */
 .card{
-  background:var(--card); border:1px solid color-mix(in srgb, var(--accent) 35%, var(--card-border)); border-radius:var(--radius-card); padding:18px;
+  background: linear-gradient(var(--card), var(--card)) padding-box, var(--grad-border) border-box;
+  border:1px solid transparent; border-radius:var(--radius-card); padding:18px;
   margin-bottom:14px; box-shadow:var(--shadow);
 }
 .info-text{display:none;}
@@ -181,7 +200,10 @@ button{font-family:inherit;}
 /* Bloc "ouvert" : remplace la carte comme structure par defaut d'une
    liste/section (fond tres legerement distinct, jamais de bordure). */
 .section{margin-bottom:6px;}
-.surface{background:var(--card-2); border:1px solid color-mix(in srgb, var(--accent) 35%, var(--card-border)); border-radius:var(--radius-card); padding:16px;}
+.surface{
+  background: linear-gradient(var(--card-2), var(--card-2)) padding-box, var(--grad-border) border-box;
+  border:1px solid transparent; border-radius:var(--radius-card); padding:16px;
+}
 
 /* ---------- HERO (accueil) ---------- */
 /* Seule vue sans .topbar (qui reserve deja env(safe-area-inset-top) partout
@@ -189,6 +211,17 @@ button{font-family:inherit;}
    sur iPhone. */
 #view-home{padding-top:calc(env(safe-area-inset-top) + 10px);}
 .greeting{padding:4px 0 6px;}
+/* Badge de marque (icone + wordmark), remplace l'ancien texte simple
+   "💪 IronNutra" -- s'inspire du logo (carre degrade + wordmark en gras). */
+.brand-badge{display:flex; align-items:center; gap:10px; margin-bottom:4px;}
+.brand-badge .brand-icon{
+  width:32px; height:32px; border-radius:10px; background:var(--grad-vivid); color:var(--accent-contrast);
+  display:flex; align-items:center; justify-content:center; font-size:16px; line-height:1; flex-shrink:0;
+  box-shadow:0 6px 14px -8px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+.brand-badge .brand-word{
+  font-size:15px; font-weight:900; letter-spacing:.03em; text-transform:uppercase; color:var(--text);
+}
 .greeting .hi{font-size:34px; font-weight:900; letter-spacing:-.02em; line-height:1.15;}
 .greeting .sub{color:var(--text-dim); font-size:15.5px; margin-top:5px;}
 /* Cartes hero de l'Accueil -- fond sombre comme Sport/Nutrition (retour de
@@ -200,7 +233,8 @@ button{font-family:inherit;}
    pour se rapprocher de la maquette de reference envoyee par Christophe. */
 .hero{
   position:relative; overflow:hidden; border-radius:28px; padding:24px; margin:18px 0 22px;
-  background:var(--card); border:1.5px solid color-mix(in srgb, var(--accent) 45%, var(--card-border)); box-shadow:var(--shadow);
+  background: linear-gradient(var(--card), var(--card)) padding-box, var(--grad-border-hero) border-box;
+  border:1.5px solid transparent; box-shadow:var(--shadow);
   color:var(--text);
 }
 .hero .eyebrow{font-size:12.5px; text-transform:uppercase; letter-spacing:.09em; font-weight:800; color:var(--accent);}
@@ -218,7 +252,7 @@ button{font-family:inherit;}
 .hero .meta{display:flex; gap:16px; margin-top:12px; font-size:14.5px; font-weight:700; color:var(--text-dim);}
 .hero .meta span{display:flex; align-items:center; gap:5px;}
 .hero .cta{
-  margin-top:20px; background:var(--grad); color:var(--accent-contrast);
+  margin-top:20px; background:var(--grad-vivid); color:var(--accent-contrast);
   border:none; border-radius:18px; padding:16px 26px; font-size:17px; font-weight:900; letter-spacing:-.01em;
   display:inline-flex; align-items:center; gap:9px; cursor:pointer; transition:transform .12s ease;
   box-shadow:0 12px 26px -14px color-mix(in srgb, var(--accent) 60%, transparent);
@@ -229,15 +263,23 @@ button{font-family:inherit;}
 
 /* ---------- QUICKSTATS (bare, pas de boite) ---------- */
 .quickstats{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin:4px 0 8px;}
-.quickstats .qs{background:var(--card-2); border:1px solid color-mix(in srgb, var(--accent) 35%, var(--card-border)); border-radius:14px; padding:10px 5px; text-align:center;}
+.quickstats .qs{
+  background: linear-gradient(var(--card-2), var(--card-2)) padding-box, var(--grad-border) border-box;
+  border:1px solid transparent; border-radius:14px; padding:10px 5px; text-align:center;
+}
 .quickstats .qs .v{font-size:17px; font-weight:900; letter-spacing:-.02em; font-variant-numeric:tabular-nums;}
 .quickstats .qs .l{font-size:9px; color:var(--text-faint); margin-top:3px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; line-height:1.2;}
-.quickstats .qs.accent{background:color-mix(in srgb, var(--accent) 12%, var(--card-2)); border-color:color-mix(in srgb, var(--accent) 55%, var(--card-border));}
+.quickstats .qs.accent{
+  background: linear-gradient(color-mix(in srgb, var(--accent) 12%, var(--card-2)), color-mix(in srgb, var(--accent) 12%, var(--card-2))) padding-box, var(--grad-border-strong) border-box;
+}
 .quickstats .qs.accent .v{color:var(--accent);}
 /* Carte "Activite recente" (ecran Sport uniquement) -- distincte de
    .timeline/.timeline-item qui reste utilisee telle quelle par l'Historique
    complet (avec ses groupes par date), pour ne rien changer la-bas. */
-.activity-card{background:var(--card); border:1px solid color-mix(in srgb, var(--accent) 35%, var(--card-border)); border-radius:18px; padding:4px; overflow:hidden;}
+.activity-card{
+  background: linear-gradient(var(--card), var(--card)) padding-box, var(--grad-border) border-box;
+  border:1px solid transparent; border-radius:18px; padding:4px; overflow:hidden;
+}
 .activity-row{display:flex; align-items:center; gap:12px; padding:11px 10px; cursor:pointer;}
 .activity-row + .activity-row{border-top:1px solid var(--card-border);}
 .activity-row .a-icon{width:38px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
@@ -250,11 +292,13 @@ button{font-family:inherit;}
 .tiles-row{display:flex; gap:12px; overflow-x:auto; padding:2px 2px 10px; margin:0 -2px; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch;}
 .tiles-row::-webkit-scrollbar{display:none;}
 .tile{
-  scroll-snap-align:start; flex:0 0 auto; width:168px; background:var(--card-2); border:1px solid color-mix(in srgb, var(--accent) 35%, var(--card-border)); border-radius:20px; padding:16px;
+  scroll-snap-align:start; flex:0 0 auto; width:168px;
+  background: linear-gradient(var(--card-2), var(--card-2)) padding-box, var(--grad-border) border-box;
+  border:1px solid transparent; border-radius:20px; padding:16px;
   display:flex; flex-direction:column; gap:10px; cursor:pointer; transition:transform .12s ease, background .15s ease;
   box-shadow:var(--shadow-sm);
 }
-.tile:active{transform:scale(.97); background:var(--input-bg);}
+.tile:active{transform:scale(.97); background: linear-gradient(var(--input-bg), var(--input-bg)) padding-box, var(--grad-border) border-box;}
 .tile .tile-icon, .list-row .tile-icon{width:36px;height:36px;border-radius:11px; background:var(--grad); color:var(--accent-contrast); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
 .tile .tile-icon svg, .list-row .tile-icon svg{width:19px;height:19px;}
 .tile .tile-name{font-size:15.5px; font-weight:800; letter-spacing:-.01em; line-height:1.2;}
@@ -438,8 +482,8 @@ button{font-family:inherit;}
    du contexte (violet), meme formule que les tuiles quickstats .qs.accent,
    plutot que le gris neutre du .pill generique utilise ailleurs (filtres). */
 #nutri-hydratation .pill, .meal-card .pill{
-  background:color-mix(in srgb, var(--accent) 14%, var(--card-2));
-  border-color:color-mix(in srgb, var(--accent) 32%, var(--card-border));
+  background: linear-gradient(color-mix(in srgb, var(--accent) 14%, var(--card-2)), color-mix(in srgb, var(--accent) 14%, var(--card-2))) padding-box, var(--grad-border) border-box;
+  border-color:transparent;
   color:var(--accent);
 }
 #nutri-hydratation .pill svg, .meal-card .pill svg{color:var(--accent);}
@@ -541,10 +585,15 @@ button{font-family:inherit;}
 
 .empty{color:var(--text-faint); font-size:14.5px; text-align:center; padding:30px 10px;}
 .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
-.stat-tile{background:var(--card-2); border:1px solid color-mix(in srgb, var(--accent) 35%, var(--card-border)); border-radius:16px; padding:13px 15px;}
+.stat-tile{
+  background: linear-gradient(var(--card-2), var(--card-2)) padding-box, var(--grad-border) border-box;
+  border:1px solid transparent; border-radius:16px; padding:13px 15px;
+}
 .stat-tile .v{font-size:22px; font-weight:800; letter-spacing:-.02em;}
 .stat-tile .l{font-size:12px; color:var(--text-dim); margin-top:3px; line-height:1.35;}
-.stat-tile.accent{background:color-mix(in srgb, var(--accent) 12%, var(--card-2)); border-color:color-mix(in srgb, var(--accent) 55%, var(--card-border));}
+.stat-tile.accent{
+  background: linear-gradient(color-mix(in srgb, var(--accent) 12%, var(--card-2)), color-mix(in srgb, var(--accent) 12%, var(--card-2))) padding-box, var(--grad-border-strong) border-box;
+}
 .stat-tile.accent .v{color:var(--accent);}
 .chart-wrap{overflow-x:auto;}
 .badge-cardio{background:var(--accent-2); color:#06231b;}
@@ -573,7 +622,11 @@ button{font-family:inherit;}
   background:var(--card-2); border:1px solid var(--card-border); border-radius:10px; color:var(--text-faint); font-size:12px;
   padding:8px 10px; line-height:1.4; width:auto; box-sizing:border-box; -webkit-appearance:none; appearance:none;
 }
-.week-strip{display:flex; justify-content:space-between; margin:12px 0 18px; background:var(--card-2); border:1px solid color-mix(in srgb, var(--accent) 35%, var(--card-border)); border-radius:16px; padding:6px;}
+.week-strip{
+  display:flex; justify-content:space-between; margin:12px 0 18px;
+  background: linear-gradient(var(--card-2), var(--card-2)) padding-box, var(--grad-border) border-box;
+  border:1px solid transparent; border-radius:16px; padding:6px;
+}
 .week-strip .wd{background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:5px; padding:8px 0; flex:1; color:var(--text-faint); font-size:12px; font-weight:800; border-radius:12px; cursor:pointer; transition:background .15s ease, color .15s ease;}
 .week-strip .wd.today{color:var(--text-dim);}
 .week-strip .wd.active{background:var(--grad); color:var(--accent-contrast);}
@@ -582,7 +635,10 @@ button{font-family:inherit;}
 .week-strip .wd.active .wd-dot.has{opacity:1;}
 
 /* ---------- NUTRITION : carte calories (barre) + macros parametrables ---------- */
-.cal-card{background:var(--card); border:1px solid color-mix(in srgb, var(--accent) 35%, var(--card-border)); border-radius:var(--radius-card); padding:18px;}
+.cal-card{
+  background: linear-gradient(var(--card), var(--card)) padding-box, var(--grad-border) border-box;
+  border:1px solid transparent; border-radius:var(--radius-card); padding:18px;
+}
 .cal-card .cc-head{display:flex; justify-content:space-between; align-items:baseline; font-size:12px; color:var(--text-faint); font-weight:800; text-transform:uppercase; letter-spacing:.05em;}
 .cal-card .cc-main-line{display:flex; justify-content:space-between; align-items:baseline; margin-top:9px; gap:10px; flex-wrap:wrap;}
 .cal-card .cc-main{font-size:28px; font-weight:900; letter-spacing:-.02em;}
@@ -658,7 +714,7 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
   <!-- ===== HOME ===== -->
   <div class="view active" id="view-home">
     <div class="greeting">
-      <div class="sub" id="home-title" style="text-transform:uppercase;letter-spacing:.09em;font-weight:800;font-size:12px;color:var(--text-faint);">💪 IronNutra</div>
+      <div class="brand-badge" id="home-title"><span class="brand-icon">💪</span><span class="brand-word">IronNutra</span></div>
       <div class="hi">Bonjour</div>
       <div class="sub" id="home-date"></div>
       <div class="sub" style="margin-top:2px;">Prêt pour ta prochaine séance ?</div>
@@ -1218,7 +1274,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260922052517';
+const APP_BUILD_VERSION = '20260922053643';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
