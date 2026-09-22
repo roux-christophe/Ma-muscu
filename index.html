@@ -670,12 +670,19 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
     <div class="quickstats" id="sport-quickstats"></div>
     <div class="section-title">Programmes</div>
     <div class="tiles-row" id="sport-programs"></div>
-    <div class="list-row" style="cursor:pointer;" onclick="nav.tab('settings')">
+    <div class="list-row" style="cursor:pointer;" onclick="nav.push('view-programmes'); app.renderProgrammesVisibilite();">
       <div class="meta"><div class="t1">Choix de programme</div><div class="t2">Sélectionner les programmes affichés ici</div></div>
       <div class="chev">›</div>
     </div>
     <div class="section-title">Activité récente</div>
     <div id="sport-recent"></div>
+  </div>
+
+  <!-- ===== PROGRAMMES (liste complete + visibilite) ===== -->
+  <div class="view" id="view-programmes">
+    <div class="topbar"><button class="back" onclick="nav.back()">‹</button><h1>Programmes</h1></div>
+    <p class="small-note" style="margin:0 0 10px;">Coche les programmes que tu veux voir sur l'accueil et l'écran Sport — les autres restent masqués (mais ton historique et tes records restent consultables normalement, seule la tuile disparaît).</p>
+    <div id="set-programmes-liste"></div>
   </div>
 
   <!-- ===== LISTE DES SEANCES D'UN PROGRAMME ===== -->
@@ -1064,9 +1071,9 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
   <div class="view" id="view-settings">
     <div class="topbar" style="margin:0 -16px 4px;"><h1>Réglages</h1></div>
     <div class="section-title">Mes programmes</div>
-    <div class="card">
-      <p class="small-note" style="margin-bottom:10px;">Coche les programmes que tu veux voir sur l'accueil et l'écran Sport — les autres restent masqués (mais ton historique et tes records restent consultables normalement, seule la tuile disparaît).</p>
-      <div id="set-programmes-liste"></div>
+    <div class="list-row" style="cursor:pointer;" onclick="nav.push('view-programmes'); app.renderProgrammesVisibilite();">
+      <div class="meta"><div class="t1">Programmes</div><div class="t2">Voir tous les programmes, choisir ceux affichés</div></div>
+      <div class="chev">›</div>
     </div>
     <div class="section-title">Mes maxs</div>
     <div class="card">
@@ -1189,7 +1196,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260921211440';
+const APP_BUILD_VERSION = '20260922045214';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1218,8 +1225,18 @@ const SVG_BARS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 const SVG_CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>';
 const SVG_RINGS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>';
 const SVG_CLIPBOARD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a2 2 0 012-2h2a2 2 0 012 2v1"/><path d="M9 10.5h6M9 14h6M9 17.5h4"/></svg>';
+// Icones des boutons d'hydratation (verre/canette/bouteille) et des actions
+// de repas (copier/enregistrer comme repas type) -- demande de Christophe de
+// remplacer les boutons "pill" texte seul / .btn-ghost + emoji par des
+// boutons avec une vraie icone SVG, comme le reste de l'appli.
+const SVG_GLASS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l-1.4 16.2a2 2 0 01-2 1.8H9.4a2 2 0 01-2-1.8L6 3z"/><path d="M6.8 8h10.4"/></svg>';
+const SVG_CAN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6.5" y="4" width="11" height="17" rx="3"/><path d="M9.5 4V2.6h5V4"/></svg>';
+const SVG_BOTTLE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4v3.2l2.2 2.4V20a2 2 0 01-2 2h-4.4a2 2 0 01-2-2V7.6L10 5.2V2z"/><path d="M8.8 11.5h6.4"/></svg>';
+const SVG_UNDO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-2"/></svg>';
+const SVG_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M5.5 15H5a2 2 0 01-2-2V5a2 2 0 012-2h8a2 2 0 012 2v.5"/></svg>';
+const SVG_BOOKMARK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h11a1 1 0 011 1V21l-6.5-3.8L5.5 21V4.5a1 1 0 011-1z"/></svg>';
 
-const NAV_SPORT_FAMILY = ['view-sport','view-seance-list','view-log','view-exo-history','view-history','view-stats'];
+const NAV_SPORT_FAMILY = ['view-sport','view-programmes','view-seance-list','view-log','view-exo-history','view-history','view-stats'];
 const NAV_NUTRITION_FAMILY = ['view-nutrition','view-recettes','view-aide-repas','view-recette-detail','view-liste-courses','view-nutri-corps','view-nutri-stats','view-nutri-profil','view-nutri-add','view-copier-repas'];
 function seanceIconSVG(isCardio){ return isCardio ? SVG_HEART : SVG_DUMBBELL; }
 
@@ -2366,7 +2383,7 @@ const app = {
       items = [
         {onclick:"nav.toHome()", active:false, label:'Accueil', icon:SVG_HOME},
         {onclick:"nav.toSport()", active: viewId==='view-sport', label:'Séance', icon:SVG_DUMBBELL},
-        {onclick:"nav.tab('settings')", active:false, label:'Programmes', icon:SVG_CLIPBOARD},
+        {onclick:"nav.push('view-programmes'); app.renderProgrammesVisibilite();", active: viewId==='view-programmes', label:'Programmes', icon:SVG_CLIPBOARD},
         {onclick:"nav.push('view-history'); app.renderHistory();", active: viewId==='view-history', label:'Historique', icon:SVG_CLOCK},
         {onclick:"nav.push('view-stats'); app.renderStats();", active: viewId==='view-stats', label:'Stats', icon:SVG_BARS},
       ];
@@ -3732,10 +3749,10 @@ const app = {
       <div class="card">
         ${objectifBarHTML('Eau', totalMl/1000, objMl/1000, 'L', false)}
         <div class="pill-row" style="margin-top:8px;">
-          <button type="button" class="pill" onclick="app.addEau(150)">+150ml (verre)</button>
-          <button type="button" class="pill" onclick="app.addEau(330)">+330ml (canette)</button>
-          <button type="button" class="pill" onclick="app.addEau(500)">+500ml</button>
-          <button type="button" class="pill" onclick="app.undoLastEau()">↩︎ Annuler la dernière</button>
+          <button type="button" class="pill" onclick="app.addEau(150)">${SVG_GLASS}+150ml (verre)</button>
+          <button type="button" class="pill" onclick="app.addEau(330)">${SVG_CAN}+330ml (canette)</button>
+          <button type="button" class="pill" onclick="app.addEau(500)">${SVG_BOTTLE}+500ml</button>
+          <button type="button" class="pill" onclick="app.undoLastEau()">${SVG_UNDO}Annuler la dernière</button>
         </div>
         <div class="field" style="margin-top:12px;"><label>Objectif quotidien (ml)</label>
           <input type="number" inputmode="numeric" value="${objMl}" onchange="app.setEauObjectif(this.value)"></div>
@@ -3945,10 +3962,10 @@ const app = {
           <span>${escapeHtml(m.label)}</span><span class="prog-badge">${Math.round(totalCal)} kcal</span>
         </div>
         ${rows}
-        <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:${entries.length?'10px':'0'};">
-          <button class="btn btn-ghost" style="width:auto;padding:9px 2px;" onclick="app.openAddAliment('${m.id}')">＋ Ajouter un aliment</button>
-          <button class="btn btn-ghost" style="width:auto;padding:9px 2px;" onclick="app.openCopierRepas('${m.id}')">📋 Copier un repas</button>
-          ${entries.length?`<button class="btn btn-ghost" style="width:auto;padding:9px 2px;" onclick="app.promptSaveRepasType('${m.id}')">💾 Enregistrer comme repas type</button>`:''}
+        <div class="pill-row" style="margin-top:${entries.length?'10px':'0'};">
+          <button type="button" class="pill" onclick="app.openAddAliment('${m.id}')">${SVG_PLUS}Ajouter un aliment</button>
+          <button type="button" class="pill" onclick="app.openCopierRepas('${m.id}')">${SVG_COPY}Copier un repas</button>
+          ${entries.length?`<button type="button" class="pill" onclick="app.promptSaveRepasType('${m.id}')">${SVG_BOOKMARK}Enregistrer comme repas type</button>`:''}
         </div>
       </div>`;
     }).join('');
@@ -4967,7 +4984,6 @@ const app = {
     document.getElementById('set-date-debut').value = this.db.settings.forceCardioDateDebut || '';
     this.updateSemaineInfo();
     this.renderMaxs();
-    this.renderProgrammesVisibilite();
   },
   saveSettings(){
     this.db.settings.forceCardioDateDebut = document.getElementById('set-date-debut').value || null;
