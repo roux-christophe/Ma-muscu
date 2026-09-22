@@ -1289,7 +1289,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260922102937';
+const APP_BUILD_VERSION = '20260922103449';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1842,31 +1842,37 @@ function foodDbByName(nom){
 // "produits laitiers frais", donc "produits laitiers" doit etre teste avant
 // la regle generique "lait"). Voir le script d'audit qui a valide cette
 // fonction sur les 130+ categories reelles de final_food_db.json (22/09).
+// ATTENTION : noms EXACTS tels que presents sur le depot GitHub de
+// Christophe (verifie le 22/09) -- SANS le prefixe "cat-" que portaient les
+// fichiers que je lui avais renommes/envoyes. Il a uploade le zip original
+// (01-viande.jpg, pas cat-01-viande.jpg), meme schema que pour Dead
+// bug/Bird-dog. Ne pas "corriger" vers un prefixe cat- sans avoir confirme
+// un renommage cote GitHub, sinon meme regression.
 const FOOD_CATEGORY_IMAGES = {
-  '01-viande': 'cat-01-viande.jpg',
-  '02-charcuterie': 'cat-02-charcuterie.jpg',
-  '03-poisson-fruits-de-mer': 'cat-03-poisson-fruits-de-mer.jpg',
-  '04-oeufs': 'cat-04-oeufs.jpg',
-  '05-produits-laitiers-frais': 'cat-05-produits-laitiers-frais.jpg',
-  '06-fromages': 'cat-06-fromages.jpg',
-  '07-lait': 'cat-07-lait.jpg',
-  '08-matieres-grasses': 'cat-08-matieres-grasses.jpg',
-  '09-legumes': 'cat-09-legumes.jpg',
-  '10-pommes-de-terre': 'cat-10-pommes-de-terre.jpg',
-  '11-legumineuses': 'cat-11-legumineuses.jpg',
-  '12-fruits-frais': 'cat-12-fruits-frais.jpg',
-  '13-fruits-a-coque': 'cat-13-fruits-a-coque.jpg',
-  '14-pates-riz-cereales': 'cat-14-pates-riz-cereales.jpg',
-  '15-pain-viennoiseries': 'cat-15-pain-viennoiseries.jpg',
-  '16-cereales-petit-dejeuner': 'cat-16-cereales-petit-dejeuner.jpg',
-  '17-biscuits-gateaux': 'cat-17-biscuits-gateaux.jpg',
-  '18-chocolat-confiseries': 'cat-18-chocolat-confiseries.jpg',
-  '19-desserts-glaces': 'cat-19-desserts-glaces.jpg',
-  '20-plats-prepares': 'cat-20-plats-prepares.jpg',
-  '21-sauces-condiments': 'cat-21-sauces-condiments.jpg',
-  '22-boissons-sans-alcool': 'cat-22-boissons-sans-alcool.jpg',
-  '23-boissons-alcoolisees': 'cat-23-boissons-alcoolisees.jpg',
-  '24-fast-food': 'cat-24-fast-food.jpg',
+  '01-viande': '01-viande.jpg',
+  '02-charcuterie': '02-charcuterie.jpg',
+  '03-poisson-fruits-de-mer': '03-poisson-fruits-de-mer.jpg',
+  '04-oeufs': '04-oeufs.jpg',
+  '05-produits-laitiers-frais': '05-produits-laitiers-frais.jpg',
+  '06-fromages': '06-fromages.jpg',
+  '07-lait': '07-lait.jpg',
+  '08-matieres-grasses': '08-matieres-grasses.jpg',
+  '09-legumes': '09-legumes.jpg',
+  '10-pommes-de-terre': '10-pommes-de-terre.jpg',
+  '11-legumineuses': '11-legumineuses.jpg',
+  '12-fruits-frais': '12-fruits-frais.jpg',
+  '13-fruits-a-coque': '13-fruits-a-coque.jpg',
+  '14-pates-riz-cereales': '14-pates-riz-cereales.jpg',
+  '15-pain-viennoiseries': '15-pain-viennoiseries.jpg',
+  '16-cereales-petit-dejeuner': '16-cereales-petit-dejeuner.jpg',
+  '17-biscuits-gateaux': '17-biscuits-gateaux.jpg',
+  '18-chocolat-confiseries': '18-chocolat-confiseries.jpg',
+  '19-desserts-glaces': '19-desserts-glaces.jpg',
+  '20-plats-prepares': '20-plats-prepares.jpg',
+  '21-sauces-condiments': '21-sauces-condiments.jpg',
+  '22-boissons-sans-alcool': '22-boissons-sans-alcool.jpg',
+  '23-boissons-alcoolisees': '23-boissons-alcoolisees.jpg',
+  '24-fast-food': '24-fast-food.jpg',
 };
 function foodCategoryBucket(categorie){
   if(!categorie) return null;
