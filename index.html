@@ -362,6 +362,13 @@ button{font-family:inherit;}
    remplace l'ancienne liste plate .list-row -- maquette de Christophe du
    22/09, validee via demo interactive avant integration ici. */
 .ing-count-chip{display:inline-flex;align-items:center;gap:6px;background:color-mix(in srgb, var(--accent) 18%, var(--card));color:var(--accent);border-radius:999px;padding:7px 14px;font-weight:800;font-size:13px;}
+/* Les pastilles de categorie du Frigo defilent horizontalement sur UNE seule
+   ligne (comme dans la demo validee), plutot que de passer a la ligne comme
+   le .pill-row generique utilise ailleurs (filtres, etc.) -- demande
+   explicite de Christophe apres capture d'ecran montrant le retour a la
+   ligne sur 3 rangees. */
+#recette-ing-pills, #aide-repas-pills{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;}
+#recette-ing-pills .pill, #aide-repas-pills .pill{flex:none;}
 .ing-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
 .ing-card{position:relative;border-radius:16px;overflow:hidden;background:var(--card);border:1px solid var(--card-border);cursor:pointer;}
 .ing-card.checked{outline:2.5px solid var(--accent);}
@@ -373,6 +380,23 @@ button{font-family:inherit;}
 .ing-card.checked .check{background:var(--grad);border-color:transparent;}
 .ing-card .check svg{width:13px;height:13px;opacity:0;color:#fff;}
 .ing-card.checked .check svg{opacity:1;}
+/* Cartes de recette de l'ecran "Repas" (Aide au repas) -- meme esprit visuel
+   que .ing-card mais avec titre + meta (les recettes n'ont pas de photo
+   dediee : la vignette reutilise la photo/icone de l'ingredient vedette).
+   Demande explicite de Christophe (22/09) d'etendre le traitement carte du
+   Frigo a cet ecran. */
+.recette-card{position:relative;border-radius:16px;overflow:hidden;background:var(--card);border:1px solid var(--card-border);cursor:pointer;}
+.recette-card.selected{outline:2.5px solid var(--accent);}
+.recette-card img{width:100%;height:96px;object-fit:cover;display:block;background:var(--card-2);}
+.recette-card .ph{width:100%;height:96px;background:var(--card-2);display:flex;align-items:center;justify-content:center;color:var(--text-dim);}
+.recette-card .ph svg{width:26px;height:26px;}
+.recette-card .body{padding:9px 10px 10px;}
+.recette-card .t1{font-size:13px;font-weight:700;line-height:1.25;color:var(--text);}
+.recette-card .t2{font-size:11.5px;color:var(--text-dim);margin-top:3px;line-height:1.3;}
+.recette-card .sel-check{position:absolute;top:7px;right:7px;width:26px;height:26px;border-radius:50%;background:rgba(7,8,10,.55);border:1.5px solid rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.recette-card.selected .sel-check{background:var(--grad);border-color:transparent;}
+.recette-card .sel-check svg{width:14px;height:14px;opacity:0;color:#fff;}
+.recette-card.selected .sel-check svg{opacity:1;}
 .exo-header .exo-info{flex:1; min-width:0;}
 .exo-header .exo-name{font-size:17px; font-weight:800; letter-spacing:-.01em; line-height:1.25;}
 .exo-header .exo-muscle{font-size:12.5px; color:var(--text-dim); margin-top:2px;}
@@ -926,20 +950,12 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
       <label>Ingrédient principal souhaité</label>
       <input type="text" id="aide-repas-search" placeholder="Ex : poulet, saumon, lentilles…" oninput="app.renderAideRepasResultats()">
     </div>
+    <div class="pill-row" id="aide-repas-pills" style="margin:10px 0 10px;"></div>
+    <div class="ing-count-chip" id="aide-repas-count-chip">0 recette</div>
 
     <div class="section-title">Filtres</div>
     <div class="surface">
       <div class="row">
-        <div class="field">
-          <label>Repas</label>
-          <select id="aide-repas-filtre-repas" onchange="app.renderAideRepasResultats()">
-            <option value="">Tous</option>
-            <option value="petit-dej">Petit-déjeuner</option>
-            <option value="dejeuner">Déjeuner</option>
-            <option value="diner">Dîner</option>
-            <option value="collation">Collation</option>
-          </select>
-        </div>
         <div class="field">
           <label>Régime</label>
           <select id="aide-repas-filtre-regime" onchange="app.renderAideRepasResultats()">
@@ -948,10 +964,10 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
             <option value="sans-gluten">Sans gluten</option>
           </select>
         </div>
-      </div>
-      <div class="field">
-        <label>Cuisine</label>
-        <select id="aide-repas-filtre-cuisine" onchange="app.renderAideRepasResultats()"><option value="">Toutes</option></select>
+        <div class="field">
+          <label>Cuisine</label>
+          <select id="aide-repas-filtre-cuisine" onchange="app.renderAideRepasResultats()"><option value="">Toutes</option></select>
+        </div>
       </div>
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:4px;">
         <input type="checkbox" id="aide-repas-filtre-proteine" onchange="app.renderAideRepasResultats()" style="width:18px;height:18px;flex-shrink:0;">
@@ -960,8 +976,8 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
     </div>
 
     <div class="section-title">Recettes correspondantes</div>
-    <p class="small-note" style="margin-top:-6px;">Coche une ou plusieurs recettes pour construire ta liste de courses ; touche le nom pour voir la recette en détail.</p>
-    <div id="aide-repas-resultats" style="padding-bottom:70px;"></div>
+    <p class="small-note" style="margin-top:-6px;">Coche une ou plusieurs recettes pour construire ta liste de courses ; touche la carte pour voir la recette en détail.</p>
+    <div id="aide-repas-resultats" class="ing-grid" style="padding-bottom:70px;"></div>
     <div class="bottom-bar" id="aide-repas-selection-bar" style="display:none;"><div class="app"><div id="aide-repas-selection-bar-inner"></div></div></div>
   </div>
 
@@ -1306,7 +1322,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260923051455';
+const APP_BUILD_VERSION = '20260923053433';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -3950,7 +3966,7 @@ const app = {
     const sel = document.getElementById('aide-repas-filtre-cuisine');
     const cuisines = Array.from(new Set(RECIPES.map(r=>r.cuisine).filter(Boolean))).sort();
     sel.innerHTML = '<option value="">Toutes</option>' + cuisines.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(cuisineLabel(c))}</option>`).join('');
-    document.getElementById('aide-repas-filtre-repas').value = '';
+    this._aideRepasFiltreRepas = '';
     document.getElementById('aide-repas-filtre-regime').value = '';
     document.getElementById('aide-repas-filtre-proteine').checked = false;
     // Selection de recettes pour construire une liste de courses : vecue
@@ -3963,14 +3979,36 @@ const app = {
     this.renderRecettesACuisiner();
     this.renderAideRepasResultats();
   },
+  setAideRepasFiltreRepas(v){
+    this._aideRepasFiltreRepas = v;
+    this.renderAideRepasResultats();
+  },
+  // Ecran "Repas" (Aide au repas) aligne sur le meme traitement visuel que
+  // le Frigo (cartes photo + onglets qui defilent + compteur en direct),
+  // demande explicite de Christophe le 22/09. Les recettes n'ont pas de
+  // photo dediee : la vignette reutilise ingredientMediaHTML() sur
+  // l'ingredient vedette (photo specifique si deja generee, sinon icone de
+  // categorie, sinon pomme SVG) -- meme cascade de repli que le Frigo.
   renderAideRepasResultats(){
     if(!this._aideRepasSelection) this._aideRepasSelection = new Set();
+    if(this._aideRepasFiltreRepas===undefined) this._aideRepasFiltreRepas = '';
     const q = normalize(document.getElementById('aide-repas-search').value);
-    const repasFiltre = document.getElementById('aide-repas-filtre-repas').value;
+    const repasFiltre = this._aideRepasFiltreRepas;
     const regimeFiltre = document.getElementById('aide-repas-filtre-regime').value;
     const cuisineFiltre = document.getElementById('aide-repas-filtre-cuisine').value;
     const proteineFiltre = document.getElementById('aide-repas-filtre-proteine').checked;
     const tokens = q.split(' ').filter(Boolean);
+
+    const pillsWrap = document.getElementById('aide-repas-pills');
+    if(pillsWrap){
+      const REPAS_TYPES = [['petit-dej','Petit-déj.'],['dejeuner','Déjeuner'],['diner','Dîner'],['collation','Collation']];
+      const all = [['','Tous']].concat(REPAS_TYPES);
+      pillsWrap.innerHTML = all.map(([v,label])=>{
+        const active = v===repasFiltre ? ' active' : '';
+        return `<button type="button" class="pill${active}" onclick="app.setAideRepasFiltreRepas('${v}')">${escapeHtml(label)}</button>`;
+      }).join('');
+    }
+
     const results = RECIPES.filter(r=>{
       if(repasFiltre && !(r.repas||[]).includes(repasFiltre)) return false;
       if(regimeFiltre && !(r.regimes||[]).includes(regimeFiltre)) return false;
@@ -3982,24 +4020,28 @@ const app = {
       }
       return true;
     }).sort((a,b)=>a.nom.localeCompare(b.nom,'fr'));
+
+    const chip = document.getElementById('aide-repas-count-chip');
+    if(chip) chip.textContent = results.length + (results.length>1 ? ' recettes' : ' recette');
+
     const wrap = document.getElementById('aide-repas-resultats');
     if(!results.length){
-      wrap.innerHTML = `<p class="empty">${tokens.length ? "Aucune recette dont l'ingrédient principal correspond à « "+escapeHtml(document.getElementById('aide-repas-search').value)+" » avec ces filtres." : "Aucune recette avec ces filtres."}</p>`;
+      wrap.innerHTML = `<p class="empty" style="grid-column:1/-1;">${tokens.length ? "Aucune recette dont l'ingrédient principal correspond à « "+escapeHtml(document.getElementById('aide-repas-search').value)+" » avec ces filtres." : "Aucune recette avec ces filtres."}</p>`;
     } else {
       wrap.innerHTML = results.map(r=>{
         const tags = [cuisineLabel(r.cuisine), ...(r.regimes||[]).map(g=>REGIME_LABELS[g]||g)].filter(Boolean);
         const checked = this._aideRepasSelection.has(r.id);
         const protPortion = Math.round(recetteProtPortion(r));
-        // La case a cocher SELECTIONNE la recette pour la liste de courses ;
-        // toucher le reste de la ligne OUVRE la recette (mode "courses" :
-        // detail + etapes, sans rapport avec la selection en cours).
-        return `<div class="card" style="margin-bottom:10px;display:flex;align-items:stretch;">
-          <label style="display:flex;align-items:center;padding:0 4px 0 12px;cursor:pointer;" title="Sélectionner pour la liste de courses">
-            <input type="checkbox" value="${escapeHtml(r.id)}" ${checked?'checked':''} onchange="app.toggleAideRepasSelection(this.value, this.checked)" style="width:19px;height:19px;flex-shrink:0;">
-          </label>
-          <div class="list-row" style="cursor:pointer;flex:1;" onclick="app.openRecetteDetail('${r.id}', 'courses')">
-            <div class="meta"><div class="t1">${escapeHtml(r.nom)}</div><div class="t2">${escapeHtml(r.ingredientVedette||'')} · ${tags.map(escapeHtml).join(' · ')}${r.tempsPreparation!=null?' · '+(r.tempsPreparation+(r.tempsCuisson||0))+' min':''} · ${protPortion} g prot./portion</div></div>
-            <div class="chev">›</div>
+        const media = r.ingredientVedette ? ingredientMediaHTML(r.ingredientVedette) : `<div class="ph">${SVG_APPLE}</div>`;
+        // Le cercle "check" SELECTIONNE la recette pour la liste de courses
+        // (stopPropagation pour ne pas aussi ouvrir le detail) ; toucher le
+        // reste de la carte OUVRE la recette (mode "courses").
+        return `<div class="recette-card${checked?' selected':''}" data-id="${escapeHtml(r.id)}" onclick="app.openRecetteDetail(this.dataset.id, 'courses')">
+          ${media}
+          <div class="sel-check" onclick="event.stopPropagation(); app.toggleAideRepasSelection(this.parentElement.dataset.id, !this.parentElement.classList.contains('selected'));">${SVG_CHECK}</div>
+          <div class="body">
+            <div class="t1">${escapeHtml(r.nom)}</div>
+            <div class="t2">${tags.map(escapeHtml).join(' · ')}${r.tempsPreparation!=null?' · '+(r.tempsPreparation+(r.tempsCuisson||0))+' min':''} · ${protPortion} g prot.</div>
           </div>
         </div>`;
       }).join('');
@@ -4009,7 +4051,9 @@ const app = {
   toggleAideRepasSelection(id, checked){
     if(!this._aideRepasSelection) this._aideRepasSelection = new Set();
     if(checked) this._aideRepasSelection.add(id); else this._aideRepasSelection.delete(id);
-    this.renderAideRepasSelectionBar();
+    // Re-rendu complet (pas juste la barre de selection) : le contour violet
+    // de la carte cochee doit se mettre a jour tout de suite.
+    this.renderAideRepasResultats();
   },
   renderAideRepasSelectionBar(){
     const bar = document.getElementById('aide-repas-selection-bar');
