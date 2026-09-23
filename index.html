@@ -358,6 +358,21 @@ button{font-family:inherit;}
 .cat-ic{width:48px;height:48px;border-radius:13px;background:var(--card-2);color:var(--text-dim);display:flex;align-items:center;justify-content:center;flex:none;overflow:hidden;margin-right:2px;}
 .cat-ic svg{width:22px;height:22px;}
 .cat-ic img{width:100%;height:100%;object-fit:cover;display:block;}
+/* Grille de cartes-ingredients de l'ecran Frigo (photo + case a cocher),
+   remplace l'ancienne liste plate .list-row -- maquette de Christophe du
+   22/09, validee via demo interactive avant integration ici. */
+.ing-count-chip{display:inline-flex;align-items:center;gap:6px;background:color-mix(in srgb, var(--accent) 18%, var(--card));color:var(--accent);border-radius:999px;padding:7px 14px;font-weight:800;font-size:13px;}
+.ing-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+.ing-card{position:relative;border-radius:16px;overflow:hidden;background:var(--card);border:1px solid var(--card-border);cursor:pointer;}
+.ing-card.checked{outline:2.5px solid var(--accent);}
+.ing-card img{width:100%;height:96px;object-fit:cover;display:block;background:var(--card-2);}
+.ing-card .ph{width:100%;height:96px;background:var(--card-2);display:flex;align-items:center;justify-content:center;color:var(--text-dim);}
+.ing-card .ph svg{width:26px;height:26px;}
+.ing-card .label{padding:8px 9px 9px;font-size:13px;font-weight:700;line-height:1.25;color:var(--text);}
+.ing-card .check{position:absolute;top:7px;right:7px;width:24px;height:24px;border-radius:50%;background:rgba(7,8,10,.55);border:1.5px solid rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;pointer-events:none;}
+.ing-card.checked .check{background:var(--grad);border-color:transparent;}
+.ing-card .check svg{width:13px;height:13px;opacity:0;color:#fff;}
+.ing-card.checked .check svg{opacity:1;}
 .exo-header .exo-info{flex:1; min-width:0;}
 .exo-header .exo-name{font-size:17px; font-weight:800; letter-spacing:-.01em; line-height:1.25;}
 .exo-header .exo-muscle{font-size:12.5px; color:var(--text-dim); margin-top:2px;}
@@ -859,8 +874,10 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
       <label>Rechercher un ingrédient à cocher</label>
       <input type="text" id="recette-ing-search" placeholder="Ex : poulet, tomate, riz…" oninput="app.renderRecetteIngredientsListe()">
     </div>
-    <div id="recette-ingredients-liste" class="card" style="max-height:260px;overflow-y:auto;"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 0;">
+    <div class="pill-row" id="recette-ing-pills" style="margin:10px 0 10px;"></div>
+    <div class="ing-count-chip" id="recette-ing-count-chip">0 recette possible</div>
+    <div id="recette-ingredients-liste" class="ing-grid"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 0;">
       <p class="small-note" id="recette-ing-count" style="margin:0;"></p>
       <button type="button" class="link" id="recette-raz-btn" style="white-space:nowrap;" onclick="app.razIngredientsDisponibles()">Tout décocher</button>
     </div>
@@ -1289,7 +1306,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260922110306';
+const APP_BUILD_VERSION = '20260923051455';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1956,6 +1973,271 @@ function foodCategoryIconHTML(nomAliment){
   return file
     ? `<div class="cat-ic"><img src="${file}" alt="" loading="lazy"></div>`
     : `<div class="cat-ic">${SVG_APPLE}</div>`;
+}
+// ---------- Photos individuelles des ingredients de l'ecran Frigo (cf.
+// FOOD_INGREDIENT_IMAGES) ----------
+// 190 ingredients = TOUS ceux reellement utilises par au moins une recette
+// (cf. recetteIngredientsPossibles()), generes par lots via Grok a la
+// demande de Christophe le 22/09 (mockup carte + onglets + compteur en
+// direct) pour remplacer les icones de categorie repetees sur les grandes
+// cartes de l'ecran Frigo -- une icone partagee par 10+ aliments d'une meme
+// categorie (ex: toutes les coupes de boeuf) passait inapercue en petite
+// icone de liste mais sautait aux yeux en grande carte photo.
+// Cette table liste les 190 noms de fichiers CIBLES meme si tous ne sont
+// pas encore uploades sur GitHub (envoi par lots, cf. ingredientMediaHTML
+// plus bas qui gere le repli automatique via onerror) : pas besoin de
+// modifier ce fichier a chaque nouveau lot recu, seulement d'uploader les
+// images manquantes sur GitHub.
+const FOOD_INGREDIENT_IMAGES = {
+  "Abricot sec": "ing-abricot-sec.jpg",
+  "Agneau, haché, cru": "ing-agneau-hache-cru.jpg",
+  "Agneau, épaule, crue": "ing-agneau-epaule-crue.jpg",
+  "Ail, cru": "ing-ail-cru.jpg",
+  "Amande": "ing-amande.jpg",
+  "Amande effilée": "ing-amande-effilee.jpg",
+  "Anchois, filets à l'huile, semi-conserve, égoutté": "ing-anchois-filets-a-lhuile-semi-conserve-egoutte.jpg",
+  "Aneth, frais": "ing-aneth-frais.jpg",
+  "Aubergine, crue": "ing-aubergine-crue.jpg",
+  "Avocat": "ing-avocat.jpg",
+  "Avocat, cru": "ing-avocat-cru.jpg",
+  "Banane": "ing-banane.jpg",
+  "Basilic, frais": "ing-basilic-frais.jpg",
+  "Betterave rouge, cuite": "ing-betterave-rouge-cuite.jpg",
+  "Beurre clarifié (ghee)": "ing-beurre-clarifie-ghee.jpg",
+  "Beurre doux": "ing-beurre-doux.jpg",
+  "Boeuf, steak haché, cuit (aliment moyen)": "ing-boeuf-steak-hache-cuit-aliment-moyen.jpg",
+  "Boeuf, à bourguignon ou pot-au-feu, cru": "ing-boeuf-a-bourguignon-ou-pot-au-feu-cru.jpg",
+  "Boulgour, cru": "ing-boulgour-cru.jpg",
+  "Boulgour, cuit": "ing-boulgour-cuit.jpg",
+  "Brocoli, cru": "ing-brocoli-cru.jpg",
+  "Bœuf, bavette, crue": "ing-boeuf-bavette-crue.jpg",
+  "Bœuf, faux-filet, cru": "ing-boeuf-faux-filet-cru.jpg",
+  "Bœuf, rumsteck, cru": "ing-boeuf-rumsteck-cru.jpg",
+  "Cabillaud, cru": "ing-cabillaud-cru.jpg",
+  "Cacahuète grillée, non salée": "ing-cacahuete-grillee-non-salee.jpg",
+  "Canneberge ou cranberry, séchée, sucrée": "ing-canneberge-ou-cranberry-sechee-sucree.jpg",
+  "Carotte, crue": "ing-carotte-crue.jpg",
+  "Champignon de Paris, cru": "ing-champignon-de-paris-cru.jpg",
+  "Champignon, lentin comestible ou shiitaké, cuit": "ing-champignon-lentin-comestible-ou-shiitake-cuit.jpg",
+  "Champignon, tout type, cru": "ing-champignon-tout-type-cru.jpg",
+  "Cheddar": "ing-cheddar.jpg",
+  "Chorizo": "ing-chorizo.jpg",
+  "Chou rouge, cru": "ing-chou-rouge-cru.jpg",
+  "Chou vert, cru": "ing-chou-vert-cru.jpg",
+  "Ciboule ou Ciboulette, fraîche": "ing-ciboule-ou-ciboulette-fraiche.jpg",
+  "Citron": "ing-citron.jpg",
+  "Citron vert": "ing-citron-vert.jpg",
+  "Clou de girofle": "ing-clou-de-girofle.jpg",
+  "Comté": "ing-comte.jpg",
+  "Comté râpé": "ing-comte-rape.jpg",
+  "Concombre, cru": "ing-concombre-cru.jpg",
+  "Coquille Saint-Jacques, noix, crue": "ing-coquille-saint-jacques-noix-crue.jpg",
+  "Coquillettes, crues": "ing-coquillettes-crues.jpg",
+  "Coriandre, fraiche": "ing-coriandre-fraiche.jpg",
+  "Courge butternut, crue": "ing-courge-butternut-crue.jpg",
+  "Courgette, crue": "ing-courgette-crue.jpg",
+  "Couscous, cru": "ing-couscous-cru.jpg",
+  "Crevette rose, crue": "ing-crevette-rose-crue.jpg",
+  "Crevette, crue": "ing-crevette-crue.jpg",
+  "Câpres au vinaigre": "ing-capres-au-vinaigre.jpg",
+  "Céleri branche, cru": "ing-celeri-branche-cru.jpg",
+  "Datte séchée": "ing-datte-sechee.jpg",
+  "Dinde, blanc (escalope), cru": "ing-dinde-blanc-escalope-cru.jpg",
+  "Dinde, escalope, crue": "ing-dinde-escalope-crue.jpg",
+  "Dinde, haché, cru": "ing-dinde-hache-cru.jpg",
+  "Dorade, crue": "ing-dorade-crue.jpg",
+  "Edamame (soja vert), cuit": "ing-edamame-soja-vert-cuit.jpg",
+  "Emmental râpé": "ing-emmental-rape.jpg",
+  "Fenouil, cru": "ing-fenouil-cru.jpg",
+  "Feta": "ing-feta.jpg",
+  "Flageolets, cuits": "ing-flageolets-cuits.jpg",
+  "Flocons d'avoine, crus": "ing-flocons-davoine-crus.jpg",
+  "Fraise, crue": "ing-fraise-crue.jpg",
+  "Fromage blanc battu nature": "ing-fromage-blanc-battu-nature.jpg",
+  "Fromage de chèvre bûche": "ing-fromage-de-chevre-buche.jpg",
+  "Fromage de chèvre frais": "ing-fromage-de-chevre-frais.jpg",
+  "Fromage frais à tartiner nature": "ing-fromage-frais-a-tartiner-nature.jpg",
+  "Fruit de la passion ou maracudja, pulpe et pépins, cru": "ing-fruit-de-la-passion-ou-maracudja-pulpe-et-pepins-cru.jpg",
+  "Fusilli, cuits": "ing-fusilli-cuits.jpg",
+  "Fèves sèches, cuites": "ing-feves-seches-cuites.jpg",
+  "Galette de riz soufflé complet": "ing-galette-de-riz-souffle-complet.jpg",
+  "Gingembre, racine crue": "ing-gingembre-racine-crue.jpg",
+  "Grenade, pulpe et pépins, crue": "ing-grenade-pulpe-et-pepins-crue.jpg",
+  "Haricot vert, cuit": "ing-haricot-vert-cuit.jpg",
+  "Haricot vert, surgelé, cru": "ing-haricot-vert-surgele-cru.jpg",
+  "Haricots blancs, cuits": "ing-haricots-blancs-cuits.jpg",
+  "Haricots noirs, cuits": "ing-haricots-noirs-cuits.jpg",
+  "Haricots rouges, cuits": "ing-haricots-rouges-cuits.jpg",
+  "Houmous (purée de pois chiches)": "ing-houmous-puree-de-pois-chiches.jpg",
+  "Jambon blanc, découenné dégraissé": "ing-jambon-blanc-decouenne-degraisse.jpg",
+  "Jambon blanc, standard": "ing-jambon-blanc-standard.jpg",
+  "Jambon de dinde": "ing-jambon-de-dinde.jpg",
+  "Lait d'amande nature": "ing-lait-damande-nature.jpg",
+  "Lait de coco (boisson)": "ing-lait-de-coco-boisson.jpg",
+  "Lait demi-écrémé": "ing-lait-demi-ecreme.jpg",
+  "Laitue, crue": "ing-laitue-crue.jpg",
+  "Lentilles corail, crues": "ing-lentilles-corail-crues.jpg",
+  "Lentilles vertes, crues": "ing-lentilles-vertes-crues.jpg",
+  "Lentilles vertes, cuites": "ing-lentilles-vertes-cuites.jpg",
+  "Lotte ou baudroie, crue": "ing-lotte-ou-baudroie-crue.jpg",
+  "Mangue, pulpe, crue": "ing-mangue-pulpe-crue.jpg",
+  "Maïs doux, cuit": "ing-mais-doux-cuit.jpg",
+  "Menthe, fraîche": "ing-menthe-fraiche.jpg",
+  "Merlu, cru": "ing-merlu-cru.jpg",
+  "Moules, crues": "ing-moules-crues.jpg",
+  "Mozzarella": "ing-mozzarella.jpg",
+  "Myrtille, crue": "ing-myrtille-crue.jpg",
+  "Navet, cru": "ing-navet-cru.jpg",
+  "Noix (cerneau)": "ing-noix-cerneau.jpg",
+  "Noix de cajou, nature": "ing-noix-de-cajou-nature.jpg",
+  "Noix de pécan": "ing-noix-de-pecan.jpg",
+  "Nori (algue), feuille séchée": "ing-nori-algue-feuille-sechee.jpg",
+  "Nouilles de riz, crues": "ing-nouilles-de-riz-crues.jpg",
+  "Nouilles soba (sarrasin), cuites": "ing-nouilles-soba-sarrasin-cuites.jpg",
+  "Oeuf, cru": "ing-oeuf-cru.jpg",
+  "Oeuf, dur": "ing-oeuf-dur.jpg",
+  "Oeuf, poché": "ing-oeuf-poche.jpg",
+  "Oeuf, à la coque": "ing-oeuf-a-la-coque.jpg",
+  "Oignon jaune, cru": "ing-oignon-jaune-cru.jpg",
+  "Oignon nouveau (cébette), cru": "ing-oignon-nouveau-cebette-cru.jpg",
+  "Oignon rouge, cru": "ing-oignon-rouge-cru.jpg",
+  "Oignon, cru": "ing-oignon-cru.jpg",
+  "Olives noires": "ing-olives-noires.jpg",
+  "Olives noires dénoyautées": "ing-olives-noires-denoyautees.jpg",
+  "Olives vertes": "ing-olives-vertes.jpg",
+  "Pain aux céréales": "ing-pain-aux-cereales.jpg",
+  "Pain burger": "ing-pain-burger.jpg",
+  "Pain complet": "ing-pain-complet.jpg",
+  "Pain de campagne": "ing-pain-de-campagne.jpg",
+  "Pain de seigle": "ing-pain-de-seigle.jpg",
+  "Pak-choï (chou chinois), cru": "ing-pak-choi-chou-chinois-cru.jpg",
+  "Paneer": "ing-paneer.jpg",
+  "Parmesan": "ing-parmesan.jpg",
+  "Patate douce, crue": "ing-patate-douce-crue.jpg",
+  "Pavé de thon, cru": "ing-pave-de-thon-cru.jpg",
+  "Persil, frais": "ing-persil-frais.jpg",
+  "Petits pois, bouillis/cuits à l'eau": "ing-petits-pois-bouillis-cuits-a-l-eau.jpg",
+  "Pignon de pin": "ing-pignon-de-pin.jpg",
+  "Piment rouge fort, cru": "ing-piment-rouge-fort-cru.jpg",
+  "Poireau, cru": "ing-poireau-cru.jpg",
+  "Pois chiches, cuits": "ing-pois-chiches-cuits.jpg",
+  "Poivron jaune, cru": "ing-poivron-jaune-cru.jpg",
+  "Poivron rouge, cru": "ing-poivron-rouge-cru.jpg",
+  "Poivron vert, cru": "ing-poivron-vert-cru.jpg",
+  "Polenta, crue": "ing-polenta-crue.jpg",
+  "Pomme": "ing-pomme.jpg",
+  "Pomme Granny Smith": "ing-pomme-granny-smith.jpg",
+  "Pomme de terre nouvelle, cuite": "ing-pomme-de-terre-nouvelle-cuite.jpg",
+  "Pomme de terre, crue": "ing-pomme-de-terre-crue.jpg",
+  "Porc, filet mignon, cru": "ing-porc-filet-mignon-cru.jpg",
+  "Porc, longe, crue": "ing-porc-longe-crue.jpg",
+  "Porc, échine, crue": "ing-porc-echine-crue.jpg",
+  "Poulet, blanc (filet), cru": "ing-poulet-blanc-filet-cru.jpg",
+  "Poulet, cuisse sans peau, crue": "ing-poulet-cuisse-sans-peau-crue.jpg",
+  "Poulet, filet, sans peau, cru": "ing-poulet-filet-sans-peau-cru.jpg",
+  "Poulet, haut de cuisse, viande, cru": "ing-poulet-haut-de-cuisse-viande-cru.jpg",
+  "Pousses de soja, crues": "ing-pousses-de-soja-crues.jpg",
+  "Pâtes complètes, crues": "ing-pates-completes-crues.jpg",
+  "Pâtes sèches, sans gluten, crues": "ing-pates-seches-sans-gluten-crues.jpg",
+  "Quinoa, cru": "ing-quinoa-cru.jpg",
+  "Quinoa, cuit": "ing-quinoa-cuit.jpg",
+  "Radis rouge, cru": "ing-radis-rouge-cru.jpg",
+  "Riz basmati, cru": "ing-riz-basmati-cru.jpg",
+  "Riz basmati, cuit": "ing-riz-basmati-cuit.jpg",
+  "Riz blanc, cru": "ing-riz-blanc-cru.jpg",
+  "Riz complet, cru": "ing-riz-complet-cru.jpg",
+  "Riz complet, cuit": "ing-riz-complet-cuit.jpg",
+  "Riz jasmin, cru": "ing-riz-jasmin-cru.jpg",
+  "Riz rond (arborio), cru": "ing-riz-rond-arborio-cru.jpg",
+  "Romarin, frais": "ing-romarin-frais.jpg",
+  "Roquette, crue": "ing-roquette-crue.jpg",
+  "Safran": "ing-safran.jpg",
+  "Salade iceberg, crue": "ing-salade-iceberg-crue.jpg",
+  "Sarrasin (kasha), cru": "ing-sarrasin-kasha-cru.jpg",
+  "Sauce nuoc-cham": "ing-sauce-nuoc-cham.jpg",
+  "Saumon d'élevage, cru": "ing-saumon-d-elevage-cru.jpg",
+  "Saumon fumé": "ing-saumon-fume.jpg",
+  "Saumon, cru": "ing-saumon-cru.jpg",
+  "Saumon, cru, élevage": "ing-saumon-cru-elevage.jpg",
+  "Semoule de blé, crue": "ing-semoule-de-ble-crue.jpg",
+  "Skyr nature": "ing-skyr-nature.jpg",
+  "Thon, au naturel, appertisé, égoutté": "ing-thon-au-naturel-appertise-egoutte.jpg",
+  "Thon, cru": "ing-thon-cru.jpg",
+  "Thym, frais": "ing-thym-frais.jpg",
+  "Tomate cerise, crue": "ing-tomate-cerise-crue.jpg",
+  "Tomate ronde, crue": "ing-tomate-ronde-crue.jpg",
+  "Tomate, crue": "ing-tomate-crue.jpg",
+  "Tomate, pelée, appertisée, égouttée": "ing-tomate-pelee-appertisee-egouttee.jpg",
+  "Tomates concassées en boîte": "ing-tomates-concassees-en-boite.jpg",
+  "Tortilla de maïs": "ing-tortilla-de-mais.jpg",
+  "Tortilla souple (à garnir), à base de maïs": "ing-tortilla-souple-a-garnir-a-base-de-mais.jpg",
+  "Truite, crue": "ing-truite-crue.jpg",
+  "Veau, jarret, cru": "ing-veau-jarret-cru.jpg",
+  "Vermicelle de riz, cuite, non salée": "ing-vermicelle-de-riz-cuite-non-salee.jpg",
+  "Yaourt grec nature": "ing-yaourt-grec-nature.jpg",
+  "Yaourt nature": "ing-yaourt-nature.jpg",
+  "Échalote, crue": "ing-echalote-crue.jpg",
+  "Épinard, jeunes pousses pour salades, cru": "ing-epinard-jeunes-pousses-pour-salades-cru.jpg",
+  "Épinards, crus": "ing-epinards-crus.jpg"
+};
+// Regroupement large (8 groupes) utilise pour les onglets/pastilles de
+// filtre de l'ecran Frigo -- distinct des 30 buckets fins de
+// FOOD_CATEGORY_IMAGES, trop nombreux pour des onglets lisibles sur mobile.
+const FOOD_COARSE_GROUPS = {
+  '25-viande-rouge':'viandes', '26-volaille':'viandes', '02-charcuterie':'viandes', '04-oeufs':'viandes',
+  '03-poisson-fruits-de-mer':'poissons',
+  '09-legumes':'legumes', '10-pommes-de-terre':'legumes',
+  '14-pates-riz-cereales':'feculents', '15-pain-viennoiseries':'feculents', '16-cereales-petit-dejeuner':'feculents', '11-legumineuses':'feculents',
+  '05-produits-laitiers-frais':'laitiers', '06-fromages':'laitiers', '07-lait':'laitiers',
+  '12-fruits-frais':'fruits', '13-fruits-a-coque':'fruits',
+  '22-boissons-sans-alcool':'boissons', '23-boissons-alcoolisees':'boissons',
+};
+const FOOD_COARSE_GROUP_LABELS = {
+  viandes:'Viandes & œufs', poissons:'Poissons', legumes:'Légumes', feculents:'Féculents',
+  laitiers:'Produits laitiers', fruits:'Fruits', epicerie:'Épicerie', boissons:'Boissons',
+};
+// Groupe large d'un ingredient (pour les onglets de l'ecran Frigo), derive
+// du meme bucket fin que l'icone de categorie -- "epicerie" par defaut pour
+// tout ce qui n'entre dans aucun des 7 groupes ci-dessus (epices, sauces,
+// sucre, biscuits, plats composes...) ou n'est pas trouve en base.
+function ingredientCoarseGroup(nomAliment){
+  const f = foodDbByName(nomAliment);
+  const bucket = f ? foodCategoryBucket(f.categorie, f.nom) : null;
+  return bucket ? (FOOD_COARSE_GROUPS[bucket] || 'epicerie') : 'epicerie';
+}
+// Bascule un <img> en erreur (photo individuelle absente -- pas encore
+// uploadee sur GitHub) vers l'icone de categorie, puis vers la pomme SVG
+// generique si meme ce repli echoue. onerror est desactive a chaque etape
+// pour ne jamais boucler si le fichier de repli est lui aussi absent.
+function ingImgFallback(img){
+  const fb = img.getAttribute('data-fallback');
+  img.onerror = null;
+  if(fb){
+    img.setAttribute('data-fallback','');
+    img.onerror = function(){ ingImgFallback(this); };
+    img.src = fb;
+  } else {
+    const ph = document.createElement('div');
+    ph.className = 'ph';
+    ph.innerHTML = SVG_APPLE;
+    img.replaceWith(ph);
+  }
+}
+// Media (photo dediee -> icone de categorie -> pomme SVG) d'une carte de
+// l'ecran Frigo. Repli en cascade gere par ingImgFallback ci-dessus : pas
+// besoin de savoir a l'avance si la photo dediee est deja sur GitHub.
+function ingredientMediaHTML(nomAliment){
+  const specific = FOOD_INGREDIENT_IMAGES[nomAliment];
+  const f = foodDbByName(nomAliment);
+  const bucket = f ? foodCategoryBucket(f.categorie, f.nom) : null;
+  const fallbackFile = bucket ? FOOD_CATEGORY_IMAGES[bucket] : null;
+  if(specific){
+    return `<img src="${specific}" alt="" loading="lazy" data-fallback="${fallbackFile||''}" onerror="ingImgFallback(this)">`;
+  }
+  if(fallbackFile){
+    return `<img src="${fallbackFile}" alt="" loading="lazy" data-fallback="" onerror="ingImgFallback(this)">`;
+  }
+  return `<div class="ph">${SVG_APPLE}</div>`;
 }
 // Macros totales d'une recette (toutes portions confondues), calculees a
 // partir des valeurs /100g reelles de chaque ingredient dans FOOD_DB — jamais
@@ -3445,12 +3727,44 @@ const app = {
     sel.innerHTML = '<option value="">Toutes</option>' + cuisines.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(cuisineLabel(c))}</option>`).join('');
     document.getElementById('recette-suggestions').innerHTML = '<p class="empty">Coche ce que tu as puis appuie sur "Voir les recettes possibles".</p>';
   },
+  // Ecran "Frigo" redesigne en grille de cartes photo + onglets de categorie
+  // + compteur de recettes "realisables maintenant" en direct (maquette
+  // envoyee par Christophe le 22/09, validee via demo interactive avant
+  // integration ici comme demande explicitement : "je veux la démo avant de
+  // la mettre sur l'appli"). Remplace l'ancienne liste plate a cocher.
   renderRecetteIngredientsListe(){
     const q = normalize(document.getElementById('recette-ing-search').value);
     const have = new Set(this.db.settings.ingredientsDisponibles||[]);
     const pool = this.recetteIngredientsPossibles();
     const tokens = q.split(' ').filter(Boolean);
-    let filtered = tokens.length ? pool.filter(nom=>{ const n = normalize(nom); return tokens.every(t=>n.includes(t)); }) : pool;
+
+    // Groupe large de chaque ingredient du pool, calcule une seule fois (190
+    // aliments, pas la peine de rappeler foodCategoryBucket() a chaque
+    // frappe de recherche ou chaque coche).
+    if(!this._recetteIngGroups){
+      this._recetteIngGroups = {};
+      pool.forEach(nom => { this._recetteIngGroups[nom] = ingredientCoarseGroup(nom); });
+    }
+    if(this._recetteIngGroup===undefined) this._recetteIngGroup = '';
+    const groups = this._recetteIngGroups;
+
+    const pillsWrap = document.getElementById('recette-ing-pills');
+    if(pillsWrap){
+      const present = Array.from(new Set(pool.map(nom=>groups[nom])));
+      present.sort((a,b)=> pool.filter(n=>groups[n]===b).length - pool.filter(n=>groups[n]===a).length);
+      const all = [''].concat(present);
+      pillsWrap.innerHTML = all.map(g=>{
+        const label = g==='' ? 'Tous' : (FOOD_COARSE_GROUP_LABELS[g]||g);
+        const active = g===this._recetteIngGroup ? ' active' : '';
+        return `<button type="button" class="pill${active}" onclick="app.setRecetteIngGroup('${g}')">${escapeHtml(label)}</button>`;
+      }).join('');
+    }
+
+    let filtered = pool.filter(nom=>{
+      if(this._recetteIngGroup && groups[nom]!==this._recetteIngGroup) return false;
+      if(tokens.length){ const n = normalize(nom); if(!tokens.every(t=>n.includes(t))) return false; }
+      return true;
+    });
     // Les ingredients deja coches remontent en tete de liste (dans leur ordre
     // alphabetique), pour que l'utilisateur retrouve sa selection en cours
     // d'un coup d'oeil au lieu d'avoir a la rechercher au milieu de centaines
@@ -3461,34 +3775,49 @@ const app = {
       return a.localeCompare(b,'fr');
     });
     const wrap = document.getElementById('recette-ingredients-liste');
-    if(!filtered.length){ wrap.innerHTML = '<p class="empty" style="margin:10px;">Aucun ingrédient ne correspond.</p>'; }
+    if(!filtered.length){ wrap.innerHTML = '<p class="empty" style="margin:10px 2px;">Aucun ingrédient ne correspond.</p>'; }
     else{
       wrap.innerHTML = filtered.map(nom=>{
         const checked = have.has(nom);
-        // La valeur exacte de l'ingredient est portee par l'attribut "value"
-        // (echappe HTML normalement), lu via this.value au changement — pas
-        // question d'injecter le nom directement dans le JS inline de
-        // l'attribut onchange, qui casserait des la premiere virgule/apostrophe
-        // (ex: noms CIQUAL "Poulet, blanc (filet), cru").
-        return `<label class="list-row" style="cursor:pointer;padding:9px 12px;">
-          <input type="checkbox" value="${escapeHtml(nom)}" ${checked?'checked':''} onchange="app.toggleIngredientDisponible(this.value)" style="width:18px;height:18px;flex-shrink:0;margin-right:10px;">
-          ${foodCategoryIconHTML(nom)}
-          <div class="meta"><div class="t1" style="font-weight:400;">${escapeHtml(nom)}</div></div>
-        </label>`;
+        // Le nom exact de l'ingredient est porte par l'attribut "data-nom"
+        // (echappe HTML), lu via this.dataset.nom au clic — pas question de
+        // l'injecter directement dans le JS inline de l'attribut onclick, qui
+        // casserait des la premiere virgule/apostrophe (ex: noms CIQUAL
+        // "Poulet, blanc (filet), cru", "Flocons d'avoine, crus").
+        return `<div class="ing-card${checked?' checked':''}" data-nom="${escapeHtml(nom)}" onclick="app.toggleIngredientDisponible(this.dataset.nom)">
+          ${ingredientMediaHTML(nom)}
+          <div class="check">${SVG_CHECK}</div>
+          <div class="label">${escapeHtml(nom)}</div>
+        </div>`;
       }).join('');
     }
     document.getElementById('recette-ing-count').textContent = have.size ? have.size+' ingrédient'+(have.size>1?'s':'')+' coché'+(have.size>1?'s':'') : 'Aucun ingrédient coché pour le moment.';
     const razBtn = document.getElementById('recette-raz-btn');
     if(razBtn) razBtn.hidden = have.size===0;
+
+    // Compteur "X recette(s) possible(s)" en direct : meme definition que la
+    // section "Realisables maintenant" plus bas (matchRecipe, 0 manquant),
+    // pour rester coherent avec le detail affiche apres le bouton "Voir les
+    // recettes possibles" — pas un second calcul approximatif.
+    const chip = document.getElementById('recette-ing-count-chip');
+    if(chip){
+      const n = have.size ? RECIPES.filter(r=>matchRecipe(r, have).manquants.length===0).length : 0;
+      chip.textContent = n + (n>1 ? ' recettes possibles' : ' recette possible');
+    }
+  },
+  setRecetteIngGroup(g){
+    this._recetteIngGroup = g;
+    this.renderRecetteIngredientsListe();
   },
   toggleIngredientDisponible(nom){
     const set = new Set(this.db.settings.ingredientsDisponibles||[]);
     if(set.has(nom)) set.delete(nom); else set.add(nom);
     this.db.settings.ingredientsDisponibles = Array.from(set);
     saveDBOrWarn(this.db);
-    document.getElementById('recette-ing-count').textContent = set.size ? set.size+' ingrédient'+(set.size>1?'s':'')+' coché'+(set.size>1?'s':'') : 'Aucun ingrédient coché pour le moment.';
-    const razBtn = document.getElementById('recette-raz-btn');
-    if(razBtn) razBtn.hidden = set.size===0;
+    // Re-rendu complet (pas juste le compteur) : la carte cochee doit
+    // remonter en tete de grille et le compteur de recettes possibles doit
+    // se mettre a jour en direct, comme demande par Christophe.
+    this.renderRecetteIngredientsListe();
   },
   // Decoche d'un coup tous les ingredients selectionnes (touche "Tout
   // décocher" demandee par l'utilisateur, pour ne pas avoir a decocher un a
