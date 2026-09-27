@@ -367,8 +367,16 @@ button{font-family:inherit;}
    le .pill-row generique utilise ailleurs (filtres, etc.) -- demande
    explicite de Christophe apres capture d'ecran montrant le retour a la
    ligne sur 3 rangees. */
-#recette-ing-pills, #aide-repas-pills{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;}
-#recette-ing-pills .pill, #aide-repas-pills .pill{flex:none;}
+#recette-ing-pills, #aide-repas-pills, #exo-picker-pills{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;}
+#recette-ing-pills .pill, #aide-repas-pills .pill, #exo-picker-pills .pill{flex:none;}
+/* Feuille modale du selecteur d'exercice (cf. app.openExercicePicker) : plus
+   large qu'une simple boite de confirmation (elle contient une grille 2
+   colonnes de photos) et son propre contenu defile verticalement, la boite
+   elle-meme restant limitee a 90% de la hauteur d'ecran (utile en paysage
+   ou sur petit telephone, sans quoi le bouton "Fermer" tout en haut peut
+   sortir de l'ecran une fois le clavier de recherche ouvert). */
+.exo-picker-box{max-width:440px; max-height:90vh; overflow-y:auto;}
+#exo-picker-grid{max-height:48vh; overflow-y:auto;}
 .ing-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
 .ing-card{position:relative;border-radius:16px;overflow:hidden;background:var(--card);border:1px solid var(--card-border);cursor:pointer;}
 .ing-card.checked{outline:2.5px solid var(--accent);}
@@ -1306,6 +1314,21 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
   </div>
 </div>
 
+<!-- Selecteur d'exercice par groupe musculaire (remplacer / ajouter, cf.
+     app.openExercicePicker) -- une seule instance partagee, remplie
+     dynamiquement, plutot qu'un template par usage. -->
+<div class="confirm-overlay" id="exo-picker-overlay" onclick="if(event.target===this) app.closeExercicePicker()">
+  <div class="confirm-box exo-picker-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div style="font-size:16px;font-weight:800;" id="exo-picker-title">Choisir un exercice</div>
+      <button class="icon-btn" title="Fermer" onclick="app.closeExercicePicker()">✕</button>
+    </div>
+    <div class="field"><input type="text" id="exo-picker-search" placeholder="Rechercher un exercice..." oninput="app.setExercicePickerQuery(this.value)"></div>
+    <div class="pill-row" id="exo-picker-pills" style="margin:10px 0;"></div>
+    <div class="ing-grid" id="exo-picker-grid"></div>
+  </div>
+</div>
+
 <nav class="navbar" id="navbar"></nav>
 
 <script>
@@ -1322,7 +1345,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260927110044';
+const APP_BUILD_VERSION = '20260927122226';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1361,6 +1384,11 @@ const SVG_BOTTLE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 const SVG_UNDO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-2"/></svg>';
 const SVG_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M5.5 15H5a2 2 0 01-2-2V5a2 2 0 012-2h8a2 2 0 012 2v.5"/></svg>';
 const SVG_BOOKMARK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h11a1 1 0 011 1V21l-6.5-3.8L5.5 21V4.5a1 1 0 011-1z"/></svg>';
+// Icone "remplacer" (deux fleches en boucle) utilisee sur le bouton de
+// remplacement d'exercice (cf. openExercicePicker) -- distincte de SVG_UNDO
+// (fleche simple, deja utilisee ailleurs pour annuler) pour eviter toute
+// ambiguite visuelle entre "annuler" et "remplacer par un autre exercice".
+const SVG_SWAP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>';
 
 const NAV_SPORT_FAMILY = ['view-sport','view-programmes','view-seance-list','view-log','view-exo-history','view-history','view-stats'];
 const NAV_NUTRITION_FAMILY = ['view-nutrition','view-recettes','view-aide-repas','view-recette-detail','view-liste-courses','view-nutri-corps','view-nutri-stats','view-nutri-profil','view-nutri-add','view-copier-repas'];
@@ -1511,6 +1539,147 @@ const EXERCICE_IMAGES = {
   'Élévation latérale haltères': '38-elevation-laterale.jpg',
   'Élévations latérales': '38-elevation-laterale.jpg',
 };
+// Groupe musculaire principal de chaque exercice du catalogue (124 apres
+// fusion des doublons d'accent/orthographe, cf. session du 27/09/2026) --
+// classification manuelle, une seule fois, reutilisee par le selecteur
+// d'exercice (remplacement dans une seance / construction d'une seance
+// libre, cf. openExercicePicker). Les CLES doivent rester en synchro avec
+// les noms d'exercices reels de final_programs.json : toute renommaison
+// d'exercice (cf. data/programs/*.json) doit etre repercutee ici.
+const EXERCICE_MUSCLE_GROUPS = {
+  "Abduction de hanche (élastique ou machine)": "fessiers",
+  "Abduction de hanche debout (élastique)": "fessiers",
+  "Biceps curl pupitre": "biceps",
+  "Bulgarian split squat": "quadriceps",
+  "Burpees": "cardio",
+  "Chestpress": "pectoraux",
+  "Chestpress incline": "pectoraux",
+  "Corde à sauter sur place": "cardio",
+  "Crunch": "abdos",
+  "Crunchs": "abdos",
+  "Crunchs bicyclette": "abdos",
+  "Curl barre debout": "biceps",
+  "Curl biceps": "biceps",
+  "Curl biceps barre": "biceps",
+  "Curl haltères alterné": "biceps",
+  "Curl marteau": "biceps",
+  "Developpe incline barre": "pectoraux",
+  "Developpe incline machine": "pectoraux",
+  "Developpe militaire assis haltere": "epaules",
+  "Dips machine triceps": "triceps",
+  "Dips sur banc": "triceps",
+  "Dips triceps": "triceps",
+  "Développé couché": "pectoraux",
+  "Développé couché barre": "pectoraux",
+  "Développé couché ou Pompes": "pectoraux",
+  "Développé incliné haltères": "pectoraux",
+  "Développé militaire": "epaules",
+  "Développé militaire haltères": "epaules",
+  "Ecarte couche poulie vis-a-vis": "pectoraux",
+  "Elevations assis 3D halteres": "epaules",
+  "Elevations laterales halteres": "epaules",
+  "Extension de hanche au sol (fire hydrant)": "fessiers",
+  "Extension lombaire": "dos",
+  "Extension triceps": "triceps",
+  "Extension triceps poulie": "triceps",
+  "Extension triceps à la poulie": "triceps",
+  "Farmer walk": "cardio",
+  "Fentes": "quadriceps",
+  "Fentes alternées": "quadriceps",
+  "Fentes arrière": "quadriceps",
+  "Fentes arrière avec haltères": "quadriceps",
+  "Fentes bulgares": "quadriceps",
+  "Fentes haltères": "quadriceps",
+  "Fentes sautées": "quadriceps",
+  "Flexion des mollets debout": "mollets",
+  "Front squat": "quadriceps",
+  "Gainage avec rotation": "abdos",
+  "Gainage dynamique": "abdos",
+  "Gainage dynamique (planche avec touches d'épaule)": "abdos",
+  "Gainage latéral (planche latérale)": "abdos",
+  "Hip thrust": "fessiers",
+  "Hip thrust unilatéral": "fessiers",
+  "Jumping jacks": "cardio",
+  "Kettlebell swing": "fessiers",
+  "Leg curl": "ischios",
+  "Leg curl (ischio-jambiers)": "ischios",
+  "Leg curl couche": "ischios",
+  "Leg extension": "quadriceps",
+  "Low row unilateral": "dos",
+  "Med-ball slam": "cardio",
+  "Mollets assis": "mollets",
+  "Mollets debout": "mollets",
+  "Montées de genoux sur place": "cardio",
+  "Montées sur banc": "quadriceps",
+  "Mountain climbers": "cardio",
+  "Oiseau (élévations arrière)": "epaules",
+  "Oiseau a la poulie haute unilateral": "epaules",
+  "Pallof press": "abdos",
+  "Planche": "abdos",
+  "Planche latérale": "abdos",
+  "Planche sur les avant-bras": "abdos",
+  "Pompes": "pectoraux",
+  "Pompes (à ton niveau)": "pectoraux",
+  "Pompes en équilibre / Handstand push-ups (à ton niveau)": "epaules",
+  "Pompes genoux": "pectoraux",
+  "Pompes larges": "pectoraux",
+  "Pont fessier au sol": "fessiers",
+  "Ponts / Bridges (à ton niveau)": "fessiers",
+  "Presse inclinee": "quadriceps",
+  "Presse à cuisses": "quadriceps",
+  "Presse à cuisses (pieds hauts)": "fessiers",
+  "Pull over poulie haute": "dos",
+  "Relevés de jambes": "abdos",
+  "Relevés de jambes / gainage abdominal (à ton niveau)": "abdos",
+  "Rowing": "dos",
+  "Rowing barre": "dos",
+  "Rowing haltère": "dos",
+  "Rowing haltère unilatéral": "dos",
+  "Rowing menton": "epaules",
+  "Rowing élastique": "dos",
+  "Rowing élastique/haltères légers": "dos",
+  "Soulevé de terre": "dos",
+  "Soulevé de terre jambes tendues": "ischios",
+  "Soulevé de terre roumain": "ischios",
+  "Squat": "quadriceps",
+  "Squat gobelet": "quadriceps",
+  "Squat guide ou hack squat": "quadriceps",
+  "Squats (à ton niveau)": "quadriceps",
+  "Squats bulgares": "quadriceps",
+  "Squats sautés": "quadriceps",
+  "Squats sumo": "fessiers",
+  "Suitcase carry": "cardio",
+  "Superman": "dos",
+  "Superman (extension dos)": "dos",
+  "Tirage horizontal": "dos",
+  "Tirage horizontal poulie basse": "dos",
+  "Tirage horizontal à la poulie basse": "dos",
+  "Tirage serre horizontal": "dos",
+  "Tirage vertical": "dos",
+  "Tirage vertical (poulie ou tractions)": "dos",
+  "Tirage vertical large": "dos",
+  "Tirage vertical poulie": "dos",
+  "Tirage vertical serre": "dos",
+  "Tractions": "dos",
+  "Tractions (à ton niveau)": "dos",
+  "Trap-bar deadlift": "quadriceps",
+  "Triceps corde extension": "triceps",
+  "Écarté couché": "pectoraux",
+  "Écarté couché haltères": "pectoraux",
+  "Écartés couché": "pectoraux",
+  "Élévation frontale haltères": "epaules",
+  "Élévation latérale": "epaules",
+  "Élévation latérale haltères": "epaules",
+  "Élévations latérales": "epaules",
+
+};
+const EXERCICE_MUSCLE_GROUP_LABELS = {
+  pectoraux: 'Pectoraux', dos: 'Dos', epaules: 'Épaules', biceps: 'Biceps',
+  triceps: 'Triceps', quadriceps: 'Quadriceps', ischios: 'Ischio-jambiers',
+  fessiers: 'Fessiers', mollets: 'Mollets', abdos: 'Abdominaux',
+  cardio: 'Cardio / Full-body',
+};
+
 // Les entrees ci-dessus sont de simples noms de fichier (ex. '69-planche-
 // gainage-frontal.jpg') -- les fichiers reels vivent dans images/exercices/.
 // Ce helper est le SEUL endroit qui connait ce prefixe : sans lui, un <img
@@ -1599,6 +1768,23 @@ PROGRAMS.push({
   id: FREE_CARDIO_PROGRAM_ID,
   nom: 'Cardio libre',
   seances: [{ numero: 1, nom: 'Marche, vélo ou autre', type: 'cardio', modalitesSuggerees: ['marche','velo'] }],
+});
+// Meme principe que "Cardio libre" ci-dessus, pour la musculation :
+// pseudo-programme toujours present, exclu de la liste "Programmes" (sa
+// propre tuile, cf. renderSport) et du toggle de visibilite (cf.
+// renderProgrammesVisibilite). Sa seance demarre SANS exercice --
+// entierement construite via le selecteur d'exercice par groupe musculaire
+// (cf. openExercicePicker en mode 'add'), qui pousse dans L.exercices au
+// fil de l'eau. Contrairement aux programmes de la bibliotheque, aucune
+// series_reps cible n'est definie ici : la progression/l'historique de
+// chaque exercice ajoute reste neanmoins suivie normalement, car
+// getLastPerformance/latestMaxKg/etc. indexent par NOM d'exercice sur
+// this.db.seances, jamais sur ce catalogue.
+const FREE_MUSCU_PROGRAM_ID = 'libre-muscu';
+PROGRAMS.push({
+  id: FREE_MUSCU_PROGRAM_ID,
+  nom: 'Musculation libre',
+  seances: [{ numero: 1, nom: 'Séance libre', type: 'muscu', exercices: [] }],
 });
 
 const DB_KEY = 'ma_muscu_db_v1';
@@ -2465,6 +2651,15 @@ function getLastPerformance(name, excludeId){
 function allExerciseNames(){
   const set = new Set();
   PROGRAMS.forEach(p=>p.seances.forEach(s=>(s.exercices||[]).forEach(e=>set.add(e.exercice))));
+  // Complete avec les exercices reellement loggues (this.db.seances) : un
+  // exercice ajoute via le selecteur libre (cf. FREE_MUSCU_PROGRAM_ID /
+  // openExercicePicker en mode 'add') n'appartient a AUCUN catalogue de
+  // programme -- sans cette ligne, il resterait invisible du selecteur de
+  // statistiques (renderStats) alors meme que sa progression est bien
+  // suivie ailleurs (getLastPerformance indexe par nom, pas par catalogue).
+  if(app.db && app.db.seances){
+    app.db.seances.forEach(l=>(l.exercices||[]).forEach(e=>set.add(e.exercice)));
+  }
   return [...set].sort((a,b)=>a.localeCompare(b,'fr'));
 }
 
@@ -3020,7 +3215,7 @@ const app = {
   // reste consultable normalement.
   visiblePrograms(){
     const visibles = new Set(this.db.settings.programmesVisibles||[]);
-    return PROGRAMS.filter(p=>p.id!==FREE_CARDIO_PROGRAM_ID && visibles.has(p.id));
+    return PROGRAMS.filter(p=>p.id!==FREE_CARDIO_PROGRAM_ID && p.id!==FREE_MUSCU_PROGRAM_ID && visibles.has(p.id));
   },
   /* ---------- SPORT (hub : programmes + activité récente + accès historique/stats) ---------- */
   renderSport(){
@@ -3044,6 +3239,11 @@ const app = {
       <div class="tile-name">Cardio libre</div>
       <div class="tile-meta">Marche, vélo... hors séance</div>
       <div class="tile-next">Commencer ›</div>
+    </div>` + `<div class="tile tile-cardio-libre" onclick="app.startMusculationLibre()">
+      <div class="tile-icon">${SVG_DUMBBELL}</div>
+      <div class="tile-name">Musculation libre</div>
+      <div class="tile-meta">Compose ta séance, exercice par exercice</div>
+      <div class="tile-next">Commencer ›</div>
     </div>`;
     const recent = this.db.seances.slice().sort((a,b)=> a.date<b.date?1:(a.date>b.date?-1:0)).slice(0,5);
     const rc = document.getElementById('sport-recent');
@@ -3053,7 +3253,7 @@ const app = {
         const p = PROGRAMS.find(pp=>pp.id===l.programmeId);
         const s = p.seances.find(ss=>ss.numero===l.seanceNumero);
         const isCardio = s.type==='cardio';
-        const label = l.programmeId===FREE_CARDIO_PROGRAM_ID ? 'Cardio libre' : (escapeHtml(p.nom)+' — Séance '+l.seanceNumero);
+        const label = l.programmeId===FREE_CARDIO_PROGRAM_ID ? 'Cardio libre' : (l.programmeId===FREE_MUSCU_PROGRAM_ID ? 'Musculation libre' : (escapeHtml(p.nom)+' — Séance '+l.seanceNumero));
         const dur = computeDureeTotaleMin(l, s);
         const parts = [isCardio ? 'Cardio' : ((s.exercices?.length||0)+' exercices')];
         if(dur) parts.push(dur+' min');
@@ -3088,7 +3288,7 @@ const app = {
     if(!el) return;
     const realPrograms = this.visiblePrograms();
     if(!realPrograms.length){
-      const aucunProgramme = PROGRAMS.filter(p=>p.id!==FREE_CARDIO_PROGRAM_ID).length===0;
+      const aucunProgramme = PROGRAMS.filter(p=>p.id!==FREE_CARDIO_PROGRAM_ID && p.id!==FREE_MUSCU_PROGRAM_ID).length===0;
       el.innerHTML = aucunProgramme
         ? '<div class="hero-empty">Aucun programme configuré.</div>'
         : '<div class="hero-empty">Aucun programme sélectionné. <button class="link" onclick="nav.tab(\'settings\')">Réglages &gt; Mes programmes</button> pour en choisir.</div>';
@@ -3152,6 +3352,7 @@ const app = {
     </div>`;
   },
   startCardioLibre(){ this.openLog(FREE_CARDIO_PROGRAM_ID, 1); },
+  startMusculationLibre(){ this.openLog(FREE_MUSCU_PROGRAM_ID, 1); },
   nextSeanceInfo(programmeId){
     const prog = PROGRAMS.find(p=>p.id===programmeId);
     const logs = this.db.seances.filter(s=>s.programmeId===programmeId).slice().sort((a,b)=> a.date<b.date?1:(a.date>b.date?-1:0));
@@ -3227,7 +3428,7 @@ const app = {
     const L = this.currentLog;
     const prog = PROGRAMS.find(p=>p.id===L.programmeId);
     const seanceDef = prog.seances.find(s=>s.numero===L.seanceNumero);
-    document.getElementById('log-title').textContent = L.programmeId===FREE_CARDIO_PROGRAM_ID ? 'Cardio libre' : ('Séance ' + L.seanceNumero);
+    document.getElementById('log-title').textContent = L.programmeId===FREE_CARDIO_PROGRAM_ID ? 'Cardio libre' : (L.programmeId===FREE_MUSCU_PROGRAM_ID ? 'Musculation libre' : ('Séance ' + L.seanceNumero));
     const semaine = computeSemaine(L.programmeId);
 
     document.getElementById('log-meta').innerHTML = `
@@ -3293,6 +3494,7 @@ const app = {
         const lastPoidsVals = last && last.series ? last.series.filter(s=>s && s.poids!=null).map(s=>s.poids) : [];
         const plateCalcPrefill = filledPoids.length ? Math.max(...filledPoids) : (lastPoidsVals.length ? Math.max(...lastPoidsVals) : null);
         const exoImg = exoImageSrc(exState.exercice);
+        const estLibre = L.programmeId===FREE_MUSCU_PROGRAM_ID;
         return `<div class="exo-block">
           <div class="exo-header">
             ${exoImg
@@ -3302,6 +3504,8 @@ const app = {
               <div class="exo-name">${escapeHtml(exState.exercice)}</div>
               ${def.commentaire?`<div class="exo-muscle">${escapeHtml(def.commentaire)}</div>`:''}
             </div>
+            <button class="icon-btn" title="Remplacer cet exercice" onclick="app.openExercicePicker('replace',${idx})">${SVG_SWAP}</button>
+            ${estLibre?`<button class="icon-btn" title="Retirer cet exercice" onclick="app.removeExerciceLibre(${idx})">${SVG_TRASH}</button>`:''}
           </div>
           <div class="exo-meta-row">
             <span class="em"><b>${escapeHtml(def.series_reps||'')}</b>${def.recup?' · récup '+escapeHtml(def.recup):''}</span>
@@ -3321,6 +3525,10 @@ const app = {
           </div>
         </div>`;
       }).join('');
+      if(L.programmeId===FREE_MUSCU_PROGRAM_ID){
+        if(!L.exercices.length){ html += `<p class="empty">Aucun exercice pour l'instant — commence par en ajouter un.</p>`; }
+        html += `<button type="button" class="btn btn-secondary" style="margin-top:4px;width:100%;" onclick="app.openExercicePicker('add')">＋ Ajouter un exercice</button>`;
+      }
       if(seanceDef.finisher){
         html += `<div class="card">
           <div class="exo-title">Finisher</div>
@@ -3347,6 +3555,101 @@ const app = {
     }
     html += `<div class="field" style="margin-top:4px;"><label>Notes (optionnel)</label><textarea rows="2" placeholder="Sensations, douleurs, ajustements..." onchange="app.updateNotes(this.value)">${escapeHtml(L.notes||'')}</textarea></div>`;
     document.getElementById('log-body').innerHTML = html;
+  },
+  /* ---------- SELECTEUR D'EXERCICE PAR GROUPE MUSCULAIRE ---------- */
+  // Un seul selecteur (feuille modale, cf. #exo-picker-overlay dans le
+  // template) pour DEUX usages, distingues par this._exoPicker.mode :
+  //  - 'replace' (idx fourni) : remplace l'exercice a cet index dans la
+  //    seance en cours (bouton 🔄 de chaque exo-block, toute seance).
+  //  - 'add' (idx absent) : ajoute un nouvel exercice en fin de seance
+  //    (bouton "+ Ajouter un exercice", uniquement en Musculation libre).
+  // Dans les deux cas, seul this.currentLog est modifie (la seance EN
+  // COURS) -- jamais la definition du programme dans PROGRAMS. Un exercice
+  // remplace/ajoute reste neanmoins suivi normalement dans l'historique et
+  // les stats (cf. getLastPerformance / allExerciseNames, qui indexent par
+  // nom sur this.db.seances, pas sur le catalogue de programme).
+  openExercicePicker(mode, idx){
+    this._exoPicker = {mode, idx, group:'', query:''};
+    const titleEl = document.getElementById('exo-picker-title');
+    if(mode==='replace'){
+      const nomActuel = this.currentLog.exercices[idx].exercice;
+      this._exoPicker.group = EXERCICE_MUSCLE_GROUPS[nomActuel] || '';
+      titleEl.textContent = 'Remplacer : ' + nomActuel;
+    } else {
+      titleEl.textContent = 'Ajouter un exercice';
+    }
+    document.getElementById('exo-picker-search').value = '';
+    this.renderExercicePickerPills();
+    this.renderExercicePickerGrid();
+    document.getElementById('exo-picker-overlay').style.display = 'flex';
+  },
+  closeExercicePicker(){
+    document.getElementById('exo-picker-overlay').style.display = 'none';
+    this._exoPicker = null;
+  },
+  setExercicePickerGroup(g){
+    if(!this._exoPicker) return;
+    this._exoPicker.group = g;
+    this.renderExercicePickerPills();
+    this.renderExercicePickerGrid();
+  },
+  setExercicePickerQuery(v){
+    if(!this._exoPicker) return;
+    this._exoPicker.query = v;
+    this.renderExercicePickerGrid();
+  },
+  renderExercicePickerPills(){
+    const p = this._exoPicker; if(!p) return;
+    const all = Object.keys(EXERCICE_MUSCLE_GROUPS);
+    const present = Array.from(new Set(all.map(n=>EXERCICE_MUSCLE_GROUPS[n])));
+    present.sort((a,b)=> all.filter(n=>EXERCICE_MUSCLE_GROUPS[n]===b).length - all.filter(n=>EXERCICE_MUSCLE_GROUPS[n]===a).length);
+    const groups = [''].concat(present);
+    document.getElementById('exo-picker-pills').innerHTML = groups.map(g=>{
+      const label = g==='' ? 'Tous' : (EXERCICE_MUSCLE_GROUP_LABELS[g]||g);
+      const active = g===p.group ? ' active' : '';
+      return `<button type="button" class="pill${active}" onclick="app.setExercicePickerGroup('${g}')">${escapeHtml(label)}</button>`;
+    }).join('');
+  },
+  renderExercicePickerGrid(){
+    const p = this._exoPicker; if(!p) return;
+    const tokens = normalize(p.query).split(' ').filter(Boolean);
+    let names = Object.keys(EXERCICE_MUSCLE_GROUPS).filter(nom=>{
+      if(p.group && EXERCICE_MUSCLE_GROUPS[nom]!==p.group) return false;
+      if(tokens.length){ const n = normalize(nom); if(!tokens.every(t=>n.includes(t))) return false; }
+      return true;
+    });
+    names.sort((a,b)=>a.localeCompare(b,'fr'));
+    const grid = document.getElementById('exo-picker-grid');
+    if(!names.length){ grid.innerHTML = '<p class="empty" style="margin:10px 2px;">Aucun exercice ne correspond.</p>'; return; }
+    grid.innerHTML = names.map(nom=>{
+      const img = exoImageSrc(nom);
+      return `<div class="ing-card" data-nom="${escapeHtml(nom)}" onclick="app.pickExercice(this.dataset.nom)">
+        ${img ? `<img src="${img}" alt="${escapeHtml(nom)}" loading="lazy">` : `<div class="ph">${SVG_DUMBBELL}</div>`}
+        <div class="label">${escapeHtml(nom)}</div>
+      </div>`;
+    }).join('');
+  },
+  // Le nom choisi transite par data-nom (echappe HTML) plutot que d'etre
+  // interpole directement dans l'attribut onclick, pour ne pas casser sur
+  // les virgules/apostrophes de certains noms d'exercices (meme principe
+  // deja applique aux ingredients, cf. toggleIngredientDisponible).
+  pickExercice(nom){
+    const p = this._exoPicker; if(!p) return;
+    const L = this.currentLog;
+    if(p.mode==='replace'){
+      const old = L.exercices[p.idx];
+      L.exercices[p.idx] = {exercice: nom, series: (old.series||[]).map(()=>({poids:null,reps:null}))};
+    } else {
+      L.exercices.push({exercice: nom, series: Array.from({length:3},()=>({poids:null,reps:null}))});
+    }
+    this.closeExercicePicker();
+    this.renderLog();
+    this.autosaveLog();
+  },
+  removeExerciceLibre(idx){
+    this.currentLog.exercices.splice(idx,1);
+    this.renderLog();
+    this.autosaveLog();
   },
   setIntensite(n){ this.currentLog.intensite = n; this.renderLog(); this.autosaveLog(); },
   updateDureeMin(v){ this.currentLog.dureeMin = v===''?null:parseFloat(v); this.renderLog(); this.autosaveLog(); },
@@ -3698,7 +4001,7 @@ const app = {
       const p = PROGRAMS.find(pp=>pp.id===l.programmeId);
       const s = p.seances.find(ss=>ss.numero===l.seanceNumero);
       const isCardio = s.type==='cardio';
-      const titre = l.programmeId===FREE_CARDIO_PROGRAM_ID ? 'Cardio libre' : (escapeHtml(p.nom)+' — Séance '+l.seanceNumero+' · '+escapeHtml(s.nom));
+      const titre = l.programmeId===FREE_CARDIO_PROGRAM_ID ? 'Cardio libre' : (l.programmeId===FREE_MUSCU_PROGRAM_ID ? 'Musculation libre' : (escapeHtml(p.nom)+' — Séance '+l.seanceNumero+' · '+escapeHtml(s.nom)));
       const vol = computeTotalPoidsSouleve(l, s);
       const parts = [relativeDateLabel(l.date)];
       if(vol>0) parts.push(vol.toLocaleString('fr-FR')+' kg');
@@ -5545,7 +5848,7 @@ const app = {
     sel.innerHTML = allExerciseNames().map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
     this.renderStatsExo();
     const filterWrap = document.getElementById('stats-volume-filter');
-    const opts = [{id:'all',label:'Tous'}, ...PROGRAMS.filter(p=>p.id!==FREE_CARDIO_PROGRAM_ID).map(p=>({id:p.id,label:p.nom}))];
+    const opts = [{id:'all',label:'Tous'}, ...PROGRAMS.filter(p=>p.id!==FREE_CARDIO_PROGRAM_ID && p.id!==FREE_MUSCU_PROGRAM_ID).map(p=>({id:p.id,label:p.nom}))];
     this._volumeFilter = this._volumeFilter || 'all';
     filterWrap.innerHTML = opts.map(o=>`<button type="button" class="pill ${this._volumeFilter===o.id?'active':''}" onclick="app.setVolumeFilter('${o.id}')">${escapeHtml(o.label)}</button>`).join('');
     this.renderStatsVolume();
@@ -5658,7 +5961,7 @@ const app = {
     const wrap = document.getElementById('set-programmes-liste');
     if(!wrap) return;
     const visibles = new Set(this.db.settings.programmesVisibles||[]);
-    const realPrograms = PROGRAMS.filter(p=>p.id!==FREE_CARDIO_PROGRAM_ID);
+    const realPrograms = PROGRAMS.filter(p=>p.id!==FREE_CARDIO_PROGRAM_ID && p.id!==FREE_MUSCU_PROGRAM_ID);
     wrap.innerHTML = realPrograms.map(p=>{
       const catClass = categorieClass(p.categorie);
       const catLabel = categorieLabel(p.categorie);
