@@ -1034,53 +1034,7 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
     <div class="section-title">Mensurations</div>
     <div id="mens-module"></div>
     <div class="surface">
-      <!-- Silhouette-repere indiquant OU prendre chaque mesure (demande
-           explicite de Christophe, 29/09/2026) : au metre ruban souple, les
-           5 zones suivies par BODY_PARTS (cf. app.js). Couleurs en
-           var(--accent)/var(--accent-2)/var(--text)/var(--text-dim) pour
-           suivre automatiquement le theme nutrition (violet/bleu canard)
-           deja applique a cet ecran, sans couleur codee en dur. -->
-      <div style="text-align:center;">
-        <svg viewBox="0 0 260 380" width="220" height="322" style="max-width:100%;">
-          <circle cx="100" cy="32" r="22" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
-          <path d="M90,52 L90,62 M110,52 L110,62" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
-          <path fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="
-            M52,78 C60,68 80,62 100,62 C120,62 140,68 148,78
-            L156,140 C158,150 154,158 146,160 L140,168
-            C148,180 152,196 150,210 L146,214 L54,214 L50,210
-            C48,196 52,180 60,168 L54,160 C46,158 42,150 44,140 Z"/>
-          <path fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" d="M52,90 C40,110 34,140 36,175 C37,188 40,198 44,206"/>
-          <path fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" d="M148,90 C160,110 166,140 164,175 C163,188 160,198 156,206"/>
-          <circle cx="44" cy="210" r="6" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
-          <circle cx="156" cy="210" r="6" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
-          <path fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" d="M82,214 L76,320 C75,332 77,344 80,352"/>
-          <path fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" d="M118,214 L124,320 C125,332 123,344 120,352"/>
-          <path fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" d="M72,352 L88,352"/>
-          <path fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" d="M112,352 L128,352"/>
-          <g stroke="var(--text-dim)" stroke-width="1.4" stroke-dasharray="4 3">
-            <line x1="20" y1="88" x2="180" y2="88"/>
-            <line x1="20" y1="148" x2="180" y2="148"/>
-            <line x1="20" y1="188" x2="180" y2="188"/>
-            <line x1="186" y1="125" x2="152" y2="125"/>
-            <line x1="20" y1="270" x2="100" y2="270"/>
-          </g>
-          <g fill="var(--accent-2)">
-            <circle cx="100" cy="88" r="2.5"/>
-            <circle cx="100" cy="148" r="2.5"/>
-            <circle cx="100" cy="188" r="2.5"/>
-            <circle cx="160" cy="125" r="2.5"/>
-            <circle cx="90" cy="270" r="2.5"/>
-          </g>
-          <g font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-size="13" font-weight="700" fill="var(--text)">
-            <text x="186" y="92">Poitrine</text>
-            <text x="186" y="152">Taille</text>
-            <text x="186" y="192">Hanches</text>
-            <text x="192" y="129">Bras</text>
-            <text x="4" y="264">Cuisses</text>
-          </g>
-        </svg>
-      </div>
-      <p class="small-note" style="margin-top:8px;"><b>Poitrine</b> — sous les aisselles, au niveau des mamelons. <b>Taille</b> — au point le plus étroit, en général au niveau du nombril. <b>Hanches</b> — au point le plus large du bassin. <b>Bras</b> — bras détendu, au milieu entre épaule et coude. <b>Cuisses</b> — au point le plus large, sous le pli fessier. Au mètre ruban souple, laisse vide ce que tu n'as pas mesuré aujourd'hui.</p>
+      <p class="small-note" style="margin-top:0;">Au mètre ruban souple, toujours au même endroit : poitrine sous les aisselles, taille au nombril, hanches au point le plus large, bras détendu au milieu épaule-coude, cuisses sous le pli fessier. Laisse vide ce que tu n'as pas mesuré aujourd'hui.</p>
       <div class="field" style="margin-top:10px;"><label>Date</label><input type="date" id="mens-date"></div>
       <div class="row" style="margin-top:10px;">
         <div class="field"><label>Tour de taille (cm)</label><input type="number" inputmode="decimal" id="mens-taille" placeholder="0"></div>
@@ -1244,6 +1198,22 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
     <div class="field"><label>Nom du plat</label><input type="text" id="plat-nom" placeholder="Ex : Lasagnes maison"></div>
 
     <div class="section-title">Ajouter un ingrédient</div>
+    <div class="row" style="margin-bottom:12px;">
+      <button class="btn btn-secondary" onclick="app.startBarcodeScan('plat')">📷 Scanner un code-barres</button>
+    </div>
+    <div id="plat-scan-zone" style="display:none;">
+      <div class="card"><div id="plat-scan-video-wrap" style="border-radius:12px;overflow:hidden;"></div>
+        <p class="small-note" style="margin-top:8px;margin-bottom:0;">Si l'image reste floue, éloigne légèrement le téléphone du code-barres (10-15 cm) au lieu de le coller — certains téléphones ne savent pas faire la mise au point de très près.</p>
+        <button class="btn btn-secondary" style="margin-top:10px;" onclick="app.stopBarcodeScan()">Annuler le scan</button>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--card-border);">
+          <div class="field" style="margin-bottom:8px;">
+            <label for="plat-scan-manual-code">La caméra ne fait pas la mise au point ? Saisis les chiffres sous le code-barres à la main :</label>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" id="plat-scan-manual-code" placeholder="Ex : 3017620422003">
+          </div>
+          <button class="btn btn-primary" onclick="app.submitManualBarcode()">Valider le code saisi</button>
+        </div>
+      </div>
+    </div>
     <div class="field"><input type="text" id="plat-ing-search" placeholder="Ex : pâtes, sauce tomate, viande hachée..." oninput="app.searchPlatIngredient()"></div>
     <div id="plat-ing-results"></div>
 
@@ -1426,7 +1396,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260929175909';
+const APP_BUILD_VERSION = '20260929185245';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -5579,6 +5549,7 @@ const app = {
     document.getElementById('plat-nom').value = '';
     document.getElementById('plat-ing-search').value = '';
     document.getElementById('plat-ing-results').innerHTML = '';
+    document.getElementById('plat-scan-zone').style.display = 'none';
     this.renderPlatBuilder();
     nav.push('view-nutri-plat-new');
   },
@@ -5801,13 +5772,29 @@ const app = {
     }
   },
 
-  /* ---------- NUTRITION : SCAN CODE-BARRES (Open Food Facts) ---------- */
-  startBarcodeScan(){
+  /* ---------- NUTRITION : SCAN CODE-BARRES (Open Food Facts) ----------
+     Deux points d'entree possibles : l'ecran "Ajouter un aliment" (cible
+     'aliment', comportement historique) et l'ecran "Creer un plat" (cible
+     'plat', ajoute au 29/09 -- demande explicite de Christophe : "il faut
+     que l'on puisse scanner les produits aussi" pour composer un plat).
+     Les deux cibles ont chacune leur propre zone/DOM de scan (deux ecrans
+     distincts restent tous les deux presents dans le DOM, un seul <video>
+     actif a la fois via _scanTarget) mais partagent la meme logique
+     camera/decodage -- seule la destination du produit scanne differe,
+     geree dans onBarcodeDecoded(). */
+  _SCAN_TARGETS: {
+    aliment: {zone:'nutri-scan-zone', videoWrap:'nutri-scan-video-wrap', video:'nutri-scan-video', manual:'nutri-scan-manual-code'},
+    plat: {zone:'plat-scan-zone', videoWrap:'plat-scan-video-wrap', video:'plat-scan-video', manual:'plat-scan-manual-code'},
+  },
+  startBarcodeScan(target){
+    target = target || 'aliment';
+    this._scanTarget = target;
+    const ids = this._SCAN_TARGETS[target];
     if(typeof Html5Qrcode==='undefined'){ toast("Scanner indisponible (pas de réseau ?)"); return; }
-    document.getElementById('nutri-scan-zone').style.display = 'block';
-    const wrap = document.getElementById('nutri-scan-video-wrap');
-    wrap.innerHTML = '<div id="nutri-scan-video"></div>';
-    this._html5Qrcode = new Html5Qrcode('nutri-scan-video');
+    document.getElementById(ids.zone).style.display = 'block';
+    const wrap = document.getElementById(ids.videoWrap);
+    wrap.innerHTML = '<div id="'+ids.video+'"></div>';
+    this._html5Qrcode = new Html5Qrcode(ids.video);
     const onDecode = (code)=>this.onBarcodeDecoded(code);
     const scanConfig = {fps:10, qrbox:{width:250,height:150}};
     // .catch() garde le vrai type d'erreur (err.name : NotAllowedError,
@@ -5837,7 +5824,8 @@ const app = {
     ).catch(fail);
   },
   stopBarcodeScan(){
-    document.getElementById('nutri-scan-zone').style.display = 'none';
+    const ids = this._SCAN_TARGETS[this._scanTarget || 'aliment'];
+    document.getElementById(ids.zone).style.display = 'none';
     if(this._html5Qrcode){
       this._html5Qrcode.stop().catch(()=>{}).finally(()=>{ this._html5Qrcode=null; });
     }
@@ -5849,7 +5837,8 @@ const app = {
   // code-barres et on reutilise la meme recherche Open Food Facts que le
   // scan camera.
   submitManualBarcode(){
-    const input = document.getElementById('nutri-scan-manual-code');
+    const ids = this._SCAN_TARGETS[this._scanTarget || 'aliment'];
+    const input = document.getElementById(ids.manual);
     const code = (input.value || '').trim().replace(/\s+/g,'');
     if(!code || !/^\d{6,14}$/.test(code)){
       toast('Code invalide : uniquement des chiffres (8 à 13 en général)');
@@ -5878,6 +5867,7 @@ const app = {
     };
   },
   async onBarcodeDecoded(code){
+    const target = this._scanTarget || 'aliment';
     this.stopBarcodeScan();
     toast('Recherche du produit…');
     try{
@@ -5886,6 +5876,20 @@ const app = {
       if(!data || data.status!==1 || !data.product){ toast('Produit introuvable'); return; }
       const p = data.product;
       const product100g = this.buildProduct100gFromOFF(p);
+      // Cible "plat" : le produit scanne devient un ingredient de plus dans
+      // le plat en cours de construction (meme forme que addPlatIngredientResult),
+      // pas un remplissage du formulaire "aliment unique".
+      if(target==='plat'){
+        if(!this._platBuilder) this._platBuilder = {ingredients:[]};
+        this._platBuilder.ingredients.push({
+          nom: p.product_name || 'Produit scanné',
+          per100g: {cal:product100g.cal||0, prot:product100g.prot||0, gluc:product100g.gluc||0, lip:product100g.lip||0},
+          quantite: 100,
+        });
+        this.renderPlatBuilder();
+        toast('Ingrédient ajouté ✅');
+        return;
+      }
       if(!this._nutriAdd) this._nutriAdd = {mealId: MEALS[0].id};
       this._nutriAdd.product100g = product100g;
       document.getElementById('nutri-add-nom').value = p.product_name || 'Produit scanné';
