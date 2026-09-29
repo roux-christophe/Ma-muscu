@@ -95,6 +95,7 @@
    restent en vert par defaut. */
 #view-nutrition, #view-nutri-profil, #view-nutri-add, #view-nutri-stats, #view-nutri-corps,
 #view-recettes, #view-aide-repas, #view-recette-detail, #view-liste-courses, #view-copier-repas,
+#view-nutri-plat-new,
 .ctx-nutrition{
   --accent: var(--accent-nutrition);
   --accent-2: var(--accent-nutrition-2);
@@ -1396,7 +1397,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260929185245';
+const APP_BUILD_VERSION = '20260929205623';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -2222,14 +2223,31 @@ function foodCategoryBucket(categorie, nom){
 }
 // Icone (img si categorie reconnue, pomme SVG generique sinon/si aliment
 // introuvable en base) a afficher devant un nom d'aliment -- utilisee dans
-// la liste "Frigo", le detail de recette et les resultats de recherche.
+// la liste "Frigo", le detail de recette (ingredients + liste de courses),
+// "Creer un plat" et les resultats de recherche.
+// Repli en cascade : photo dediee de l'ingredient (FOOD_INGREDIENT_IMAGES,
+// les 190 photos individuelles) -> icone de categorie partagee -> pomme SVG
+// generique. Jusqu'au 29/09 cette fonction sautait directement a l'icone de
+// categorie (les 190 photos n'existaient alors que pour les grandes cartes
+// de l'ecran Frigo via ingredientMediaHTML) -- une fois les 190 photos
+// recues, Christophe a fait remarquer qu'elles n'apparaissaient nulle part
+// ailleurs (ex : liste de courses d'une recette, toujours sur l'icone
+// "legumes"/"epices" partagee). Meme cascade de repli que ingImgFallback
+// (utilisee par ingredientMediaHTML), juste dans le habillage .cat-ic
+// (48x48) attendu par .list-row au lieu du habillage pleine largeur des
+// grandes cartes Frigo.
 function foodCategoryIconHTML(nomAliment){
+  const specific = FOOD_INGREDIENT_IMAGES[nomAliment];
   const f = foodDbByName(nomAliment);
   const bucket = f ? foodCategoryBucket(f.categorie, f.nom) : null;
-  const file = bucket ? FOOD_CATEGORY_IMAGES[bucket] : null;
-  return file
-    ? `<div class="cat-ic"><img src="${file}" alt="" loading="lazy"></div>`
-    : `<div class="cat-ic">${SVG_APPLE}</div>`;
+  const fallbackFile = bucket ? FOOD_CATEGORY_IMAGES[bucket] : null;
+  if(specific){
+    return `<div class="cat-ic"><img src="${specific}" alt="" loading="lazy" data-fallback="${fallbackFile||''}" onerror="ingImgFallback(this)"></div>`;
+  }
+  if(fallbackFile){
+    return `<div class="cat-ic"><img src="${fallbackFile}" alt="" loading="lazy" onerror="ingImgFallback(this)"></div>`;
+  }
+  return `<div class="cat-ic">${SVG_APPLE}</div>`;
 }
 // ---------- Photos individuelles des ingredients de l'ecran Frigo (cf.
 // FOOD_INGREDIENT_IMAGES) ----------
@@ -3180,6 +3198,7 @@ const app = {
   db: null,
   currentLog: null,
   restTimer: null,
+  _audioCtx: null,
 
   /* ---------- NAVBAR CONTEXTUEL ---------- */
   // La barre du bas change de contenu selon la famille d'ecrans dans
@@ -3866,10 +3885,29 @@ const app = {
     this._startRestTimerSeconds(seconds, exState.exercice);
   },
   _startRestTimerSeconds(seconds, label){
+    // Debloque/reveille l'AudioContext ICI, de facon SYNCHRONE dans la pile
+    // d'appel du geste utilisateur qui declenche le repos (tap sur ▶, ou
+    // saisie d'une serie) -- Safari/iOS exige qu'un AudioContext soit cree
+    // OU reveille (.resume()) pendant un geste utilisateur reel pour
+    // pouvoir emettre du son plus tard. Sans ca, en créer un nouveau au
+    // moment ou le minuteur arrive a zero (dans _restTimerFinishedCue,
+    // appele depuis un setInterval -- donc HORS geste utilisateur) reste
+    // muet sur iPhone sans la moindre erreur : c'est exactement pourquoi le
+    // bip ne se faisait jamais entendre. On reutilise la meme instance
+    // (creee une seule fois) plutot que d'en recreer une a chaque repos.
+    this._unlockRestTimerAudio();
     clearInterval(this._restInterval);
     this.restTimer = { total: seconds, remaining: seconds, label: label || '', done: false };
     this.renderRestTimer();
     this._restInterval = setInterval(()=>this._tickRestTimer(), 1000);
+  },
+  _unlockRestTimerAudio(){
+    try{
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if(!Ctx) return;
+      if(!this._audioCtx) this._audioCtx = new Ctx();
+      if(this._audioCtx.state === 'suspended') this._audioCtx.resume().catch(()=>{});
+    }catch(e){}
   },
   _tickRestTimer(){
     if(!this.restTimer){ clearInterval(this._restInterval); return; }
@@ -3898,11 +3936,24 @@ const app = {
     this.renderRestTimer();
   },
   _restTimerFinishedCue(){
+    // navigator.vibrate n'existe tout simplement pas sous Safari/iOS (API de
+    // vibration jamais implementee par WebKit, meme en PWA installee sur
+    // l'ecran d'accueil) -- ce n'est pas un bug corrigible cote code, juste
+    // une limite de la plateforme sur iPhone. Ca fonctionne en revanche sur
+    // Android/Chrome, d'ou le garde-fou ci-dessous plutot qu'un appel
+    // suppose toujours disponible.
     try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(e){}
     try{
+      // Reutilise l'AudioContext deja debloque par _unlockRestTimerAudio()
+      // (appele de facon synchrone lors du geste utilisateur qui a demarre
+      // CE repos) plutot que d'en creer un nouveau ici -- on est appele
+      // depuis un setInterval, donc hors geste utilisateur, et un
+      // AudioContext cree a ce moment-la reste muet sur iPhone.
       const Ctx = window.AudioContext || window.webkitAudioContext;
       if(!Ctx) return;
-      const ctx = new Ctx();
+      if(!this._audioCtx) this._audioCtx = new Ctx();
+      const ctx = this._audioCtx;
+      if(ctx.state === 'suspended') ctx.resume().catch(()=>{});
       const beep = (start, dur)=>{
         const o = ctx.createOscillator(), g = ctx.createGain();
         o.type = 'sine'; o.frequency.value = 880;
