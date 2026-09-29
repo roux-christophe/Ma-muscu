@@ -981,6 +981,10 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
         <input type="checkbox" id="aide-repas-filtre-proteine" onchange="app.renderAideRepasResultats()" style="width:18px;height:18px;flex-shrink:0;">
         <span>Riche en protéines uniquement (≥ 25 g / portion)</span>
       </label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:8px;">
+        <input type="checkbox" id="aide-repas-filtre-lipides" onchange="app.renderAideRepasResultats()" style="width:18px;height:18px;flex-shrink:0;">
+        <span>Bas en lipides uniquement (≤ 12 g / portion)</span>
+      </label>
     </div>
 
     <div class="section-title">Recettes correspondantes</div>
@@ -1030,7 +1034,53 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
     <div class="section-title">Mensurations</div>
     <div id="mens-module"></div>
     <div class="surface">
-      <p class="small-note" style="margin-top:0;">Au mètre ruban souple : taille au niveau du nombril, hanches, poitrine, bras, cuisses. Laisse vide ce que tu n'as pas mesuré aujourd'hui.</p>
+      <!-- Silhouette-repere indiquant OU prendre chaque mesure (demande
+           explicite de Christophe, 29/09/2026) : au metre ruban souple, les
+           5 zones suivies par BODY_PARTS (cf. app.js). Couleurs en
+           var(--accent)/var(--accent-2)/var(--text)/var(--text-dim) pour
+           suivre automatiquement le theme nutrition (violet/bleu canard)
+           deja applique a cet ecran, sans couleur codee en dur. -->
+      <div style="text-align:center;">
+        <svg viewBox="0 0 260 380" width="220" height="322" style="max-width:100%;">
+          <circle cx="100" cy="32" r="22" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+          <path d="M90,52 L90,62 M110,52 L110,62" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+          <path fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="
+            M52,78 C60,68 80,62 100,62 C120,62 140,68 148,78
+            L156,140 C158,150 154,158 146,160 L140,168
+            C148,180 152,196 150,210 L146,214 L54,214 L50,210
+            C48,196 52,180 60,168 L54,160 C46,158 42,150 44,140 Z"/>
+          <path fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" d="M52,90 C40,110 34,140 36,175 C37,188 40,198 44,206"/>
+          <path fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" d="M148,90 C160,110 166,140 164,175 C163,188 160,198 156,206"/>
+          <circle cx="44" cy="210" r="6" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+          <circle cx="156" cy="210" r="6" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+          <path fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" d="M82,214 L76,320 C75,332 77,344 80,352"/>
+          <path fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" d="M118,214 L124,320 C125,332 123,344 120,352"/>
+          <path fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" d="M72,352 L88,352"/>
+          <path fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" d="M112,352 L128,352"/>
+          <g stroke="var(--text-dim)" stroke-width="1.4" stroke-dasharray="4 3">
+            <line x1="20" y1="88" x2="180" y2="88"/>
+            <line x1="20" y1="148" x2="180" y2="148"/>
+            <line x1="20" y1="188" x2="180" y2="188"/>
+            <line x1="186" y1="125" x2="152" y2="125"/>
+            <line x1="20" y1="270" x2="100" y2="270"/>
+          </g>
+          <g fill="var(--accent-2)">
+            <circle cx="100" cy="88" r="2.5"/>
+            <circle cx="100" cy="148" r="2.5"/>
+            <circle cx="100" cy="188" r="2.5"/>
+            <circle cx="160" cy="125" r="2.5"/>
+            <circle cx="90" cy="270" r="2.5"/>
+          </g>
+          <g font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-size="13" font-weight="700" fill="var(--text)">
+            <text x="186" y="92">Poitrine</text>
+            <text x="186" y="152">Taille</text>
+            <text x="186" y="192">Hanches</text>
+            <text x="192" y="129">Bras</text>
+            <text x="4" y="264">Cuisses</text>
+          </g>
+        </svg>
+      </div>
+      <p class="small-note" style="margin-top:8px;"><b>Poitrine</b> — sous les aisselles, au niveau des mamelons. <b>Taille</b> — au point le plus étroit, en général au niveau du nombril. <b>Hanches</b> — au point le plus large du bassin. <b>Bras</b> — bras détendu, au milieu entre épaule et coude. <b>Cuisses</b> — au point le plus large, sous le pli fessier. Au mètre ruban souple, laisse vide ce que tu n'as pas mesuré aujourd'hui.</p>
       <div class="field" style="margin-top:10px;"><label>Date</label><input type="date" id="mens-date"></div>
       <div class="row" style="margin-top:10px;">
         <div class="field"><label>Tour de taille (cm)</label><input type="number" inputmode="decimal" id="mens-taille" placeholder="0"></div>
@@ -1146,6 +1196,10 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
     </div>
     <div id="nutri-repastypes-zone"></div>
     <div id="nutri-favoris-zone"></div>
+    <div id="nutri-plats-perso-zone"></div>
+    <div class="row" style="margin:0 0 12px;">
+      <button class="btn btn-secondary" onclick="app.openPlatBuilder()">🍽️ Créer un plat (plusieurs ingrédients)</button>
+    </div>
     <div class="section-title">Détails</div>
     <div class="card">
       <div class="field"><label>Nom de l'aliment</label><input type="text" id="nutri-add-nom" placeholder="Ex : Poulet grillé"></div>
@@ -1176,6 +1230,33 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
       <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text-dim);"><input type="checkbox" id="nutri-add-favori" style="width:18px;height:18px;">Enregistrer comme aliment favori</label>
     </div>
     <button class="btn btn-primary" id="nutri-add-save-btn" onclick="app.saveAliment()">Ajouter au repas</button>
+  </div>
+
+  <!-- ===== NUTRITION : CREER UN PLAT MAISON (plusieurs ingredients cumules) =====
+       Demande explicite de Christophe (27/09) : "lasagnes maison" = pates +
+       sauce tomate + viande, enregistre une fois puis retrouve tel quel les
+       fois suivantes -- une seule entree globale (pas de decoupe en parts,
+       choix explicite). Reutilise la meme base FOOD_DB que "Ajouter un
+       aliment", mais AJOUTE plusieurs ingredients a une liste au lieu d'en
+       remplir un seul formulaire. -->
+  <div class="view" id="view-nutri-plat-new">
+    <div class="topbar"><button class="back" onclick="nav.back()">‹</button><h1>Créer un plat</h1></div>
+    <div class="field"><label>Nom du plat</label><input type="text" id="plat-nom" placeholder="Ex : Lasagnes maison"></div>
+
+    <div class="section-title">Ajouter un ingrédient</div>
+    <div class="field"><input type="text" id="plat-ing-search" placeholder="Ex : pâtes, sauce tomate, viande hachée..." oninput="app.searchPlatIngredient()"></div>
+    <div id="plat-ing-results"></div>
+
+    <div class="section-title">Ingrédients du plat</div>
+    <div id="plat-ing-liste"></div>
+    <p class="small-note" id="plat-ing-empty">Aucun ingrédient ajouté pour l'instant.</p>
+
+    <div class="card" style="margin-top:4px;" id="plat-totaux-card">
+      <div class="section-title" style="margin-top:0;">Total du plat</div>
+      <div class="stat-grid" id="plat-totaux"></div>
+    </div>
+
+    <button class="btn btn-primary" style="margin-top:14px;" onclick="app.savePlatPerso()">Enregistrer le plat</button>
   </div>
 
   <!-- ===== NUTRITION : COPIER UN REPAS (restes de la veille etc.) ===== -->
@@ -1345,7 +1426,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260928142350';
+const APP_BUILD_VERSION = '20260929175909';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1391,7 +1472,7 @@ const SVG_BOOKMARK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
 const SVG_SWAP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>';
 
 const NAV_SPORT_FAMILY = ['view-sport','view-programmes','view-seance-list','view-log','view-exo-history','view-history','view-stats'];
-const NAV_NUTRITION_FAMILY = ['view-nutrition','view-recettes','view-aide-repas','view-recette-detail','view-liste-courses','view-nutri-corps','view-nutri-stats','view-nutri-profil','view-nutri-add','view-copier-repas'];
+const NAV_NUTRITION_FAMILY = ['view-nutrition','view-recettes','view-aide-repas','view-recette-detail','view-liste-courses','view-nutri-corps','view-nutri-stats','view-nutri-profil','view-nutri-add','view-copier-repas','view-nutri-plat-new'];
 function seanceIconSVG(isCardio){ return isCardio ? SVG_HEART : SVG_DUMBBELL; }
 
 /* ===================== POSTERS ANATOMIQUES DES EXERCICES =====================
@@ -1836,7 +1917,7 @@ function defaultSettings(){
   };
 }
 function defaultDB(){
-  return { version: 1, settings: defaultSettings(), seances: [], pesees: [], mensurations: [], journalAlimentaire: [], alimentsFavoris: [], hydratation: [], repasTypes: [], listesCourses: [], recettesACuisiner: [] };
+  return { version: 1, settings: defaultSettings(), seances: [], pesees: [], mensurations: [], journalAlimentaire: [], alimentsFavoris: [], hydratation: [], repasTypes: [], listesCourses: [], recettesACuisiner: [], platsPerso: [] };
 }
 function tryParseDB(raw){
   if(!raw) return null;
@@ -1862,6 +1943,14 @@ function tryParseDB(raw){
       // cuisine avec ce que j'ai achete ?") et supprimable une a une une fois
       // la recette realisee.
       recettesACuisiner: Array.isArray(data.recettesACuisiner) ? data.recettesACuisiner : [],
+      // Plats maison composes de plusieurs ingredients de FOOD_DB (ex :
+      // "Lasagnes maison" = pates + sauce tomate + viande + fromage),
+      // demande explicite de Christophe (27/09) pour retrouver un plat deja
+      // construit sans resaisir chaque ingredient a chaque fois. Totaux
+      // fixes a la creation (comme un favori) : une seule entree globale
+      // ajoutee au journal a chaque reprise, pas de decoupe en parts (choix
+      // explicite de Christophe, plus simple que le modele "part fixe").
+      platsPerso: Array.isArray(data.platsPerso) ? data.platsPerso : [],
     });
   }catch(e){ return null; }
 }
@@ -2476,6 +2565,17 @@ function recetteProtPortion(recipe){
   const {totals} = computeRecipeTotals(recipe);
   return totals.prot / (recipe.portions||1);
 }
+// Seuil "bas en lipides" (meme filtre que ci-dessus, demande symetrique de
+// Christophe le 29/09/2026) : 12 g de lipides par portion. Calibre en
+// verifiant la distribution reelle des 116 recettes (2.4 a 29.2 g/portion,
+// mediane 15.1 g) pour donner un sous-ensemble significatif sans etre trop
+// restrictif -- ~1 recette sur 3 passe ce seuil, contre ~6 sur 10 pour le
+// seuil "riche en proteines" ci-dessus.
+const LIPIDES_BAS_SEUIL = 12;
+function recetteLipPortion(recipe){
+  const {totals} = computeRecipeTotals(recipe);
+  return totals.lip / (recipe.portions||1);
+}
 function fmtDateHuman(iso){
   if(!iso) return '';
   const d = new Date(iso+'T00:00:00');
@@ -2513,7 +2613,12 @@ function parseRecupSeconds(str){
   if(!vals.length) return null;
   return Math.round(Math.max(...vals));
 }
-const REST_TIMER_DEFAULT_SEC = 90;
+// Repere par defaut quand le programme ne precise AUCUN temps de repos pour
+// l'exercice (cf. startRestTimer : parseRecupSeconds(def.recup) prioritaire
+// des qu'un "recup" est renseigne dans le programme). Abaisse de 90s a 45s
+// le 29/09/2026 a la demande explicite de Christophe ("le temps de repos
+// est trop long").
+const REST_TIMER_DEFAULT_SEC = 45;
 function parseRangeKey(k){
   const m = k.match(/(\d+)(?:-(\d+))?/);
   if(!m) return [1,1];
@@ -4296,6 +4401,7 @@ const app = {
     const regimeFiltre = document.getElementById('aide-repas-filtre-regime').value;
     const cuisineFiltre = document.getElementById('aide-repas-filtre-cuisine').value;
     const proteineFiltre = document.getElementById('aide-repas-filtre-proteine').checked;
+    const lipidesFiltre = document.getElementById('aide-repas-filtre-lipides').checked;
     const tokens = q.split(' ').filter(Boolean);
 
     const pillsWrap = document.getElementById('aide-repas-pills');
@@ -4313,6 +4419,7 @@ const app = {
       if(regimeFiltre && !(r.regimes||[]).includes(regimeFiltre)) return false;
       if(cuisineFiltre && r.cuisine!==cuisineFiltre) return false;
       if(proteineFiltre && recetteProtPortion(r) < PROTEIN_RICHE_SEUIL) return false;
+      if(lipidesFiltre && recetteLipPortion(r) > LIPIDES_BAS_SEUIL) return false;
       if(tokens.length){
         const v = normalize(r.ingredientVedette||'');
         if(!tokens.every(t=>v.includes(t))) return false;
@@ -5115,6 +5222,7 @@ const app = {
     document.getElementById('nutri-db-online-zone').style.display = 'none';
     document.getElementById('nutri-add-save-btn').textContent = 'Ajouter au repas';
     this.renderFavoris();
+    this.renderPlatsPerso();
     this.renderRepasTypes();
     this.renderNutriAddDetail();
     nav.push('view-nutri-add');
@@ -5157,6 +5265,7 @@ const app = {
     document.getElementById('nutri-db-online-zone').style.display = 'none';
     document.getElementById('nutri-add-save-btn').textContent = 'Enregistrer les modifications';
     this.renderFavoris();
+    this.renderPlatsPerso();
     // Pas de "repas types" en mode modification d'un aliment deja au journal
     // (ajouter tout un repas type n'a pas de sens ici, on corrige un seul
     // aliment) — la zone reste simplement vide.
@@ -5411,6 +5520,183 @@ const app = {
       document.getElementById('nutri-add-hint').textContent = "Ajuste les valeurs si tu en manges plus ou moins que la dernière fois.";
       this.renderNutriAddDetail();
     }
+  },
+  /* ---------- NUTRITION : PLATS MAISON (plusieurs ingredients cumules) ----------
+     Demande explicite de Christophe (27/09) : construire un plat (ex.
+     "Lasagnes maison") en cumulant plusieurs ingredients de FOOD_DB, le
+     nommer, et le retrouver tel quel les fois suivantes -- SANS decouper en
+     parts (une seule entree globale a chaque reprise, choix explicite de
+     Christophe plutot que le modele "part fixe" qu'il aurait aussi pu
+     choisir). Le total (cal/prot/gluc/lip) est fige a l'enregistrement,
+     exactement comme un favori -- pas de recalcul dynamique depuis FOOD_DB
+     a chaque reprise, pour rester robuste si un nom d'aliment de la base
+     venait a changer plus tard. */
+  renderPlatsPerso(){
+    const wrap = document.getElementById('nutri-plats-perso-zone');
+    if(!wrap) return;
+    const plats = this.db.platsPerso;
+    if(!plats.length){ wrap.innerHTML = ''; return; }
+    wrap.innerHTML = `<div class="section-title" style="margin-top:0;">Mes plats</div>
+      <div class="card">${plats.map(p=>`
+        <div class="list-row">
+          <div class="meta" style="cursor:pointer" onclick="app.addAlimentFromPlatPerso('${p.id}')"><div class="t1">${escapeHtml(p.nom)}</div><div class="t2">${Math.round(p.cal)||0} kcal · ${(p.ingredients||[]).length} ingrédient${(p.ingredients||[]).length>1?'s':''}</div></div>
+          <button class="icon-btn" title="Supprimer ce plat" onclick="event.stopPropagation(); app.deletePlatPerso('${p.id}')">${SVG_TRASH}</button>
+        </div>`).join('')}</div>`;
+  },
+  deletePlatPerso(platId){
+    showConfirm('Supprimer ce plat ?', ()=>{
+      const prev = this.db.platsPerso;
+      this.db.platsPerso = this.db.platsPerso.filter(x=>x.id!==platId);
+      if(!saveDBOrWarn(this.db)){ this.db.platsPerso = prev; return; }
+      toast('Plat supprimé');
+      this.renderPlatsPerso();
+    });
+  },
+  // Comme addAlimentFromFavori (branche "sans base 100g") : remplit le
+  // formulaire d'ajout avec le total fige du plat, editable avant de
+  // valider -- pas de champ quantite (le plat compte comme une seule
+  // entree globale, choix explicite de Christophe).
+  addAlimentFromPlatPerso(platId){
+    const p = this.db.platsPerso.find(x=>x.id===platId);
+    if(!p || !this._nutriAdd) return;
+    this._nutriAdd.product100g = null;
+    document.getElementById('nutri-add-nom').value = p.nom;
+    document.getElementById('nutri-db-search').value = '';
+    document.getElementById('nutri-db-results').innerHTML = '';
+    document.getElementById('nutri-db-online-results').innerHTML = '';
+    document.getElementById('nutri-db-online-zone').style.display = 'none';
+    document.getElementById('nutri-add-quantite-wrap').style.display = 'none';
+    document.getElementById('nutri-add-cal').value = p.cal;
+    document.getElementById('nutri-add-prot').value = p.prot;
+    document.getElementById('nutri-add-gluc').value = p.gluc;
+    document.getElementById('nutri-add-lip').value = p.lip;
+    document.getElementById('nutri-add-portion').value = p.portion || '';
+    document.getElementById('nutri-add-hint').textContent = "Ajuste les valeurs si besoin (portion différente, ingrédient en plus/moins ce jour-là).";
+    this.renderNutriAddDetail();
+  },
+  openPlatBuilder(){
+    this._platBuilder = { ingredients: [] };
+    document.getElementById('plat-nom').value = '';
+    document.getElementById('plat-ing-search').value = '';
+    document.getElementById('plat-ing-results').innerHTML = '';
+    this.renderPlatBuilder();
+    nav.push('view-nutri-plat-new');
+  },
+  // Recherche identique a searchFoodDB (meme base FOOD_DB, meme logique de
+  // classement), mais alimente la liste d'ingredients du plat en cours de
+  // construction au lieu de remplir un formulaire "aliment unique".
+  searchPlatIngredient(){
+    const q = document.getElementById('plat-ing-search').value.trim();
+    const wrap = document.getElementById('plat-ing-results');
+    if(q.length < 2){ wrap.innerHTML = ''; return; }
+    const norm = s => s.toLowerCase().replace(/œ/g,'oe').replace(/æ/g,'ae').normalize('NFKD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+    const nq = norm(q);
+    const qTokens = nq.split(' ').filter(Boolean);
+    const scored = [];
+    FOOD_DB.forEach(f=>{
+      const nf = norm(f.nom);
+      if(!qTokens.every(t => nf.includes(t))) return;
+      let score = 2;
+      if(nf.startsWith(nq)) score = 0;
+      else if(nf.split(' ')[0]===qTokens[0]) score = 1;
+      scored.push({f, score, len: nf.length});
+    });
+    scored.sort((a,b)=> a.score-b.score || a.len-b.len);
+    const matches = scored.slice(0, 8).map(s=>s.f);
+    if(!matches.length){ wrap.innerHTML = '<p class="empty" style="margin:8px 0;">Aucun résultat.</p>'; return; }
+    wrap.innerHTML = `<div class="card" style="margin-bottom:12px;">${matches.map((f,i)=>{
+      const sub = f.portionG
+        ? `${Math.round(f.kcal*f.portionG/100)} kcal (portion ${f.portionG}g) · P ${Math.round(f.prot*f.portionG/100)}g · G ${Math.round(f.gluc*f.portionG/100)}g · L ${Math.round(f.lip*f.portionG/100)}g`
+        : `${Math.round(f.kcal)} kcal /100g · P ${f.prot}g · G ${f.gluc}g · L ${f.lip}g`;
+      return `<div class="list-row" style="cursor:pointer" onclick="app.addPlatIngredientResult(${i})">
+        ${foodCategoryIconHTML(f.nom)}
+        <div class="meta"><div class="t1">${escapeHtml(f.nom)}</div><div class="t2">${sub}</div></div>
+        <div class="chev">›</div>
+      </div>`;
+    }).join('')}</div>`;
+    this._platIngMatches = matches;
+  },
+  addPlatIngredientResult(i){
+    const f = this._platIngMatches && this._platIngMatches[i];
+    if(!f || !this._platBuilder) return;
+    this._platBuilder.ingredients.push({
+      nom: f.nom,
+      per100g: {cal:f.kcal||0, prot:f.prot||0, gluc:f.gluc||0, lip:f.lip||0},
+      quantite: f.portionG || 100,
+    });
+    document.getElementById('plat-ing-search').value = '';
+    document.getElementById('plat-ing-results').innerHTML = '';
+    this.renderPlatBuilder();
+  },
+  removePlatIngredient(idx){
+    if(!this._platBuilder) return;
+    this._platBuilder.ingredients.splice(idx,1);
+    this.renderPlatBuilder();
+  },
+  updatePlatIngredientQuantite(idx, val){
+    if(!this._platBuilder) return;
+    const ing = this._platBuilder.ingredients[idx];
+    if(!ing) return;
+    ing.quantite = parseFloat(val)||0;
+    this.renderPlatBuilder();
+  },
+  platBuilderTotals(){
+    const ings = (this._platBuilder && this._platBuilder.ingredients) || [];
+    const t = {cal:0, prot:0, gluc:0, lip:0};
+    ings.forEach(ing=>{
+      const fac = (ing.quantite||0)/100;
+      t.cal += ing.per100g.cal*fac; t.prot += ing.per100g.prot*fac;
+      t.gluc += ing.per100g.gluc*fac; t.lip += ing.per100g.lip*fac;
+    });
+    return t;
+  },
+  renderPlatBuilder(){
+    const ings = (this._platBuilder && this._platBuilder.ingredients) || [];
+    const wrap = document.getElementById('plat-ing-liste');
+    const emptyMsg = document.getElementById('plat-ing-empty');
+    if(emptyMsg) emptyMsg.hidden = ings.length>0;
+    if(wrap){
+      wrap.innerHTML = ings.map((ing,idx)=>{
+        const fac = (ing.quantite||0)/100;
+        const cal = Math.round(ing.per100g.cal*fac);
+        return `<div class="list-row">
+          ${foodCategoryIconHTML(ing.nom)}
+          <div class="meta"><div class="t1">${escapeHtml(ing.nom)}</div><div class="t2">${cal} kcal</div></div>
+          <div class="field" style="max-width:80px;margin:0;"><input type="number" inputmode="numeric" value="${ing.quantite}" onchange="app.updatePlatIngredientQuantite(${idx}, this.value)"></div>
+          <span style="font-size:12px;color:var(--text-dim);margin-left:4px;">g</span>
+          <button class="icon-btn" title="Retirer" onclick="app.removePlatIngredient(${idx})">${SVG_TRASH}</button>
+        </div>`;
+      }).join('');
+    }
+    const t = this.platBuilderTotals();
+    const totEl = document.getElementById('plat-totaux');
+    if(totEl){
+      totEl.innerHTML = `
+        <div class="stat-tile accent"><div class="v">${Math.round(t.cal)}</div><div class="l">kcal</div></div>
+        <div class="stat-tile"><div class="v">${Math.round(t.prot)} g</div><div class="l">Protéines</div></div>
+        <div class="stat-tile"><div class="v">${Math.round(t.gluc)} g</div><div class="l">Glucides</div></div>
+        <div class="stat-tile"><div class="v">${Math.round(t.lip)} g</div><div class="l">Lipides</div></div>
+      `;
+    }
+  },
+  savePlatPerso(){
+    const nom = document.getElementById('plat-nom').value.trim();
+    const ings = (this._platBuilder && this._platBuilder.ingredients) || [];
+    if(!nom){ toast('Indique un nom pour ce plat'); return; }
+    if(!ings.length){ toast('Ajoute au moins un ingrédient'); return; }
+    const t = this.platBuilderTotals();
+    const plat = {
+      id: uid(), nom,
+      cal: Math.round(t.cal), prot: Math.round(t.prot*10)/10, gluc: Math.round(t.gluc*10)/10, lip: Math.round(t.lip*10)/10,
+      portion: ings.length+' ingrédient'+(ings.length>1?'s':''),
+      ingredients: ings.map(i=>({nom:i.nom, quantite:i.quantite})),
+    };
+    const prev = this.db.platsPerso;
+    this.db.platsPerso = [...this.db.platsPerso, plat];
+    if(!saveDBOrWarn(this.db)){ this.db.platsPerso = prev; return; }
+    toast('Plat enregistré ✅');
+    this.renderPlatsPerso();
+    nav.back();
   },
   saveAliment(){
     const nom = document.getElementById('nutri-add-nom').value.trim();
