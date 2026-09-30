@@ -1296,6 +1296,13 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
       <div class="meta"><div class="t1">Programmes</div><div class="t2">Voir tous les programmes, choisir ceux affichés</div></div>
       <div class="chev">›</div>
     </div>
+    <div class="section-title">Séances</div>
+    <div class="list-row">
+      <label style="display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;min-width:0;">
+        <div class="meta"><div class="t1">Formats de séance avancés</div><div class="t2">Affiche Superset/EMOM/AMRAP sur chaque exercice</div></div>
+        <input type="checkbox" id="set-formats-avances" style="width:18px;height:18px;flex-shrink:0;" onchange="app.toggleFormatsAvances(this.checked)">
+      </label>
+    </div>
     <div class="section-title">Mes maxs</div>
     <div class="card">
       <p class="small-note" style="margin-bottom:10px;">Utilisé pour calculer automatiquement les charges cibles des programmes basés sur un pourcentage (5/3/1, Conjugate Method...). C'est un "max d'entraînement" au sens large — pas forcément ton vrai 1RM à l'échec — ajustable à tout moment.</p>
@@ -1442,7 +1449,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260930055659';
+const APP_BUILD_VERSION = '20260930062837';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1944,6 +1951,14 @@ function defaultSettings(){
     objectifDate: null,      // ISO, optionnel
     objectifRythme: null,    // kg/semaine, optionnel, signe (+prise/-perte)
     ajouterCaloriesSport: true,
+    // Formats de séance avancés (superset/EMOM/AMRAP) : DESACTIVE par
+    // defaut -- Christophe a signale que le selecteur affiche sur CHAQUE
+    // exercice de CHAQUE programme alourdissait l'ecran pour les seances
+    // classiques ou il ne s'en sert jamais. Ce reglage global controle
+    // uniquement l'AFFICHAGE du selecteur (cf. renderLog) : les formats
+    // deja choisis sur une seance ne sont pas effaces si on desactive puis
+    // reactive, ils sont juste masques entre-temps (rendus en "Normal").
+    formatsAvances: false,
     // Surcharges manuelles des macros (grammes) ; null = calcul automatique
     proteinesOverride: null,
     lipidesOverride: null,
@@ -3857,11 +3872,18 @@ const app = {
         const estLibre = L.programmeId===FREE_MUSCU_PROGRAM_ID;
         // Formats de séance (v1) : normal/EMOM/AMRAP par exercice + superset
         // (liaison avec l'exercice SUIVANT, sans repos entre les deux).
-        const format = exState.format || 'normal';
-        const iAmTopHalf = !!exState.supersetNext;
-        const iAmBottomHalf = idx>0 && !!L.exercices[idx-1].supersetNext;
+        // Masque derriere Réglages > Formats de séance avancés (defaut
+        // desactive, demande Christophe 30/09 : le selecteur sur CHAQUE
+        // exercice alourdissait l'ecran pour ceux qui ne s'en servent pas).
+        // Quand desactive, on affiche TOUJOURS "normal" (meme si un format
+        // avait ete choisi avant de desactiver le reglage) -- la valeur
+        // reste en memoire, juste non affichee/non appliquee entre-temps.
+        const formatsOn = !!this.db.settings.formatsAvances;
+        const format = formatsOn ? (exState.format || 'normal') : 'normal';
+        const iAmTopHalf = formatsOn && !!exState.supersetNext;
+        const iAmBottomHalf = formatsOn && idx>0 && !!L.exercices[idx-1].supersetNext;
         const blockClasses = ['exo-block', iAmTopHalf?'superset-top':'', iAmBottomHalf?'superset-bottom':''].filter(Boolean).join(' ');
-        const fmtSelectRow = `<div class="fmt-select-row">
+        const fmtSelectRow = !formatsOn ? '' : `<div class="fmt-select-row">
             <div class="pill-row">
               <button type="button" class="pill ${format==='normal'?'active':''}" onclick="app.setExerciseFormat(${idx},'normal')">Normal</button>
               <button type="button" class="pill ${format==='emom'?'active':''}" onclick="app.setExerciseFormat(${idx},'emom')">EMOM</button>
@@ -3939,7 +3961,7 @@ const app = {
     // Les blocs EMOM/AMRAP contiennent un div #fmt-timer-N vide (rempli par
     // JS, pas par du HTML statique, pour pouvoir etre rafraichi seul chaque
     // seconde sans re-render tout renderLog -- cf. renderFormatTimer).
-    if(seanceDef.type!=='cardio'){
+    if(seanceDef.type!=='cardio' && this.db.settings.formatsAvances){
       L.exercices.forEach((exState,idx)=>{
         if(exState.format==='emom' || exState.format==='amrap') this.renderFormatTimer(idx);
       });
@@ -6775,8 +6797,14 @@ const app = {
   /* ---------- REGLAGES ---------- */
   renderSettings(){
     document.getElementById('set-date-debut').value = this.db.settings.forceCardioDateDebut || '';
+    document.getElementById('set-formats-avances').checked = !!this.db.settings.formatsAvances;
     this.updateSemaineInfo();
     this.renderMaxs();
+  },
+  toggleFormatsAvances(v){
+    this.db.settings.formatsAvances = !!v;
+    if(!saveDBOrWarn(this.db)) return;
+    toast(v ? 'Formats de séance avancés activés' : 'Formats de séance avancés désactivés');
   },
   saveSettings(){
     this.db.settings.forceCardioDateDebut = document.getElementById('set-date-debut').value || null;
