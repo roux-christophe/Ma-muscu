@@ -317,11 +317,13 @@ button{font-family:inherit;}
 .tile-icon.cat-femme, .seance-icon.cat-femme{background:linear-gradient(135deg,#ff9fd8,#d6336c) !important; color:#fff !important;}
 .tile-icon.cat-callisthenie, .seance-icon.cat-callisthenie{background:linear-gradient(135deg,#7db4ff,#2f6fd4) !important; color:#fff !important;}
 .tile-icon.cat-perte-de-poids, .seance-icon.cat-perte-de-poids{background:linear-gradient(135deg,#ffc266,#e08e0b) !important; color:#3a2600 !important;}
+.tile-icon.cat-perso, .seance-icon.cat-perso{background:linear-gradient(135deg,#6ee7d8,#0e9488) !important; color:#062521 !important;}
 .tile .tile-cat{align-self:flex-start; font-size:10px; font-weight:800; letter-spacing:.02em; padding:3px 8px; border-radius:20px;}
 .tile .tile-cat.cat-force{background:rgba(224,73,73,.16); color:#ff8080;}
 .tile .tile-cat.cat-femme{background:rgba(214,51,108,.16); color:#ff8fce;}
 .tile .tile-cat.cat-callisthenie{background:rgba(47,111,212,.16); color:#7db4ff;}
 .tile .tile-cat.cat-perte-de-poids{background:rgba(224,142,11,.18); color:#ffc266;}
+.tile .tile-cat.cat-perso{background:rgba(14,148,136,.18); color:#6ee7d8;}
 
 /* ---------- TIMELINE (activite recente / historique) ---------- */
 .timeline{position:relative; padding-left:22px;}
@@ -837,7 +839,7 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
     <div id="sport-checkin"></div>
     <div class="section-title">Programmes</div>
     <div class="tiles-row" id="sport-programs"></div>
-    <div class="list-row" style="cursor:pointer;" onclick="nav.push('view-programmes'); app.renderProgrammesVisibilite();">
+    <div class="list-row" style="cursor:pointer;" onclick="nav.push('view-programmes'); app.renderProgrammesVisibilite(); app.renderProgrammesPerso();">
       <div class="meta"><div class="t1">Choix de programme</div><div class="t2">Sélectionner les programmes affichés ici</div></div>
       <div class="chev">›</div>
     </div>
@@ -858,6 +860,7 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
   <!-- ===== PROGRAMMES (liste complete + visibilite) ===== -->
   <div class="view" id="view-programmes">
     <div class="topbar"><button class="back" onclick="nav.back()">‹</button><h1>Programmes</h1><button type="button" class="info-btn" title="Comment ça marche" onclick="app.openInfo(this)" data-info="Coche les programmes que tu veux voir sur l&#39;accueil et l&#39;écran Sport — les autres restent masqués (mais ton historique et tes records restent consultables normalement, seule la tuile disparaît)." style="margin-left:6px;">i</button></div>
+    <div id="mes-programmes-perso"></div>
     <div class="card" id="set-programmes-liste"></div>
   </div>
 
@@ -875,7 +878,7 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
     <div id="log-body"></div>
     <div style="height:90px"></div>
     <div id="rest-timer-bar" class="rest-timer-bar" hidden></div>
-    <div class="bottom-bar"><div class="app"><button class="btn btn-primary" onclick="app.saveSeance()">Enregistrer la séance</button></div></div>
+    <div class="bottom-bar"><div class="app"><button class="btn btn-primary" id="log-save-btn" onclick="app.saveSeance()">Enregistrer la séance</button></div></div>
   </div>
 
   <!-- ===== HISTORIQUE D'UN EXERCICE ===== -->
@@ -1292,14 +1295,14 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
   <div class="view" id="view-settings">
     <div class="topbar" style="margin:0 -16px 4px;"><h1>Réglages</h1></div>
     <div class="section-title">Mes programmes</div>
-    <div class="list-row" style="cursor:pointer;" onclick="nav.push('view-programmes'); app.renderProgrammesVisibilite();">
+    <div class="list-row" style="cursor:pointer;" onclick="nav.push('view-programmes'); app.renderProgrammesVisibilite(); app.renderProgrammesPerso();">
       <div class="meta"><div class="t1">Programmes</div><div class="t2">Voir tous les programmes, choisir ceux affichés</div></div>
       <div class="chev">›</div>
     </div>
     <div class="section-title">Séances</div>
     <div class="list-row">
       <label style="display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;min-width:0;">
-        <div class="meta"><div class="t1">Formats de séance avancés</div><div class="t2">Affiche Superset/EMOM/AMRAP sur chaque exercice</div></div>
+        <div class="meta"><div class="t1">Formats de séance avancés</div><div class="t2">Superset/EMOM/AMRAP, uniquement en Musculation libre (jamais sur un programme prescrit)</div></div>
         <input type="checkbox" id="set-formats-avances" style="width:18px;height:18px;flex-shrink:0;" onchange="app.toggleFormatsAvances(this.checked)">
       </label>
     </div>
@@ -1380,6 +1383,16 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
   </div>
 </div>
 
+<div class="confirm-overlay" id="program-picker-overlay">
+  <div class="confirm-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:16px;font-weight:800;">Enregistrer dans quel programme ?</div>
+      <button class="icon-btn" title="Fermer" onclick="app.closeProgramPicker()">✕</button>
+    </div>
+    <div id="program-picker-list"></div>
+  </div>
+</div>
+
 <div class="confirm-overlay" id="checkin-overlay">
   <div class="confirm-box">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
@@ -1449,7 +1462,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260930062837';
+const APP_BUILD_VERSION = '20260930083911';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1776,12 +1789,54 @@ const EXERCICE_MUSCLE_GROUPS = {
   "Élévation latérale haltères": "epaules",
   "Élévations latérales": "epaules",
 
+  // Ajouts du 30/09 (demande Christophe : catalogue jugé trop pauvre en
+  // variantes poulie/machine, ex. curl biceps a la poulie totalement
+  // absent). L'ordre dans cet objet n'a aucune importance pour l'affichage
+  // -- renderExercicePickerGrid trie toujours par ordre alphabetique -- donc
+  // un simple ajout en fin de liste suffit, pas besoin de re-inserer au bon
+  // endroit alphabetique parmi les entrees existantes ci-dessus.
+  "Curl poulie basse prise large": "biceps",
+  "Curl poulie basse prise serrée": "biceps",
+  "Curl poulie haute unilatéral (curl araignée)": "biceps",
+  "Curl incliné haltères": "biceps",
+  "Curl à la corde (poulie, prise marteau)": "biceps",
+  "Barre au front (skull crusher)": "triceps",
+  "Développé couché prise serrée": "triceps",
+  "Extension triceps à un bras à la poulie": "triceps",
+  "Extension triceps nuque haltère": "triceps",
+  "Développé Arnold": "epaules",
+  "Face pull à la poulie": "epaules",
+  "Élévation latérale à la poulie": "epaules",
+  "Rowing T-bar": "dos",
+  "Tirage poitrine prise neutre": "dos",
+  "Tractions assistées (machine)": "dos",
+  "Pec-deck (butterfly)": "pectoraux",
+  "Développé couché décliné": "pectoraux",
+  "Écarté incliné haltères": "pectoraux",
+  "Shrugs haltères": "trapezes",
+  "Shrugs barre": "trapezes",
+  "Curl poignet barre": "avant-bras",
+  "Curl poignet inversé": "avant-bras",
+  "Good morning": "ischios",
+  "Step-up haltères": "quadriceps",
+  "Mollets à la presse à cuisses": "mollets",
+  "Mollet unilatéral haltère": "mollets",
+  "Crunch à la poulie haute": "abdos",
+  "Relevé de jambes suspendu": "abdos",
+  "Rotation russe (russian twist)": "abdos",
+  "Roulette abdominale (ab wheel)": "abdos",
+  "Rameur (ergomètre)": "cardio",
+  "Assault bike": "cardio",
+  "Battle ropes": "cardio",
+  "Box jump": "cardio",
+  "Wall ball": "cardio",
+  "Thrusters": "cardio",
 };
 const EXERCICE_MUSCLE_GROUP_LABELS = {
   pectoraux: 'Pectoraux', dos: 'Dos', epaules: 'Épaules', biceps: 'Biceps',
   triceps: 'Triceps', quadriceps: 'Quadriceps', ischios: 'Ischio-jambiers',
   fessiers: 'Fessiers', mollets: 'Mollets', abdos: 'Abdominaux',
-  cardio: 'Cardio / Full-body',
+  cardio: 'Cardio / Full-body', trapezes: 'Trapèzes', 'avant-bras': 'Avant-bras',
 };
 
 // Les entrees ci-dessus sont de simples noms de fichier (ex. '69-planche-
@@ -1807,6 +1862,7 @@ const CATEGORIE_LABELS = {
   femme: 'Femme',
   callisthenie: 'Callisthénie',
   'perte-de-poids': 'Perte de poids',
+  perso: 'Personnalisé',
 };
 function categorieClass(categorie){ return categorie ? 'cat-'+categorie : ''; }
 function categorieLabel(categorie){ return CATEGORIE_LABELS[categorie] || ''; }
@@ -1932,6 +1988,27 @@ const PROFILES = {
   strategiste: {icon:'♟️', name:'Stratège', desc:'Tu aimes les méthodes construites, qui varient et demandent réflexion.', programId:'conjugate-method', progDesc:'Avancé, 4 séances : méthode Conjugate — alterne effort maximal et effort dynamique, exercices variés chaque semaine.'},
 };
 
+// Programmes personnalises (demande Christophe 30/09) : construits par
+// l'utilisateur seance par seance depuis Musculation libre, jusqu'a ce qu'il
+// considere son programme fini -- pas de nombre de seances impose, pas de
+// flux de creation separe : on reutilise la composition d'exercices deja
+// disponible en Musculation libre, puis on "enregistre" la seance dans un
+// programme perso au lieu de juste la logger. Persistes dans
+// db.programmesPerso, mais pour que TOUTE la logique existante (tuiles
+// Sport, rotation nextSeanceInfo, historique, stats, suivi de charge par
+// nom d'exercice) fonctionne sans la moindre modification, on les rejoue
+// aussi comme de vraies entrees PROGRAMS -- exactement le meme principe que
+// FREE_MUSCU_PROGRAM_ID/FREE_CARDIO_PROGRAM_ID ci-dessus, sauf que ceux-la
+// sont pousses une fois pour toutes alors que les programmes perso doivent
+// etre re-synchronises a chaque chargement ET apres chaque modification
+// (cf. syncProgrammesPerso, appele au demarrage et par app.*ProgrammePerso*).
+function syncProgrammesPerso(db){
+  for(let i=PROGRAMS.length-1;i>=0;i--){ if(PROGRAMS[i]._perso) PROGRAMS.splice(i,1); }
+  (db.programmesPerso||[]).forEach(p=>{
+    PROGRAMS.push({id:p.id, nom:p.nom, seances:p.seances, categorie:'perso', _perso:true});
+  });
+}
+
 const DB_KEY = 'ma_muscu_db_v1';
 const DB_BACKUP_KEY = 'ma_muscu_db_v1_prev';
 
@@ -1989,7 +2066,7 @@ function defaultSettings(){
   };
 }
 function defaultDB(){
-  return { version: 1, settings: defaultSettings(), seances: [], pesees: [], mensurations: [], journalAlimentaire: [], alimentsFavoris: [], hydratation: [], repasTypes: [], listesCourses: [], recettesACuisiner: [], platsPerso: [], checkins: [] };
+  return { version: 1, settings: defaultSettings(), seances: [], pesees: [], mensurations: [], journalAlimentaire: [], alimentsFavoris: [], hydratation: [], repasTypes: [], listesCourses: [], recettesACuisiner: [], platsPerso: [], checkins: [], programmesPerso: [] };
 }
 function tryParseDB(raw){
   if(!raw) return null;
@@ -2028,6 +2105,9 @@ function tryParseDB(raw){
       // uniquement a suggerer une intensite de seance -- ne bloque jamais
       // l'acces a une seance, purement indicatif (demande Christophe 30/09).
       checkins: Array.isArray(data.checkins) ? data.checkins : [],
+      // Programmes personnalises (cf. syncProgrammesPerso) : [{id, nom,
+      // seances:[{numero, nom, type:'muscu', exercices:[{exercice, series_reps}]}]}].
+      programmesPerso: Array.isArray(data.programmesPerso) ? data.programmesPerso : [],
     });
   }catch(e){ return null; }
 }
@@ -2678,6 +2758,15 @@ function fmtDateHuman(iso){
   let s = d.toLocaleDateString('fr-FR', opts);
   return s.charAt(0).toUpperCase()+s.slice(1);
 }
+// Extrait le nombre de reps cible d'une chaine "NxM" simple (format toujours
+// utilise pour les series_reps des programmes perso, cf. syncProgrammesPerso)
+// -- distinct de parseSeriesCount qui extrait lui le nombre de SERIES et gere
+// des formats plus complexes ("3x10, 2x8") non utilises ici.
+function parseRepsTarget(str){
+  if(!str) return 10;
+  const m = /x\s*(\d+)/i.exec(str);
+  return m ? parseInt(m[1],10) : 10;
+}
 function parseSeriesCount(str){
   if(!str) return 3;
   const re = /(\d+)(?:\s*[-–]\s*(\d+))?\s*x/gi;
@@ -3303,6 +3392,12 @@ function computeNutriWindowStats(days){
 const app = {
   db: null,
   currentLog: null,
+  // Non-null uniquement pendant l'edition de la DEFINITION d'une seance
+  // perso (cf. editProgramSeance) -- {programId, numero, nom}. Reutilise
+  // l'ecran/l'etat de Musculation libre (this.currentLog) pour la
+  // composition d'exercices, mais bascule saveSeance() vers une sauvegarde
+  // dans this.db.programmesPerso au lieu d'un log date dans this.db.seances.
+  _editingProgramSeance: null,
   restTimer: null,
   _audioCtx: null,
   _fmtTimer: null,
@@ -3751,6 +3846,11 @@ const app = {
 
   /* ---------- LOG D'UNE SEANCE ---------- */
   openLog(programmeId, seanceNumero, dateISO){
+    // Un openLog "normal" (log date d'une performance) n'a rien a voir avec
+    // l'edition d'une definition de seance perso (cf. editProgramSeance) --
+    // on quitte toujours ce mode d'edition en arrivant ici, sinon un
+    // ancien etat resterait accroche et fausserait le prochain "Enregistrer".
+    this._editingProgramSeance = null;
     dateISO = dateISO || todayISO();
     const prog = PROGRAMS.find(p=>p.id===programmeId);
     const seanceDef = prog.seances.find(s=>s.numero===seanceNumero);
@@ -3803,10 +3903,21 @@ const app = {
     const L = this.currentLog;
     const prog = PROGRAMS.find(p=>p.id===L.programmeId);
     const seanceDef = prog.seances.find(s=>s.numero===L.seanceNumero);
-    document.getElementById('log-title').textContent = L.programmeId===FREE_CARDIO_PROGRAM_ID ? 'Cardio libre' : (L.programmeId===FREE_MUSCU_PROGRAM_ID ? 'Musculation libre' : ('Séance ' + L.seanceNumero));
+    const editingSeance = this._editingProgramSeance;
+    document.getElementById('log-title').textContent = editingSeance ? 'Modifier la séance'
+      : L.programmeId===FREE_CARDIO_PROGRAM_ID ? 'Cardio libre' : (L.programmeId===FREE_MUSCU_PROGRAM_ID ? 'Musculation libre' : ('Séance ' + L.seanceNumero));
     const semaine = computeSemaine(L.programmeId);
+    const saveBtn = document.getElementById('log-save-btn');
+    if(saveBtn) saveBtn.textContent = editingSeance ? 'Mettre à jour la séance' : 'Enregistrer la séance';
 
-    document.getElementById('log-meta').innerHTML = `
+    // Mode edition d'une seance perso (cf. editProgramSeance) : pas de date,
+    // pas de suppression -- ce n'est pas un log de performance date, c'est la
+    // DEFINITION de la seance qu'on modifie. Juste son nom, editable ici.
+    document.getElementById('log-meta').innerHTML = editingSeance ? `
+      <div class="field"><label>Nom de la séance</label>
+        <input type="text" value="${escapeHtml(editingSeance.nom||'')}" onchange="app.updateEditingSeanceName(this.value)"></div>
+      <p class="small-note" style="margin-top:6px;">Tu modifies la liste d'exercices de cette séance dans ton programme personnalisé — ça ne log rien comme une séance faite aujourd'hui.</p>
+    ` : `
       <div class="top-row" style="display:flex;justify-content:space-between;align-items:center;">
         <div><div style="font-size:17px;font-weight:800;">${escapeHtml(prog.nom)} — ${escapeHtml(seanceDef.nom)}</div>
         ${semaine!=null?`<div class="week-chip">Semaine ${semaine} du programme</div>`:''}</div>
@@ -3878,7 +3989,13 @@ const app = {
         // Quand desactive, on affiche TOUJOURS "normal" (meme si un format
         // avait ete choisi avant de desactiver le reglage) -- la valeur
         // reste en memoire, juste non affichee/non appliquee entre-temps.
-        const formatsOn = !!this.db.settings.formatsAvances;
+        // RESTREINT A "Musculation libre" (demande Christophe 30/09) : les
+        // programmes de la bibliotheque sont retranscrits tels quels et ne
+        // doivent pas etre modifies -- EMOM/AMRAP cassent le suivi de charge
+        // (poids/reps prescrits), et meme le superset change la structure
+        // d'un enchainement pense par l'auteur du programme. Sur Musculation
+        // libre, aucune prescription a respecter, donc aucun probleme.
+        const formatsOn = !!this.db.settings.formatsAvances && estLibre;
         const format = formatsOn ? (exState.format || 'normal') : 'normal';
         const iAmTopHalf = formatsOn && !!exState.supersetNext;
         const iAmBottomHalf = formatsOn && idx>0 && !!L.exercices[idx-1].supersetNext;
@@ -3931,6 +4048,9 @@ const app = {
       if(L.programmeId===FREE_MUSCU_PROGRAM_ID){
         if(!L.exercices.length){ html += `<p class="empty">Aucun exercice pour l'instant — commence par en ajouter un.</p>`; }
         html += `<button type="button" class="btn btn-secondary" style="margin-top:4px;width:100%;" onclick="app.openExercicePicker('add')">＋ Ajouter un exercice</button>`;
+        if(L.exercices.length && !editingSeance){
+          html += `<button type="button" class="btn btn-secondary" style="margin-top:10px;width:100%;" onclick="app.promptSaveAsProgramSeance()">💾 Enregistrer comme séance de mon programme</button>`;
+        }
       }
       if(seanceDef.finisher){
         html += `<div class="card">
@@ -3939,29 +4059,34 @@ const app = {
           ${this.cardioBlockHTML(seanceDef, L.finisherCardio, 'finisher', null, null, true)}
         </div>`;
       }
-      html += `<div class="field" style="margin-top:4px;"><label>Durée de la séance (min)</label><input type="number" inputmode="numeric" placeholder="0" value="${L.dureeMin!=null?L.dureeMin:''}" onchange="app.updateDureeMin(this.value)"></div>`;
+      if(!editingSeance) html += `<div class="field" style="margin-top:4px;"><label>Durée de la séance (min)</label><input type="number" inputmode="numeric" placeholder="0" value="${L.dureeMin!=null?L.dureeMin:''}" onchange="app.updateDureeMin(this.value)"></div>`;
     }
-    html += `<div class="field" style="margin-top:12px;"><label>Intensité ressentie (1 = léger, 10 = maximal)</label>
-      <div class="pill-row">${Array.from({length:10},(_,i)=>i+1).map(n=>`<button type="button" class="pill ${L.intensite===n?'active':''}" onclick="app.setIntensite(${n})">${n}</button>`).join('')}</div>
-      <p class="small-note" style="margin-top:6px;">Sert uniquement à estimer les calories brûlées (approximatif, pas une mesure).</p>
-    </div>`;
-    const totalPoids = computeTotalPoidsSouleve(L, seanceDef);
-    const calories = estimateCaloriesSeance(L, seanceDef);
-    if(totalPoids>0 || calories!=null){
-      html += `<div class="card" style="margin-top:4px;">
-        <div class="section-title" style="margin-top:0;">Résumé de la séance</div>
-        <div class="stat-grid">
-          ${totalPoids>0?`<div class="stat-tile accent"><div class="v">${totalPoids.toLocaleString('fr-FR')} kg</div><div class="l">Poids total soulevé</div></div>`:''}
-          ${calories!=null?`<div class="stat-tile accent"><div class="v">≈ ${calories} kcal</div><div class="l">Calories brûlées (ajoutées à ton budget Nutrition du jour)</div></div>`:`<div class="stat-tile"><div class="v">—</div><div class="l">Renseigne la durée ci-dessus (et ton poids dans Nutrition) pour estimer les calories brûlées</div></div>`}
-        </div>
+    // Intensite/resume/notes : n'ont de sens que pour un log de performance
+    // date, pas pour la definition d'une seance perso -- masques en mode
+    // edition (cf. editProgramSeance).
+    if(!editingSeance){
+      html += `<div class="field" style="margin-top:12px;"><label>Intensité ressentie (1 = léger, 10 = maximal)</label>
+        <div class="pill-row">${Array.from({length:10},(_,i)=>i+1).map(n=>`<button type="button" class="pill ${L.intensite===n?'active':''}" onclick="app.setIntensite(${n})">${n}</button>`).join('')}</div>
+        <p class="small-note" style="margin-top:6px;">Sert uniquement à estimer les calories brûlées (approximatif, pas une mesure).</p>
       </div>`;
+      const totalPoids = computeTotalPoidsSouleve(L, seanceDef);
+      const calories = estimateCaloriesSeance(L, seanceDef);
+      if(totalPoids>0 || calories!=null){
+        html += `<div class="card" style="margin-top:4px;">
+          <div class="section-title" style="margin-top:0;">Résumé de la séance</div>
+          <div class="stat-grid">
+            ${totalPoids>0?`<div class="stat-tile accent"><div class="v">${totalPoids.toLocaleString('fr-FR')} kg</div><div class="l">Poids total soulevé</div></div>`:''}
+            ${calories!=null?`<div class="stat-tile accent"><div class="v">≈ ${calories} kcal</div><div class="l">Calories brûlées (ajoutées à ton budget Nutrition du jour)</div></div>`:`<div class="stat-tile"><div class="v">—</div><div class="l">Renseigne la durée ci-dessus (et ton poids dans Nutrition) pour estimer les calories brûlées</div></div>`}
+          </div>
+        </div>`;
+      }
+      html += `<div class="field" style="margin-top:4px;"><label>Notes (optionnel)</label><textarea rows="2" placeholder="Sensations, douleurs, ajustements..." onchange="app.updateNotes(this.value)">${escapeHtml(L.notes||'')}</textarea></div>`;
     }
-    html += `<div class="field" style="margin-top:4px;"><label>Notes (optionnel)</label><textarea rows="2" placeholder="Sensations, douleurs, ajustements..." onchange="app.updateNotes(this.value)">${escapeHtml(L.notes||'')}</textarea></div>`;
     document.getElementById('log-body').innerHTML = html;
     // Les blocs EMOM/AMRAP contiennent un div #fmt-timer-N vide (rempli par
     // JS, pas par du HTML statique, pour pouvoir etre rafraichi seul chaque
     // seconde sans re-render tout renderLog -- cf. renderFormatTimer).
-    if(seanceDef.type!=='cardio' && this.db.settings.formatsAvances){
+    if(seanceDef.type!=='cardio' && this.db.settings.formatsAvances && L.programmeId===FREE_MUSCU_PROGRAM_ID){
       L.exercices.forEach((exState,idx)=>{
         if(exState.format==='emom' || exState.format==='amrap') this.renderFormatTimer(idx);
       });
@@ -4061,6 +4186,179 @@ const app = {
     this.currentLog.exercices.splice(idx,1);
     this.renderLog();
     this.autosaveLog();
+  },
+  /* ---------- PROGRAMMES PERSONNALISES (construits depuis Musculation libre) ---------- */
+  // Enregistre la seance EN COURS de composition (this.currentLog.exercices,
+  // Musculation libre uniquement) comme une seance d'un programme perso --
+  // nouveau ou existant. Reutilise le picker d'exercices deja en place, ne
+  // duplique aucune UI de composition.
+  promptSaveAsProgramSeance(){
+    if(!this.currentLog.exercices.length){ toast('Ajoute au moins un exercice avant d\'enregistrer'); return; }
+    if(!this.db.programmesPerso.length){ this._promptNewProgramThenSeance(); return; }
+    this.openProgramPicker();
+  },
+  _promptNewProgramThenSeance(){
+    showPrompt('Nom de ton nouveau programme', 'Ex : Mon programme', nomProg=>{
+      if(!nomProg) return;
+      showPrompt('Nom de cette première séance', 'Ex : Jour 1 - Push', nomSeance=>{
+        if(!nomSeance) return;
+        const prog = {id:uid(), nom:nomProg, seances:[]};
+        this.db.programmesPerso.push(prog);
+        this._appendSeanceToProgram(prog.id, nomSeance, true);
+      });
+    });
+  },
+  openProgramPicker(){
+    const wrap = document.getElementById('program-picker-list');
+    wrap.innerHTML = this.db.programmesPerso.map(p=>`
+      <div class="list-row" style="cursor:pointer;" onclick="app.closeProgramPicker(); app.promptSeanceNameFor('${p.id}')">
+        <div class="meta"><div class="t1">${escapeHtml(p.nom)}</div><div class="t2">${p.seances.length} séance${p.seances.length>1?'s':''}</div></div>
+        <div class="chev">›</div>
+      </div>`).join('') + `
+      <div class="list-row" style="cursor:pointer;" onclick="app.closeProgramPicker(); app._promptNewProgramThenSeance()">
+        <div class="meta"><div class="t1">＋ Nouveau programme</div></div>
+        <div class="chev">›</div>
+      </div>`;
+    document.getElementById('program-picker-overlay').style.display = 'flex';
+  },
+  closeProgramPicker(){ document.getElementById('program-picker-overlay').style.display = 'none'; },
+  promptSeanceNameFor(programId){
+    showPrompt('Nom de cette séance', 'Ex : Jour 2 - Pull', nom=>{
+      if(!nom) return;
+      this._appendSeanceToProgram(programId, nom, false);
+    });
+  },
+  _appendSeanceToProgram(programId, seanceNom, isNewProgram){
+    const prog = this.db.programmesPerso.find(p=>p.id===programId);
+    if(!prog) return;
+    // series_reps derive de ce qui a ete reellement saisi dans cette
+    // composition (nombre de series + reps max saisies), sinon un defaut
+    // raisonnable (3x10) -- garde le meme format "NxM" que tous les autres
+    // programmes (cf. parseSeriesCount), donc aucune logique d'affichage ou
+    // d'ouverture de seance (openLog) n'a besoin d'etre adaptee.
+    const exercices = this.currentLog.exercices.map(exState=>{
+      const repsVals = (exState.series||[]).filter(s=>s && s.reps!=null).map(s=>s.reps);
+      const repsTarget = repsVals.length ? Math.max(...repsVals) : 10;
+      const nbSeries = (exState.series||[]).length || 3;
+      return { exercice: exState.exercice, series_reps: nbSeries+'x'+repsTarget };
+    });
+    const numero = prog.seances.length ? Math.max(...prog.seances.map(s=>s.numero))+1 : 1;
+    prog.seances.push({numero, nom: seanceNom, type:'muscu', exercices});
+    if(!this.db.settings.programmesVisibles.includes(programId)) this.db.settings.programmesVisibles.push(programId);
+    if(!saveDBOrWarn(this.db)){
+      prog.seances.pop();
+      if(isNewProgram) this.db.programmesPerso = this.db.programmesPerso.filter(p=>p.id!==programId);
+      return;
+    }
+    syncProgrammesPerso(this.db);
+    toast('Séance enregistrée dans « '+prog.nom+' » ✅');
+  },
+  /* ---------- GESTION DES PROGRAMMES PERSO (ecran Programmes) ---------- */
+  renderProgrammesPerso(){
+    const wrap = document.getElementById('mes-programmes-perso');
+    if(!wrap) return;
+    const progs = this.db.programmesPerso;
+    if(!progs.length){ wrap.innerHTML = ''; return; }
+    wrap.innerHTML = `<div class="section-title" style="margin-top:0;">Mes programmes personnalisés</div>` +
+      progs.map(p=>`
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:16px;font-weight:800;">${escapeHtml(p.nom)}</div>
+            <button class="icon-btn" title="Supprimer ce programme" onclick="app.deleteProgrammePerso('${p.id}')">${SVG_TRASH}</button>
+          </div>
+          ${p.seances.length ? p.seances.map(s=>`
+            <div class="list-row" style="padding-left:0;padding-right:0;">
+              <div class="meta" style="cursor:pointer;" onclick="app.editProgramSeance('${p.id}',${s.numero})"><div class="t1">${escapeHtml(s.nom)}</div><div class="t2">${s.exercices.length} exercice${s.exercices.length>1?'s':''}</div></div>
+              <button class="icon-btn" title="Modifier cette séance" onclick="app.editProgramSeance('${p.id}',${s.numero})">${SVG_EDIT}</button>
+              <button class="icon-btn" title="Supprimer cette séance" onclick="app.deleteSeancePerso('${p.id}',${s.numero})">${SVG_TRASH}</button>
+            </div>`).join('') : `<p class="empty">Aucune séance pour l'instant.</p>`}
+        </div>
+      `).join('');
+  },
+  deleteSeancePerso(programId, numero){
+    showConfirm('Supprimer cette séance de ton programme ?', ()=>{
+      const prog = this.db.programmesPerso.find(p=>p.id===programId);
+      if(!prog) return;
+      const prev = prog.seances;
+      prog.seances = prog.seances.filter(s=>s.numero!==numero);
+      if(!saveDBOrWarn(this.db)){ prog.seances = prev; return; }
+      syncProgrammesPerso(this.db);
+      this.renderProgrammesPerso();
+      toast('Séance supprimée');
+    });
+  },
+  deleteProgrammePerso(programId){
+    showConfirm('Supprimer tout ce programme personnalisé (toutes ses séances) ?', ()=>{
+      const prev = this.db.programmesPerso;
+      const visPrev = this.db.settings.programmesVisibles;
+      this.db.programmesPerso = this.db.programmesPerso.filter(p=>p.id!==programId);
+      this.db.settings.programmesVisibles = this.db.settings.programmesVisibles.filter(id=>id!==programId);
+      if(!saveDBOrWarn(this.db)){ this.db.programmesPerso = prev; this.db.settings.programmesVisibles = visPrev; return; }
+      syncProgrammesPerso(this.db);
+      this.renderProgrammesPerso();
+      this.renderProgrammesVisibilite();
+      toast('Programme supprimé');
+    });
+  },
+  // Ouvre la composition d'exercices de Musculation libre, PRE-REMPLIE avec
+  // les exercices deja enregistres pour cette seance perso -- permet de
+  // modifier (ajouter/retirer/remplacer, via les memes boutons que d'habitude)
+  // puis d'ecraser la definition existante au lieu d'en creer une nouvelle.
+  // Reutilise this.currentLog/view-log tel quel plutot que de dupliquer tout
+  // l'ecran de composition -- seul saveSeance() se comporte differemment
+  // tant que this._editingProgramSeance est actif (cf. _saveEditedProgramSeance).
+  editProgramSeance(programId, numero){
+    const prog = this.db.programmesPerso.find(p=>p.id===programId);
+    if(!prog) return;
+    const seance = prog.seances.find(s=>s.numero===numero);
+    if(!seance) return;
+    this.stopRestTimer();
+    this.stopFormatTimer();
+    this._editingProgramSeance = {programId, numero, nom: seance.nom};
+    this.currentLog = {
+      id: uid(), programmeId: FREE_MUSCU_PROGRAM_ID, seanceNumero: 1, date: todayISO(),
+      notes:'', isEdit:false, intensite:5, dureeMin:null, circuitAbdosDureeMin:null,
+      exercices: (seance.exercices||[]).map(e=>({
+        exercice: e.exercice,
+        series: Array.from({length:parseSeriesCount(e.series_reps)}, ()=>({poids:null,reps:null})),
+        format: 'normal', supersetNext: false,
+        // Retient l'objectif de reps deja prescrit pour cet exercice, pour
+        // ne pas le faire retomber a 10 par defaut si on resauvegarde sans
+        // avoir retape de reps dans les champs (cf. _saveEditedProgramSeance).
+        _origRepsTarget: parseRepsTarget(e.series_reps),
+      })),
+      cardio: null, finisherCardio: null,
+    };
+    nav.push('view-log');
+    this.renderLog();
+  },
+  updateEditingSeanceName(v){
+    if(!this._editingProgramSeance) return;
+    this._editingProgramSeance.nom = v;
+  },
+  _saveEditedProgramSeance(){
+    const ctx = this._editingProgramSeance;
+    if(!ctx) return;
+    if(!this.currentLog.exercices.length){ toast('Ajoute au moins un exercice avant d\'enregistrer'); return; }
+    const prog = this.db.programmesPerso.find(p=>p.id===ctx.programId);
+    const seance = prog && prog.seances.find(s=>s.numero===ctx.numero);
+    if(!prog || !seance) { this._editingProgramSeance = null; nav.tab('sport'); return; }
+    const exercices = this.currentLog.exercices.map(exState=>{
+      const repsVals = (exState.series||[]).filter(s=>s && s.reps!=null).map(s=>s.reps);
+      const repsTarget = repsVals.length ? Math.max(...repsVals) : (exState._origRepsTarget || 10);
+      const nbSeries = (exState.series||[]).length || 3;
+      return { exercice: exState.exercice, series_reps: nbSeries+'x'+repsTarget };
+    });
+    const prevExercices = seance.exercices, prevNom = seance.nom;
+    seance.exercices = exercices;
+    seance.nom = (ctx.nom||'').trim() || seance.nom;
+    if(!saveDBOrWarn(this.db)){ seance.exercices = prevExercices; seance.nom = prevNom; return; }
+    syncProgrammesPerso(this.db);
+    this._editingProgramSeance = null;
+    toast('Séance mise à jour ✅');
+    nav.back();
+    this.renderProgrammesVisibilite();
+    this.renderProgrammesPerso();
   },
   setIntensite(n){ this.currentLog.intensite = n; this.renderLog(); this.autosaveLog(); },
   updateDureeMin(v){ this.currentLog.dureeMin = v===''?null:parseFloat(v); this.renderLog(); this.autosaveLog(); },
@@ -4582,6 +4880,7 @@ const app = {
     return ok;
   },
   saveSeance(){
+    if(this._editingProgramSeance){ this._saveEditedProgramSeance(); return; }
     if(!this.autosaveLog()) return;
     this.stopRestTimer();
     this.stopFormatTimer();
@@ -6976,6 +7275,7 @@ function applyUpdate(){
 
 document.addEventListener('DOMContentLoaded', ()=>{
   app.db = loadDB();
+  syncProgrammesPerso(app.db);
   app.renderNavbar('view-home');
   app.renderHome();
   app.maybeShowOnboarding();
