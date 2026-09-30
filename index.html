@@ -1507,7 +1507,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260930105011';
+const APP_BUILD_VERSION = '20260930112043';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -4182,7 +4182,7 @@ const app = {
             ${totalPoids>0?`<div class="stat-tile accent"><div class="v">${totalPoids.toLocaleString('fr-FR')} kg</div><div class="l">Poids total soulevé</div></div>`:''}
             ${calories!=null?`<div class="stat-tile accent"><div class="v">≈ ${calories} kcal</div><div class="l">Calories brûlées (ajoutées à ton budget Nutrition du jour)</div></div>`:`<div class="stat-tile"><div class="v">—</div><div class="l">Renseigne la durée ci-dessus (et ton poids dans Nutrition) pour estimer les calories brûlées</div></div>`}
           </div>
-          <button type="button" class="btn btn-secondary" style="margin-top:12px;width:100%;" onclick="app.generateRecapImage()">📸 Générer l'image récap</button>
+          <button type="button" class="btn btn-secondary" style="margin-top:12px;width:100%;" onclick="app.generateRecapImage()">📤 Partage séance</button>
         </div>`;
       }
       html += `<div class="field" style="margin-top:4px;"><label>Notes (optionnel)</label><textarea rows="2" placeholder="Sensations, douleurs, ajustements..." onchange="app.updateNotes(this.value)">${escapeHtml(L.notes||'')}</textarea></div>`;
@@ -5072,16 +5072,46 @@ const app = {
     if(!isCardio && nbSeries) stats.push(['Séries réalisées', String(nbSeries)]);
     if(L.dureeMin) stats.push(['Durée', L.dureeMin+' min']);
 
-    const exoLines = isCardio ? [] : (L.exercices||[]).slice(0,8).map(exState=>{
-      const vals = (exState.series||[]).filter(s=>s && s.poids!=null && s.reps!=null);
-      const best = vals.length ? vals.reduce((a,b)=> (b.poids>a.poids?b:a)) : null;
-      return best ? exState.exercice+' — '+best.poids+'kg × '+best.reps : exState.exercice;
+    // Detail COMPLET de chaque exercice -- TOUTES les series (ou tous les
+    // paliers d'un drop-set), pas seulement la meilleure : le premier jet ne
+    // montrait qu'une seule serie par exercice, juge trop pauvre par
+    // Christophe (30/09). Reutilise formatSeries(), deja utilise ailleurs
+    // pour l'historique ("Dernière fois (...) : 80kg×8, 82.5kg×8"), plutot
+    // que de reinventer un format. Le texte peut depasser la largeur de
+    // l'image (beaucoup de series, ou series lourdes a 3 chiffres) : un
+    // retour a la ligne manuel (wrapText, mesure via un contexte 2D) evite
+    // toute troncature/chevauchement silencieux.
+    const W = 800, pad = 50;
+    const nameFont = 'bold 21px -apple-system, sans-serif';
+    const detailFont = '18px -apple-system, sans-serif';
+    const mctx = document.createElement('canvas').getContext('2d');
+    const maxTextWidth = W - pad*2;
+    const wrapText = (text, font)=>{
+      mctx.font = font;
+      const words = String(text).split(' ');
+      const lines = [];
+      let line = '';
+      words.forEach(w=>{
+        const test = line ? line+' '+w : w;
+        if(line && mctx.measureText(test).width > maxTextWidth){ lines.push(line); line = w; }
+        else line = test;
+      });
+      if(line) lines.push(line);
+      return lines;
+    };
+    const exoEntries = isCardio ? [] : (L.exercices||[]).map(exState=>{
+      const seriesList = exState.series ? exState.series : (exState.dropset || []);
+      const detail = formatSeries(seriesList) || 'Pas de données saisies';
+      return {nameLines: wrapText(exState.exercice, nameFont), detailLines: wrapText(detail, detailFont)};
     });
 
-    const W = 800, headerH = 210, statH = 110, listHeaderH = exoLines.length?50:0, listRowH = 40, footerH = 70, pad = 50;
-    const H = headerH + Math.ceil(stats.length/2)*statH + listHeaderH + exoLines.length*listRowH + footerH + pad;
+    const headerH = 210, statH = 110, listTitleH = exoEntries.length?50:0, nameLineH = 27, detailLineH = 24, exoGap = 16, footerH = 70;
+    let listH = 0;
+    exoEntries.forEach(e=>{ listH += e.nameLines.length*nameLineH + e.detailLines.length*detailLineH + exoGap; });
+    const H = headerH + Math.ceil(stats.length/2)*statH + listTitleH + listH + footerH + pad;
     const canvas = document.createElement('canvas');
     canvas.width = W; canvas.height = H;
+    this._lastRecapCanvas = canvas; // reference gardee pour d'eventuelles verifications, pas utilisee ailleurs dans l'UI
     const ctx = canvas.getContext('2d');
 
     const bgGrad = ctx.createLinearGradient(0,0,0,H);
@@ -5115,16 +5145,19 @@ const app = {
     });
     y += Math.ceil(stats.length/2)*statH;
 
-    if(exoLines.length){
+    if(exoEntries.length){
       ctx.fillStyle = '#F5F6F8';
       ctx.font = 'bold 20px -apple-system, sans-serif';
       ctx.fillText('Exercices', pad, y+10);
-      y += listHeaderH;
-      ctx.font = '19px -apple-system, sans-serif';
-      exoLines.forEach(line=>{
-        ctx.fillStyle = '#D7DAE1';
-        ctx.fillText('• '+line, pad, y);
-        y += listRowH;
+      y += listTitleH;
+      exoEntries.forEach(e=>{
+        ctx.fillStyle = '#F5F6F8';
+        ctx.font = nameFont;
+        e.nameLines.forEach(line=>{ ctx.fillText(line, pad, y); y += nameLineH; });
+        ctx.fillStyle = '#9BA1AD';
+        ctx.font = detailFont;
+        e.detailLines.forEach(line=>{ ctx.fillText(line, pad, y); y += detailLineH; });
+        y += exoGap;
       });
     }
 
