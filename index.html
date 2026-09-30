@@ -3,6 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+// Applique le theme choisi AVANT le premier rendu visuel, directement depuis
+// localStorage (sans attendre app.js, charge en fin de <body>) -- sans ce
+// script, un utilisateur ayant choisi le theme clair verrait un flash du
+// theme sombre par defaut a chaque ouverture. Duplique volontairement la clé
+// de stockage (DB_KEY='ma_muscu_db_v1' dans app.js) : ce script doit rester
+// autonome, il tourne avant que la moindre variable de app.js n'existe.
+(function(){
+  try{
+    var raw = localStorage.getItem('ma_muscu_db_v1');
+    if(raw){
+      var data = JSON.parse(raw);
+      if(data && data.settings && data.settings.theme==='light'){
+        document.documentElement.setAttribute('data-theme','light');
+      }
+    }
+  }catch(e){}
+})();
+</script>
 <title>IronNutra</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -912,7 +931,7 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
       <div id="stats-exo-chart" class="chart-wrap"></div>
     </div>
 
-    <div class="section-title">Records personnels</div>
+    <div class="section-title">1RM estimé<button type="button" class="info-btn" title="En savoir plus" onclick="app.openInfo(this)" data-info="Pour chaque exercice, ta série la plus lourde jamais enregistrée sert à estimer ton 1RM (le poids max que tu pourrais soulever pour une seule répétition), avec la formule d'Epley. C'est une estimation, pas un vrai test à l'échec — utile pour comparer ta progression dans le temps." style="margin-left:6px;">i</button></div>
     <div class="leaderboard" id="stats-records"></div>
   </div>
 
@@ -1294,6 +1313,15 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
   <!-- ===== REGLAGES ===== -->
   <div class="view" id="view-settings">
     <div class="topbar" style="margin:0 -16px 4px;"><h1>Réglages</h1></div>
+    <div class="section-title" style="margin-top:0;">Apparence</div>
+    <div class="card">
+      <div class="field"><label>Thème</label>
+        <div class="segmented">
+          <button type="button" id="set-theme-dark" onclick="app.setTheme('dark')">🌙 Sombre</button>
+          <button type="button" id="set-theme-light" onclick="app.setTheme('light')">☀️ Clair</button>
+        </div>
+      </div>
+    </div>
     <div class="section-title">Mes programmes</div>
     <div class="list-row" style="cursor:pointer;" onclick="nav.push('view-programmes'); app.renderProgrammesVisibilite(); app.renderProgrammesPerso();">
       <div class="meta"><div class="t1">Programmes</div><div class="t2">Voir tous les programmes, choisir ceux affichés</div></div>
@@ -1302,7 +1330,7 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
     <div class="section-title">Séances</div>
     <div class="list-row">
       <label style="display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;min-width:0;">
-        <div class="meta"><div class="t1">Formats de séance avancés</div><div class="t2">Superset/EMOM/AMRAP, uniquement en Musculation libre (jamais sur un programme prescrit)</div></div>
+        <div class="meta"><div class="t1">Formats de séance avancés</div><div class="t2">Superset/EMOM/AMRAP/Drop-set/Échec, uniquement en Musculation libre (jamais sur un programme prescrit)</div></div>
         <input type="checkbox" id="set-formats-avances" style="width:18px;height:18px;flex-shrink:0;" onchange="app.toggleFormatsAvances(this.checked)">
       </label>
     </div>
@@ -1403,17 +1431,6 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
   </div>
 </div>
 
-<div class="confirm-overlay" id="prompt-overlay">
-  <div class="confirm-box">
-    <p id="prompt-message"></p>
-    <div class="field"><input type="text" id="prompt-input"></div>
-    <div class="row">
-      <button class="btn btn-secondary" id="prompt-cancel">Annuler</button>
-      <button class="btn btn-primary" id="prompt-ok">Valider</button>
-    </div>
-  </div>
-</div>
-
 <div class="confirm-overlay" id="info-overlay" onclick="if(event.target===this) app.closeInfo()">
   <div class="confirm-box">
     <p id="info-message" style="white-space:pre-line;"></p>
@@ -1446,6 +1463,34 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
   </div>
 </div>
 
+<!-- Choix du groupe musculaire d'un exercice personnalise (cf.
+     app.promptCreateExercicePerso), et le prompt generique (showPrompt) --
+     places APRES exo-picker-overlay dans le DOM (donc au-dessus, tous a
+     z-index:60 -- l'ordre DOM tranche a egalite) : les deux se declenchent
+     alors que #exo-picker-overlay reste ouvert en arriere-plan (l'utilisateur
+     y revient une fois l'exercice cree), sans quoi ce dernier interceptait
+     les clics (bug constate en test, cf. session du 30/09). -->
+<div class="confirm-overlay" id="muscle-group-picker-overlay">
+  <div class="confirm-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:16px;font-weight:800;">Quel groupe musculaire ?</div>
+      <button class="icon-btn" title="Fermer" onclick="app.closeMuscleGroupPicker()">✕</button>
+    </div>
+    <div id="muscle-group-picker-list"></div>
+  </div>
+</div>
+
+<div class="confirm-overlay" id="prompt-overlay">
+  <div class="confirm-box">
+    <p id="prompt-message"></p>
+    <div class="field"><input type="text" id="prompt-input"></div>
+    <div class="row">
+      <button class="btn btn-secondary" id="prompt-cancel">Annuler</button>
+      <button class="btn btn-primary" id="prompt-ok">Valider</button>
+    </div>
+  </div>
+</div>
+
 <nav class="navbar" id="navbar"></nav>
 
 <script>
@@ -1462,7 +1507,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260930083911';
+const APP_BUILD_VERSION = '20260930105011';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1838,6 +1883,22 @@ const EXERCICE_MUSCLE_GROUP_LABELS = {
   fessiers: 'Fessiers', mollets: 'Mollets', abdos: 'Abdominaux',
   cardio: 'Cardio / Full-body', trapezes: 'Trapèzes', 'avant-bras': 'Avant-bras',
 };
+// Groupe musculaire d'un exercice, catalogue integre (EXERCICE_MUSCLE_GROUPS)
+// OU personnalise (db.exercicesPerso, cf. promptCreateExercicePerso) -- point
+// d'entree UNIQUE utilise partout ou un groupe est necessaire (selecteur
+// d'exercice), pour ne jamais avoir a dupliquer cette logique de fusion.
+function muscleGroupOf(nom){
+  if(EXERCICE_MUSCLE_GROUPS[nom]) return EXERCICE_MUSCLE_GROUPS[nom];
+  const custom = (app.db && app.db.exercicesPerso || []).find(e=>e.nom===nom);
+  return custom ? custom.groupe : undefined;
+}
+// Noms d'exercices proposes dans le selecteur (cf. renderExercicePickerGrid) :
+// catalogue integre + exercices personnalises de l'utilisateur.
+function allCatalogExerciceNames(){
+  const names = new Set(Object.keys(EXERCICE_MUSCLE_GROUPS));
+  (app.db && app.db.exercicesPerso || []).forEach(e=>names.add(e.nom));
+  return [...names];
+}
 
 // Les entrees ci-dessus sont de simples noms de fichier (ex. '69-planche-
 // gainage-frontal.jpg') -- les fichiers reels vivent dans images/exercices/.
@@ -2014,6 +2075,13 @@ const DB_BACKUP_KEY = 'ma_muscu_db_v1_prev';
 
 function defaultSettings(){
   return {
+    // Theme visuel : 'dark' (par defaut, historique) ou 'light'. Le CSS des
+    // deux themes existe entierement dans app_template.html (:root et
+    // :root[data-theme="light"]) -- ce reglage se contente de poser/retirer
+    // l'attribut data-theme sur <html> (cf. applyTheme()), choix explicite
+    // de l'utilisateur uniquement (pas de detection automatique du systeme,
+    // demande Christophe 30/09).
+    theme: 'dark',
     forceCardioDateDebut: null,
     // Programme mis en avant dans le hero "prochaine séance" de l'accueil
     // quand il y en a plusieurs (choix explicite de l'utilisateur, sinon
@@ -2066,7 +2134,7 @@ function defaultSettings(){
   };
 }
 function defaultDB(){
-  return { version: 1, settings: defaultSettings(), seances: [], pesees: [], mensurations: [], journalAlimentaire: [], alimentsFavoris: [], hydratation: [], repasTypes: [], listesCourses: [], recettesACuisiner: [], platsPerso: [], checkins: [], programmesPerso: [] };
+  return { version: 1, settings: defaultSettings(), seances: [], pesees: [], mensurations: [], journalAlimentaire: [], alimentsFavoris: [], hydratation: [], repasTypes: [], listesCourses: [], recettesACuisiner: [], platsPerso: [], checkins: [], programmesPerso: [], exercicesPerso: [] };
 }
 function tryParseDB(raw){
   if(!raw) return null;
@@ -2108,6 +2176,12 @@ function tryParseDB(raw){
       // Programmes personnalises (cf. syncProgrammesPerso) : [{id, nom,
       // seances:[{numero, nom, type:'muscu', exercices:[{exercice, series_reps}]}]}].
       programmesPerso: Array.isArray(data.programmesPerso) ? data.programmesPerso : [],
+      // Exercices personnalises ajoutes par l'utilisateur (cf. muscleGroupOf/
+      // allCatalogExerciceNames) : [{nom, groupe}]. Complete EXERCICE_MUSCLE_GROUPS
+      // (catalogue fige) sans jamais le modifier -- demande Christophe 30/09,
+      // le catalogue integre restera toujours incomplet face a des variantes
+      // trop specifiques/personnelles pour justifier un ajout global au code.
+      exercicesPerso: Array.isArray(data.exercicesPerso) ? data.exercicesPerso : [],
     });
   }catch(e){ return null; }
 }
@@ -2163,6 +2237,18 @@ function saveDBOrWarn(db){
     alert("⚠️ La sauvegarde a échoué : ce navigateur (ou ce mode de navigation) n'autorise pas le stockage local ici. Tes données de cette action n'ont PAS été enregistrées.\n\nOuvre l'appli dans Safari ou Chrome normalement (pas en navigation privée, pas depuis l'app Claude), idéalement depuis l'icône ajoutée à l'écran d'accueil, et réessaie. Utilise \"Copier\" dans Réglages pour garder une sauvegarde de secours régulièrement.");
   }
   return ok;
+}
+// Pose/retire l'attribut data-theme sur <html>, seul point de contact entre
+// le reglage (db.settings.theme) et le CSS des deux themes deja presents
+// dans app_template.html. Un script inline place en tout debut de <head>
+// (avant meme <style>) fait deja ce meme geste au chargement de la page, a
+// partir de localStorage directement -- pour eviter un flash visible du
+// theme sombre avant que ce script-ci (charge en fin de <body>) ne s'execute.
+// Cette fonction reste neanmoins necessaire pour re-appliquer le theme sans
+// recharger la page (cf. app.setTheme(), change en direct depuis Reglages).
+function applyTheme(db){
+  const light = db && db.settings && db.settings.theme==='light';
+  document.documentElement.setAttribute('data-theme', light ? 'light' : 'dark');
 }
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
 function todayISO(){ const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); }
@@ -3120,8 +3206,10 @@ const BODY_PARTS = [
   {key:'cuisses', label:'Tour de cuisses'},
 ];
 // Presentation d'accueil (onboarding) : contenu des diapos, valide avec
-// Christophe avant integration (7 ecrans -- Sport, Nutrition et Recettes
-// separes car ce sont 3 usages distincts, pas un seul flux). grad/glow/
+// Christophe avant integration (9 ecrans -- Sport, Nutrition et Recettes
+// separes car ce sont 3 usages distincts, pas un seul flux ; 2 diapos Sport
+// ajoutees le 30/09 pour couvrir programmes/formats/check-in/profil, toutes
+// arrivees apres la version initiale de cette presentation). grad/glow/
 // accent reprennent respectivement --grad (univers Sport, lime/vert) et
 // --accent-nutrition/--accent-nutrition-2 (univers Nutrition, violet/bleu
 // canard) definis dans le CSS, pour rester coherent avec le reste de
@@ -3130,6 +3218,10 @@ const ONBOARDING_SLIDES = [
   {tag:'', icon:'💪', title:'Bienvenue sur IronNutra', text:"Ton suivi sport et nutrition, simple et pensé pour durer dans le temps.",
     grad:'linear-gradient(135deg,#C6FF4D,#31E1A6)', glow:'rgba(198,255,77,.45)', accent:'#C6FF4D'},
   {tag:'Sport', icon:'🏋️', title:'Suis tes séances', text:"Programmes prêts à l'emploi, historique complet, et des statistiques avec la moyenne pour voir ta progression d'un coup d'œil.",
+    grad:'linear-gradient(135deg,#C6FF4D,#31E1A6)', glow:'rgba(198,255,77,.45)', accent:'#C6FF4D'},
+  {tag:'Sport', icon:'🎯', title:'Personnalise tes séances', text:"Crée tes propres programmes, séance par séance, avec tes exercices (y compris les tiens). En Musculation libre, active superset, EMOM, AMRAP, drop-set ou séries à l'échec.",
+    grad:'linear-gradient(135deg,#C6FF4D,#31E1A6)', glow:'rgba(198,255,77,.45)', accent:'#C6FF4D'},
+  {tag:'Sport', icon:'📋', title:'Check-in & profil', text:"Un check-in quotidien pour indiquer ta forme du jour, et un test de profil qui te recommande le programme le plus adapté.",
     grad:'linear-gradient(135deg,#C6FF4D,#31E1A6)', glow:'rgba(198,255,77,.45)', accent:'#C6FF4D'},
   {tag:'Nutrition', icon:'🍽️', title:'Ton journal alimentaire', text:"Ajoute un aliment en scannant son code-barres, en le cherchant dans une base de plus de 4000 produits, ou en tapant le code à la main.",
     grad:'linear-gradient(135deg,#8C7CF6,#33AFC4)', glow:'rgba(140,124,246,.45)', accent:'#8C7CF6'},
@@ -4005,12 +4097,24 @@ const app = {
               <button type="button" class="pill ${format==='normal'?'active':''}" onclick="app.setExerciseFormat(${idx},'normal')">Normal</button>
               <button type="button" class="pill ${format==='emom'?'active':''}" onclick="app.setExerciseFormat(${idx},'emom')">EMOM</button>
               <button type="button" class="pill ${format==='amrap'?'active':''}" onclick="app.setExerciseFormat(${idx},'amrap')">AMRAP</button>
+              <button type="button" class="pill ${format==='dropset'?'active':''}" onclick="app.setExerciseFormat(${idx},'dropset')">Drop-set</button>
+              <button type="button" class="pill ${format==='echec'?'active':''}" onclick="app.setExerciseFormat(${idx},'echec')">Échec</button>
             </div>
             ${idx<L.exercices.length-1 ? `<button type="button" class="pill superset-toggle ${iAmTopHalf?'active':''}" onclick="app.toggleSupersetNext(${idx})">🔗 Superset avec le suivant</button>` : ''}
           </div>`;
+        // Drop-set : une seule serie de travail enchainee, poids qui baisse a
+        // chaque palier SANS repos entre eux -- structure differente de la
+        // grille normale (cf. exState.dropset, initialise dans
+        // setExerciseFormat), d'ou son propre bloc dedie (dropsetBlockHTML).
+        // "Echec" en revanche n'est qu'une etiquette posee sur une serie
+        // normale (pousser chaque serie jusqu'a l'echec musculaire) : aucune
+        // structure de donnees differente, juste un rappel visuel -- inutile
+        // d'inventer une mecanique qui n'existe pas dans la vraie vie.
         const bodyHTML = format==='emom' ? this.emomBlockHTML(idx, exState.emom)
           : format==='amrap' ? this.amrapBlockHTML(idx, exState.amrap)
+          : format==='dropset' ? this.dropsetBlockHTML(idx, exState.dropset)
           : `<div class="series-head ${single?'single':''}">${headCols}</div>
+          ${format==='echec'?`<p class="small-note" style="margin:-4px 0 8px;">🔥 Pousse chaque série jusqu'à l'échec musculaire.</p>`:''}
           <div class="series-grid">${seriesRows}</div>
           <div class="series-actions-row">
             <button class="btn btn-secondary btn-sm" onclick="app.addSerie(${idx})">＋ Ajouter une série</button>
@@ -4078,6 +4182,7 @@ const app = {
             ${totalPoids>0?`<div class="stat-tile accent"><div class="v">${totalPoids.toLocaleString('fr-FR')} kg</div><div class="l">Poids total soulevé</div></div>`:''}
             ${calories!=null?`<div class="stat-tile accent"><div class="v">≈ ${calories} kcal</div><div class="l">Calories brûlées (ajoutées à ton budget Nutrition du jour)</div></div>`:`<div class="stat-tile"><div class="v">—</div><div class="l">Renseigne la durée ci-dessus (et ton poids dans Nutrition) pour estimer les calories brûlées</div></div>`}
           </div>
+          <button type="button" class="btn btn-secondary" style="margin-top:12px;width:100%;" onclick="app.generateRecapImage()">📸 Générer l'image récap</button>
         </div>`;
       }
       html += `<div class="field" style="margin-top:4px;"><label>Notes (optionnel)</label><textarea rows="2" placeholder="Sensations, douleurs, ajustements..." onchange="app.updateNotes(this.value)">${escapeHtml(L.notes||'')}</textarea></div>`;
@@ -4109,7 +4214,7 @@ const app = {
     const titleEl = document.getElementById('exo-picker-title');
     if(mode==='replace'){
       const nomActuel = this.currentLog.exercices[idx].exercice;
-      this._exoPicker.group = EXERCICE_MUSCLE_GROUPS[nomActuel] || '';
+      this._exoPicker.group = muscleGroupOf(nomActuel) || '';
       titleEl.textContent = 'Remplacer : ' + nomActuel;
     } else {
       titleEl.textContent = 'Ajouter un exercice';
@@ -4136,9 +4241,9 @@ const app = {
   },
   renderExercicePickerPills(){
     const p = this._exoPicker; if(!p) return;
-    const all = Object.keys(EXERCICE_MUSCLE_GROUPS);
-    const present = Array.from(new Set(all.map(n=>EXERCICE_MUSCLE_GROUPS[n])));
-    present.sort((a,b)=> all.filter(n=>EXERCICE_MUSCLE_GROUPS[n]===b).length - all.filter(n=>EXERCICE_MUSCLE_GROUPS[n]===a).length);
+    const all = allCatalogExerciceNames();
+    const present = Array.from(new Set(all.map(n=>muscleGroupOf(n)))).filter(Boolean);
+    present.sort((a,b)=> all.filter(n=>muscleGroupOf(n)===b).length - all.filter(n=>muscleGroupOf(n)===a).length);
     const groups = [''].concat(present);
     document.getElementById('exo-picker-pills').innerHTML = groups.map(g=>{
       const label = g==='' ? 'Tous' : (EXERCICE_MUSCLE_GROUP_LABELS[g]||g);
@@ -4149,21 +4254,64 @@ const app = {
   renderExercicePickerGrid(){
     const p = this._exoPicker; if(!p) return;
     const tokens = normalize(p.query).split(' ').filter(Boolean);
-    let names = Object.keys(EXERCICE_MUSCLE_GROUPS).filter(nom=>{
-      if(p.group && EXERCICE_MUSCLE_GROUPS[nom]!==p.group) return false;
+    let names = allCatalogExerciceNames().filter(nom=>{
+      if(p.group && muscleGroupOf(nom)!==p.group) return false;
       if(tokens.length){ const n = normalize(nom); if(!tokens.every(t=>n.includes(t))) return false; }
       return true;
     });
     names.sort((a,b)=>a.localeCompare(b,'fr'));
     const grid = document.getElementById('exo-picker-grid');
-    if(!names.length){ grid.innerHTML = '<p class="empty" style="margin:10px 2px;">Aucun exercice ne correspond.</p>'; return; }
+    const createCard = `<div class="ing-card" style="cursor:pointer;" onclick="app.promptCreateExercicePerso()">
+        <div class="ph">${SVG_DUMBBELL}</div>
+        <div class="label">＋ Créer un exercice</div>
+      </div>`;
+    if(!names.length){ grid.innerHTML = '<p class="empty" style="margin:10px 2px;">Aucun exercice ne correspond.</p>' + createCard; return; }
     grid.innerHTML = names.map(nom=>{
       const img = exoImageSrc(nom);
       return `<div class="ing-card" data-nom="${escapeHtml(nom)}" onclick="app.pickExercice(this.dataset.nom)">
         ${img ? `<img src="${img}" alt="${escapeHtml(nom)}" loading="lazy">` : `<div class="ph">${SVG_DUMBBELL}</div>`}
         <div class="label">${escapeHtml(nom)}</div>
       </div>`;
-    }).join('');
+    }).join('') + createCard;
+  },
+  /* ---------- EXERCICES PERSONNALISES ---------- */
+  // Complete le catalogue integre (EXERCICE_MUSCLE_GROUPS, fige dans le
+  // code) sans jamais le modifier -- demande Christophe 30/09. Nom via
+  // showPrompt (reutilise), groupe musculaire via un second choix dans une
+  // liste (pas de saisie libre : le groupe doit rester une des valeurs
+  // connues de EXERCICE_MUSCLE_GROUP_LABELS, utilisees partout ailleurs).
+  promptCreateExercicePerso(){
+    showPrompt('Nom du nouvel exercice', 'Ex : Curl pupitre à la poulie', nom=>{
+      nom = (nom||'').trim();
+      if(!nom) return;
+      if(EXERCICE_MUSCLE_GROUPS[nom] || this.db.exercicesPerso.some(e=>e.nom===nom)){
+        toast('Cet exercice existe déjà'); return;
+      }
+      this._pendingExercicePerso = nom;
+      this.openMuscleGroupPicker();
+    });
+  },
+  openMuscleGroupPicker(){
+    const wrap = document.getElementById('muscle-group-picker-list');
+    wrap.innerHTML = Object.keys(EXERCICE_MUSCLE_GROUP_LABELS).map(g=>`
+      <div class="list-row" style="cursor:pointer;" onclick="app.confirmExercicePersoGroup('${g}')">
+        <div class="meta"><div class="t1">${escapeHtml(EXERCICE_MUSCLE_GROUP_LABELS[g])}</div></div>
+        <div class="chev">›</div>
+      </div>`).join('');
+    document.getElementById('muscle-group-picker-overlay').style.display = 'flex';
+  },
+  closeMuscleGroupPicker(){
+    document.getElementById('muscle-group-picker-overlay').style.display = 'none';
+    this._pendingExercicePerso = null;
+  },
+  confirmExercicePersoGroup(groupe){
+    const nom = this._pendingExercicePerso;
+    this.closeMuscleGroupPicker();
+    if(!nom) return;
+    this.db.exercicesPerso.push({nom, groupe});
+    if(!saveDBOrWarn(this.db)){ this.db.exercicesPerso.pop(); return; }
+    toast('Exercice ajouté ✅');
+    if(this._exoPicker){ this.renderExercicePickerPills(); this.renderExercicePickerGrid(); }
   },
   // Le nom choisi transite par data-nom (echappe HTML) plutot que d'etre
   // interpole directement dans l'attribut onclick, pour ne pas casser sur
@@ -4600,11 +4748,11 @@ const app = {
     `;
   },
 
-  /* ---------- FORMATS DE SEANCE (v1 : superset / EMOM / AMRAP) ---------- */
-  // Choix explicite de Christophe (30/09) : superset, EMOM et AMRAP en v1,
-  // pas de format "libre" supplementaire pour l'instant (drop-set/circuit
-  // envisages en v2 si besoin). Le format est un choix PAR EXERCICE DE CETTE
-  // SEANCE (this.currentLog), jamais ecrit dans la definition du programme
+  /* ---------- FORMATS DE SEANCE (superset / EMOM / AMRAP / drop-set / echec) ---------- */
+  // v1 (30/09) : superset, EMOM, AMRAP. v2 (30/09, meme session) : ajout de
+  // drop-set et echec, a la demande de Christophe. Le format est un choix
+  // PAR EXERCICE DE CETTE SEANCE (this.currentLog), jamais ecrit dans la
+  // definition du programme
   // (PROGRAMS/data/programs) -- au meme titre que le remplacement d'exercice
   // deja existant (cf. pickExercice), donc regenerable/rejouable sans copier
   // aucune donnee de format d'une seance a l'autre.
@@ -4614,9 +4762,17 @@ const app = {
     exState.format = format;
     if(format==='emom' && !exState.emom) exState.emom = {minutes:10, target:'', rounds:0};
     if(format==='amrap' && !exState.amrap) exState.amrap = {durationMin:12, rounds:0, reps:0};
+    if(format==='dropset' && !exState.dropset) exState.dropset = [{poids:null,reps:null},{poids:null,reps:null},{poids:null,reps:null}];
     this.renderLog();
     this.autosaveLog();
   },
+  updateDropsetPalier(idx, palierIdx, field, val){
+    const d = this.currentLog.exercices[idx]?.dropset; if(!d || !d[palierIdx]) return;
+    d[palierIdx][field] = val===''? null : parseFloat(val);
+    this.autosaveLog();
+  },
+  addDropPalier(idx){ this.currentLog.exercices[idx].dropset.push({poids:null,reps:null}); this.renderLog(); this.autosaveLog(); },
+  removeDropPalier(idx){ const d=this.currentLog.exercices[idx].dropset; if(d.length>1) d.pop(); this.renderLog(); this.autosaveLog(); },
   toggleSupersetNext(idx){
     const exState = this.currentLog.exercices[idx]; if(!exState) return;
     exState.supersetNext = !exState.supersetNext;
@@ -4802,6 +4958,21 @@ const app = {
         </div>
       </div>`;
   },
+  dropsetBlockHTML(idx, dropset){
+    const rows = dropset.map((s,j)=>`<div class="series-row ${(s.poids!=null&&s.reps!=null)?'done':''}">
+        <div class="s-num">${j+1}</div>
+        <div class="s-field"><input type="number" inputmode="decimal" placeholder="0" value="${s.poids!=null?s.poids:''}" onchange="app.updateDropsetPalier(${idx},${j},'poids',this.value)"></div>
+        <div class="s-field"><input type="number" inputmode="numeric" placeholder="0" value="${s.reps!=null?s.reps:''}" onchange="app.updateDropsetPalier(${idx},${j},'reps',this.value)"></div>
+        <div class="s-check">${SVG_CHECK}</div>
+      </div>`).join('');
+    return `<p class="small-note" style="margin:0 0 8px;">Paliers enchaînés SANS repos entre eux — baisse le poids à chaque palier.</p>
+      <div class="series-head"><div class="sh-num">N°</div><div>KG</div><div>REPS</div><div class="sh-check"></div></div>
+      <div class="series-grid">${rows}</div>
+      <div class="series-actions-row">
+        <button class="btn btn-secondary btn-sm" onclick="app.addDropPalier(${idx})">＋ Ajouter un palier</button>
+        <button class="icon-btn" title="Supprimer un palier" onclick="app.removeDropPalier(${idx})">${SVG_TRASH}</button>
+      </div>`;
+  },
 
   /* ---------- CALCULATEUR DE DISQUES ---------- */
   openPlateCalc(prefillKg){
@@ -4878,6 +5049,103 @@ const app = {
       alert("⚠️ Ce que tu saisis ne peut pas être sauvegardé sur cet appareil/navigateur en ce moment (stockage bloqué ou navigation privée). Tant que ce message peut réapparaître, RIEN de ce que tu notes n'est conservé.\n\nOuvre l'appli depuis l'icône sur ton écran d'accueil (pas depuis l'app Claude), pas en navigation privée, puis recommence la saisie de cette séance.");
     }
     return ok;
+  },
+  // Image recap de la seance, generee UNIQUEMENT a la demande (bouton dans
+  // la carte "Resume de la seance") -- jamais automatiquement, demande
+  // explicite de Christophe (30/09). Dessinee en canvas (aucune dependance
+  // externe), puis proposee via le partage natif si disponible (Safari iOS
+  // 15+), sinon telechargee comme une image PNG classique.
+  generateRecapImage(){
+    const L = this.currentLog;
+    const prog = PROGRAMS.find(p=>p.id===L.programmeId);
+    const seanceDef = prog.seances.find(s=>s.numero===L.seanceNumero);
+    const isCardio = seanceDef.type==='cardio';
+    const totalPoids = computeTotalPoidsSouleve(L, seanceDef);
+    const calories = estimateCaloriesSeance(L, seanceDef);
+    const nbExercices = isCardio ? 0 : (L.exercices||[]).length;
+    const nbSeries = isCardio ? 0 : (L.exercices||[]).reduce((s,e)=> s + (e.series ? e.series.length : (e.dropset ? e.dropset.length : 1)), 0);
+
+    const stats = [];
+    if(totalPoids>0) stats.push(['Poids total soulevé', totalPoids.toLocaleString('fr-FR')+' kg']);
+    if(calories!=null) stats.push(['Calories brûlées', '≈ '+calories+' kcal']);
+    if(!isCardio && nbExercices) stats.push(['Exercices', String(nbExercices)]);
+    if(!isCardio && nbSeries) stats.push(['Séries réalisées', String(nbSeries)]);
+    if(L.dureeMin) stats.push(['Durée', L.dureeMin+' min']);
+
+    const exoLines = isCardio ? [] : (L.exercices||[]).slice(0,8).map(exState=>{
+      const vals = (exState.series||[]).filter(s=>s && s.poids!=null && s.reps!=null);
+      const best = vals.length ? vals.reduce((a,b)=> (b.poids>a.poids?b:a)) : null;
+      return best ? exState.exercice+' — '+best.poids+'kg × '+best.reps : exState.exercice;
+    });
+
+    const W = 800, headerH = 210, statH = 110, listHeaderH = exoLines.length?50:0, listRowH = 40, footerH = 70, pad = 50;
+    const H = headerH + Math.ceil(stats.length/2)*statH + listHeaderH + exoLines.length*listRowH + footerH + pad;
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    const bgGrad = ctx.createLinearGradient(0,0,0,H);
+    bgGrad.addColorStop(0,'#0B0C0F'); bgGrad.addColorStop(1,'#181B22');
+    ctx.fillStyle = bgGrad; ctx.fillRect(0,0,W,H);
+
+    ctx.fillStyle = '#C6FF4D';
+    ctx.font = 'bold 30px -apple-system, sans-serif';
+    ctx.fillText('💪 IronNutra', pad, 70);
+
+    ctx.fillStyle = '#F5F6F8';
+    ctx.font = 'bold 34px -apple-system, sans-serif';
+    ctx.fillText(prog.nom+' — '+seanceDef.nom, pad, 122);
+
+    ctx.fillStyle = '#9BA1AD';
+    ctx.font = '22px -apple-system, sans-serif';
+    ctx.fillText(fmtDateHuman(L.date), pad, 158);
+
+    let y = headerH;
+    const colW = (W-pad*2)/2;
+    stats.forEach((s,i)=>{
+      const col = i%2, row = Math.floor(i/2);
+      const x = pad + col*colW;
+      const rowY = y + row*statH;
+      ctx.fillStyle = '#C6FF4D';
+      ctx.font = 'bold 40px -apple-system, sans-serif';
+      ctx.fillText(s[1], x, rowY);
+      ctx.fillStyle = '#9BA1AD';
+      ctx.font = '18px -apple-system, sans-serif';
+      ctx.fillText(s[0], x, rowY+28);
+    });
+    y += Math.ceil(stats.length/2)*statH;
+
+    if(exoLines.length){
+      ctx.fillStyle = '#F5F6F8';
+      ctx.font = 'bold 20px -apple-system, sans-serif';
+      ctx.fillText('Exercices', pad, y+10);
+      y += listHeaderH;
+      ctx.font = '19px -apple-system, sans-serif';
+      exoLines.forEach(line=>{
+        ctx.fillStyle = '#D7DAE1';
+        ctx.fillText('• '+line, pad, y);
+        y += listRowH;
+      });
+    }
+
+    ctx.fillStyle = '#5B6472';
+    ctx.font = '16px -apple-system, sans-serif';
+    ctx.fillText('Généré avec IronNutra', pad, H-30);
+
+    canvas.toBlob(blob=>{
+      if(!blob){ toast("Impossible de générer l'image"); return; }
+      const file = new File([blob], 'seance-ironnutra.png', {type:'image/png'});
+      if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+        navigator.share({files:[file], title:'Ma séance IronNutra'}).catch(()=>{});
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'seance-ironnutra.png';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url), 4000);
+        toast('Image téléchargée ✅');
+      }
+    }, 'image/png');
   },
   saveSeance(){
     if(this._editingProgramSeance){ this._saveEditedProgramSeance(); return; }
@@ -7097,8 +7365,17 @@ const app = {
   renderSettings(){
     document.getElementById('set-date-debut').value = this.db.settings.forceCardioDateDebut || '';
     document.getElementById('set-formats-avances').checked = !!this.db.settings.formatsAvances;
+    const isLight = this.db.settings.theme==='light';
+    document.getElementById('set-theme-dark').classList.toggle('active', !isLight);
+    document.getElementById('set-theme-light').classList.toggle('active', isLight);
     this.updateSemaineInfo();
     this.renderMaxs();
+  },
+  setTheme(v){
+    this.db.settings.theme = v==='light' ? 'light' : 'dark';
+    if(!saveDBOrWarn(this.db)) return;
+    applyTheme(this.db);
+    this.renderSettings();
   },
   toggleFormatsAvances(v){
     this.db.settings.formatsAvances = !!v;
@@ -7276,6 +7553,7 @@ function applyUpdate(){
 document.addEventListener('DOMContentLoaded', ()=>{
   app.db = loadDB();
   syncProgrammesPerso(app.db);
+  applyTheme(app.db);
   app.renderNavbar('view-home');
   app.renderHome();
   app.maybeShowOnboarding();
