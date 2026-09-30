@@ -351,6 +351,30 @@ button{font-family:inherit;}
   border:1px solid transparent; border-radius:18px;
 }
 .exo-block:last-child{margin-bottom:0;}
+/* Formats de séance (v1 : superset/EMOM/AMRAP, demande Christophe 30/09).
+   Superset = deux .exo-block consecutifs visuellement fusionnes (pas de
+   repos entre les deux) ; EMOM/AMRAP remplacent la grille de series par un
+   minuteur dedie (cf. app.emomBlockHTML/amrapBlockHTML/renderFormatTimer). */
+.exo-block.superset-top{margin-bottom:2px; border-radius:18px 18px 6px 6px;}
+.exo-block.superset-bottom{margin-top:-2px; border-radius:6px 6px 18px 18px;}
+.superset-badge{
+  display:inline-flex; align-items:center; gap:4px;
+  background:var(--grad); color:var(--accent-contrast);
+  font-size:11px; font-weight:800; letter-spacing:.03em;
+  padding:4px 10px; border-radius:999px; margin-bottom:10px;
+}
+.fmt-select-row{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:10px;}
+.fmt-config{display:flex; flex-direction:column; gap:10px; margin-top:12px;}
+.fmt-timer-box{margin-top:14px; padding:16px; border-radius:16px; background:var(--card-2); text-align:center;}
+.fmt-timer-box.done{background:color-mix(in srgb, var(--accent) 18%, var(--card-2));}
+.fmt-timer-box .fmt-time{font-size:34px; font-weight:800; font-variant-numeric:tabular-nums;}
+.fmt-timer-box .fmt-sub{font-size:13px; color:var(--text-dim); margin-top:2px;}
+.fmt-timer-box .fmt-round{font-size:13px; font-weight:700; margin-top:6px; color:var(--accent);}
+.fmt-timer-actions{display:flex; justify-content:center; align-items:center; gap:10px; margin-top:12px;}
+.fmt-rounds-row{display:flex; align-items:center; justify-content:space-between; margin-top:12px; font-weight:700; font-size:14px;}
+.fmt-counter{display:flex; align-items:center; gap:10px;}
+.fmt-counter-val{font-size:18px; font-weight:800; min-width:24px; text-align:center;}
+.checkin-card{margin-bottom:14px;}
 .exo-header{display:flex; gap:12px; align-items:flex-start;}
 .exo-header .exo-ic, .list-row .exo-ic{width:68px;height:68px;border-radius:16px;background:var(--card-2);color:var(--text-dim);display:flex;align-items:center;justify-content:center;flex:none;}
 .exo-header .exo-ic svg, .list-row .exo-ic svg{width:26px;height:26px;}
@@ -810,14 +834,25 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
   <div class="view" id="view-sport">
     <div class="topbar"><h1>Sport</h1></div>
     <div class="quickstats" id="sport-quickstats"></div>
+    <div id="sport-checkin"></div>
     <div class="section-title">Programmes</div>
     <div class="tiles-row" id="sport-programs"></div>
     <div class="list-row" style="cursor:pointer;" onclick="nav.push('view-programmes'); app.renderProgrammesVisibilite();">
       <div class="meta"><div class="t1">Choix de programme</div><div class="t2">Sélectionner les programmes affichés ici</div></div>
       <div class="chev">›</div>
     </div>
+    <div class="list-row" style="cursor:pointer;" onclick="app.openProfilQuiz();">
+      <div class="meta"><div class="t1">Test de profil d'entraînement</div><div class="t2">4 questions pour te suggérer un programme de la bibliothèque</div></div>
+      <div class="chev">›</div>
+    </div>
     <div class="section-title">Activité récente</div>
     <div id="sport-recent"></div>
+  </div>
+
+  <!-- ===== TEST DE PROFIL D'ENTRAINEMENT ===== -->
+  <div class="view" id="view-profil-quiz">
+    <div class="topbar"><button class="back" onclick="nav.toSport()">‹</button><h1>Test de profil</h1></div>
+    <div id="quiz-body"></div>
   </div>
 
   <!-- ===== PROGRAMMES (liste complete + visibilite) ===== -->
@@ -1338,6 +1373,16 @@ select.native{appearance:none; -webkit-appearance:none; background-image:none;}
   </div>
 </div>
 
+<div class="confirm-overlay" id="checkin-overlay">
+  <div class="confirm-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:16px;font-weight:800;">Comment tu te sens aujourd'hui ?</div>
+      <button class="icon-btn" title="Fermer" onclick="app.closeCheckinForm()">✕</button>
+    </div>
+    <div id="checkin-form-body"></div>
+  </div>
+</div>
+
 <div class="confirm-overlay" id="prompt-overlay">
   <div class="confirm-box">
     <p id="prompt-message"></p>
@@ -1397,7 +1442,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260929205623';
+const APP_BUILD_VERSION = '20260930055659';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -1442,7 +1487,7 @@ const SVG_BOOKMARK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
 // ambiguite visuelle entre "annuler" et "remplacer par un autre exercice".
 const SVG_SWAP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>';
 
-const NAV_SPORT_FAMILY = ['view-sport','view-programmes','view-seance-list','view-log','view-exo-history','view-history','view-stats'];
+const NAV_SPORT_FAMILY = ['view-sport','view-programmes','view-seance-list','view-log','view-exo-history','view-history','view-stats','view-profil-quiz'];
 const NAV_NUTRITION_FAMILY = ['view-nutrition','view-recettes','view-aide-repas','view-recette-detail','view-liste-courses','view-nutri-corps','view-nutri-stats','view-nutri-profil','view-nutri-add','view-copier-repas','view-nutri-plat-new'];
 function seanceIconSVG(isCardio){ return isCardio ? SVG_HEART : SVG_DUMBBELL; }
 
@@ -1839,6 +1884,47 @@ PROGRAMS.push({
   seances: [{ numero: 1, nom: 'Séance libre', type: 'muscu', exercices: [] }],
 });
 
+// Test de profil d'entrainement (cf. app.openProfilQuiz) : 5 profils, chacun
+// mappe vers un id REEL de la bibliotheque (data/programs/lib/*.json),
+// verifie a la main le 30/09 -- jamais un nom de programme invente.
+const QUIZ = [
+  {q:"Quand tu penses à une séance idéale, tu vois plutôt...", opts:[
+    {t:'Une barre chargée, des séries lourdes, rien d\'autre', tag:'guerrier'},
+    {t:'Un plan détaillé avec des chiffres à battre chaque semaine', tag:'performeur'},
+    {t:'Un enchaînement au poids du corps, sans machine', tag:'explorateur'},
+    {t:'Un travail ciblé pour sculpter une silhouette précise', tag:'artiste'},
+    {t:'Un système qui varie tout le temps, jamais la même semaine', tag:'strategiste'},
+  ]},
+  {q:"Ce qui te motive le plus...", opts:[
+    {t:'Voir le poids sur la barre augmenter, simplement', tag:'guerrier'},
+    {t:'Analyser mes chiffres et progresser sur des cycles précis', tag:'performeur'},
+    {t:'Repousser ce que mon corps est capable de faire', tag:'explorateur'},
+    {t:'Voir un résultat visible dans le miroir', tag:'artiste'},
+    {t:'Ne jamais m\'ennuyer, changer souvent de stimulus', tag:'strategiste'},
+  ]},
+  {q:"Ton rapport à la technique...", opts:[
+    {t:'Peu importe, je veux juste que ce soit lourd', tag:'guerrier'},
+    {t:'J\'aime comprendre pourquoi chaque exercice est là', tag:'performeur'},
+    {t:'Je préfère maîtriser mon propre poids de corps', tag:'explorateur'},
+    {t:'Je privilégie ce qui cible le mieux le muscle visé', tag:'artiste'},
+    {t:'J\'aime les méthodes qui demandent de la préparation', tag:'strategiste'},
+  ]},
+  {q:"Ton niveau d'expérience...", opts:[
+    {t:'Débutant, je veux des bases solides', tag:'guerrier'},
+    {t:'Confirmé, je veux pousser plus loin', tag:'performeur'},
+    {t:'Peu importe, je veux explorer autrement', tag:'explorateur'},
+    {t:'Intermédiaire, avec un objectif esthétique', tag:'artiste'},
+    {t:'Avancé, je veux un système exigeant', tag:'strategiste'},
+  ]},
+];
+const PROFILES = {
+  guerrier: {icon:'🗡️', name:'Guerrier', desc:'Tu veux l\'essentiel : des bases solides, une charge qui monte, pas de fioritures.', programId:'starting-strength', progDesc:'Débutant, 2 séances : l\'école de la force pure (squat/développé/soulevé de terre), progression linéaire simple.'},
+  performeur: {icon:'📈', name:'Performeur', desc:'Tu veux comprendre et mesurer ta progression, pas juste la ressentir.', programId:'phat', progDesc:'Avancé, 5 séances : mélange force (charges lourdes, peu de reps) et hypertrophie (volume, reps modérées) sur la même semaine.'},
+  explorateur: {icon:'🧭', name:'Explorateur', desc:'Tu préfères ton propre corps aux machines, et repousser ce qu\'il sait faire.', programId:'convict-conditioning', progDesc:'Tous niveaux, 2 séances : callisthénie pure au poids du corps, progression par étapes de difficulté.'},
+  artiste: {icon:'🎨', name:'Artiste', desc:'Tu veux un résultat visible, une silhouette travaillée avec précision.', programId:'shortcut-to-shred', progDesc:'Intermédiaire, 6 séances : orienté définition musculaire, gros volume de travail.'},
+  strategiste: {icon:'♟️', name:'Stratège', desc:'Tu aimes les méthodes construites, qui varient et demandent réflexion.', programId:'conjugate-method', progDesc:'Avancé, 4 séances : méthode Conjugate — alterne effort maximal et effort dynamique, exercices variés chaque semaine.'},
+};
+
 const DB_KEY = 'ma_muscu_db_v1';
 const DB_BACKUP_KEY = 'ma_muscu_db_v1_prev';
 
@@ -1888,7 +1974,7 @@ function defaultSettings(){
   };
 }
 function defaultDB(){
-  return { version: 1, settings: defaultSettings(), seances: [], pesees: [], mensurations: [], journalAlimentaire: [], alimentsFavoris: [], hydratation: [], repasTypes: [], listesCourses: [], recettesACuisiner: [], platsPerso: [] };
+  return { version: 1, settings: defaultSettings(), seances: [], pesees: [], mensurations: [], journalAlimentaire: [], alimentsFavoris: [], hydratation: [], repasTypes: [], listesCourses: [], recettesACuisiner: [], platsPerso: [], checkins: [] };
 }
 function tryParseDB(raw){
   if(!raw) return null;
@@ -1922,6 +2008,11 @@ function tryParseDB(raw){
       // ajoutee au journal a chaque reprise, pas de decoupe en parts (choix
       // explicite de Christophe, plus simple que le modele "part fixe").
       platsPerso: Array.isArray(data.platsPerso) ? data.platsPerso : [],
+      // Check-in quotidien (sommeil/energie/courbatures, echelle 1-3) : une
+      // entree par jour au plus (upsert par date, cf. saveCheckin), sert
+      // uniquement a suggerer une intensite de seance -- ne bloque jamais
+      // l'acces a une seance, purement indicatif (demande Christophe 30/09).
+      checkins: Array.isArray(data.checkins) ? data.checkins : [],
     });
   }catch(e){ return null; }
 }
@@ -3199,6 +3290,7 @@ const app = {
   currentLog: null,
   restTimer: null,
   _audioCtx: null,
+  _fmtTimer: null,
 
   /* ---------- NAVBAR CONTEXTUEL ---------- */
   // La barre du bas change de contenu selon la famille d'ecrans dans
@@ -3314,6 +3406,7 @@ const app = {
   /* ---------- SPORT (hub : programmes + activité récente + accès historique/stats) ---------- */
   renderSport(){
     this.renderSportQuickstats();
+    this.renderCheckin();
     const wrap = document.getElementById('sport-programs');
     const realPrograms = this.visiblePrograms();
     wrap.innerHTML = realPrograms.map(p=>{
@@ -3368,6 +3461,171 @@ const app = {
       <div class="qs"><div class="v">${q.totalVolume.toLocaleString('fr-FR')}</div><div class="l">Volume (kg)</div></div>
       <div class="qs"><div class="v">${q.seancesThisWeek}</div><div class="l">7 derniers jours</div></div>
       <div class="qs accent"><div class="v">${q.progressionPct!=null ? (q.progressionPct>=0?'+':'')+q.progressionPct+'%' : '—'}</div><div class="l">Volume vs sem. -1</div></div>
+    `;
+  },
+  /* ---------- CHECK-IN QUOTIDIEN (sommeil/energie/courbatures) ---------- */
+  // Une entree par jour (upsert par date dans this.db.checkins), purement
+  // indicative : donne une suggestion d'intensite de seance, ne bloque
+  // jamais l'acces a une seance ni ne modifie les exercices/poids proposes.
+  todayCheckin(){
+    const today = todayISO();
+    return this.db.checkins.find(c=>c.date===today) || null;
+  },
+  checkinScore(c){
+    // Chaque champ note 1 (mauvais) a 3 (bon) -- courbatures est inversee
+    // (3 = aucune courbature = bon signal). Total de 3 a 9.
+    return c.sommeil + c.energie + (4 - c.courbatures);
+  },
+  checkinRecommendation(c){
+    const score = this.checkinScore(c);
+    if(score <= 5) return {label:'Séance allégée conseillée', detail:'Récupération pas optimale — baisse un peu les charges ou les volumes aujourd\'hui, mieux vaut une séance propre qu\'une séance à tout prix.', tone:'low'};
+    if(score >= 8) return {label:'Pleine forme', detail:'Bons signaux sur toute la ligne — c\'est le bon jour pour viser une charge ou une performance.', tone:'high'};
+    return {label:'Séance normale', detail:'Rien de particulier à signaler, pars sur ta séance prévue.', tone:'mid'};
+  },
+  renderCheckin(){
+    const el = document.getElementById('sport-checkin');
+    if(!el) return;
+    const c = this.todayCheckin();
+    if(!c){
+      el.innerHTML = `<div class="card checkin-card" onclick="app.openCheckinForm()" style="cursor:pointer;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="font-size:22px;">🙋</div>
+          <div style="flex:1;">
+            <div style="font-weight:800;">Comment tu te sens aujourd'hui ?</div>
+            <div class="small-note" style="margin:2px 0 0;">Check-in rapide (10 secondes) pour adapter ta séance</div>
+          </div>
+          <div class="chev">›</div>
+        </div>
+      </div>`;
+      return;
+    }
+    const rec = this.checkinRecommendation(c);
+    el.innerHTML = `<div class="card checkin-card checkin-${rec.tone}" onclick="app.openCheckinForm()" style="cursor:pointer;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="font-size:22px;">${rec.tone==='low'?'🪫':(rec.tone==='high'?'🔋':'✅')}</div>
+        <div style="flex:1;">
+          <div style="font-weight:800;">${escapeHtml(rec.label)}</div>
+          <div class="small-note" style="margin:2px 0 0;">${escapeHtml(rec.detail)}</div>
+        </div>
+        <div class="chev">›</div>
+      </div>
+    </div>`;
+  },
+  openCheckinForm(){
+    const existing = this.todayCheckin();
+    this._checkinDraft = existing ? Object.assign({}, existing) : {date: todayISO(), sommeil:2, energie:2, courbatures:2};
+    this.renderCheckinForm();
+    document.getElementById('checkin-overlay').style.display = 'flex';
+  },
+  closeCheckinForm(){
+    document.getElementById('checkin-overlay').style.display = 'none';
+    this._checkinDraft = null;
+  },
+  setCheckinField(field, val){
+    if(!this._checkinDraft) return;
+    this._checkinDraft[field] = val;
+    this.renderCheckinForm();
+  },
+  renderCheckinForm(){
+    const d = this._checkinDraft; if(!d) return;
+    const row = (field, label, opts)=>`
+      <div class="field"><label>${label}</label>
+      <div class="pill-row">${opts.map((o,i)=>`<button type="button" class="pill ${d[field]===i+1?'active':''}" onclick="app.setCheckinField('${field}',${i+1})">${o}</button>`).join('')}</div></div>`;
+    const rec = this.checkinRecommendation(d);
+    document.getElementById('checkin-form-body').innerHTML = `
+      ${row('sommeil','😴 Sommeil', ['Mauvais','Moyen','Bon'])}
+      ${row('energie','⚡ Énergie', ['Faible','Moyenne','Haute'])}
+      ${row('courbatures','💪 Courbatures', ['Fortes','Légères','Aucune'])}
+      <div class="card" style="margin-top:10px;">
+        <div style="font-weight:800;">${escapeHtml(rec.label)}</div>
+        <div class="small-note" style="margin-top:2px;">${escapeHtml(rec.detail)}</div>
+      </div>
+      <button type="button" class="btn btn-primary" style="width:100%;margin-top:12px;" onclick="app.saveCheckin()">Valider</button>
+    `;
+  },
+  saveCheckin(){
+    const d = this._checkinDraft; if(!d) return;
+    const idx = this.db.checkins.findIndex(c=>c.date===d.date);
+    if(idx>=0) this.db.checkins[idx] = d; else this.db.checkins.push(d);
+    saveDB(this.db);
+    this.closeCheckinForm();
+    this.renderCheckin();
+    toast('Check-in enregistré ✅');
+  },
+  /* ---------- TEST DE PROFIL D'ENTRAINEMENT ---------- */
+  // Recommande un programme REEL de la bibliotheque (PROGRAMS, cf. data/
+  // programs/lib/*.json) selon 5 profils -- jamais un programme invente, les
+  // 5 ids ci-dessous existent tous dans la bibliotheque (verifie le 30/09).
+  // Purement une suggestion : n'ecrit rien tant que l'utilisateur n'appuie
+  // pas sur "Ajouter ce programme".
+  openProfilQuiz(){
+    this._quiz = {step:0, answers:[]};
+    nav.push('view-profil-quiz');
+    this.renderQuiz();
+  },
+  answerQuiz(tag){
+    if(!this._quiz) return;
+    this._quiz.answers[this._quiz.step] = tag;
+    this._quiz.step++;
+    this.renderQuiz();
+  },
+  backQuiz(){
+    if(!this._quiz) return;
+    if(this._quiz.step>0){ this._quiz.step--; this.renderQuiz(); }
+    else nav.toSport();
+  },
+  restartQuiz(){ this.openProfilQuiz(); },
+  computeQuizProfile(){
+    const tally = {};
+    this._quiz.answers.forEach(tag=>{ tally[tag] = (tally[tag]||0)+1; });
+    // Ordre de priorite fixe en cas d'egalite, pour un resultat reproductible.
+    const order = ['guerrier','performeur','explorateur','artiste','strategiste'];
+    let best = order[0], bestCount = -1;
+    order.forEach(tag=>{ if((tally[tag]||0)>bestCount){ best=tag; bestCount=tally[tag]||0; } });
+    return best;
+  },
+  addQuizProgram(programId){
+    if(!this.db.settings.programmesVisibles.includes(programId)) this.db.settings.programmesVisibles.push(programId);
+    this.db.settings.heroProgramId = programId;
+    saveDB(this.db);
+    toast('Programme ajouté ✅');
+    nav.toSport();
+    this.renderSport();
+  },
+  renderQuiz(){
+    const body = document.getElementById('quiz-body');
+    const q = this._quiz;
+    if(!q || q.step >= QUIZ.length){
+      const profileKey = this.computeQuizProfile();
+      const profile = PROFILES[profileKey];
+      const prog = PROGRAMS.find(p=>p.id===profile.programId);
+      body.innerHTML = `
+        <div class="card" style="text-align:center;">
+          <div style="font-size:44px;">${profile.icon}</div>
+          <div style="font-size:20px;font-weight:800;margin-top:6px;">${escapeHtml(profile.name)}</div>
+          <div class="small-note" style="margin-top:6px;">${escapeHtml(profile.desc)}</div>
+        </div>
+        <div class="card">
+          <div class="section-title" style="margin-top:0;">Programme suggéré</div>
+          <div style="font-size:17px;font-weight:800;">${escapeHtml(prog.nom)}</div>
+          <div class="em" style="display:block;margin-top:6px;">${escapeHtml(prog.niveau||'')}${prog.seances?.length?' · '+prog.seances.length+' séances':''}</div>
+          <div class="small-note" style="margin-top:8px;">${escapeHtml(profile.progDesc)}</div>
+          <button type="button" class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="app.addQuizProgram('${prog.id}')">Ajouter ce programme à mes programmes</button>
+          <button type="button" class="btn btn-secondary" style="width:100%;margin-top:10px;" onclick="app.restartQuiz()">Refaire le test</button>
+        </div>
+      `;
+      return;
+    }
+    const question = QUIZ[q.step];
+    body.innerHTML = `
+      <div class="small-note" style="margin-bottom:6px;">Question ${q.step+1} / ${QUIZ.length}</div>
+      <div class="card">
+        <div style="font-size:17px;font-weight:800;margin-bottom:14px;">${escapeHtml(question.q)}</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          ${question.opts.map(o=>`<button type="button" class="btn btn-secondary" style="width:100%;text-align:left;" onclick="app.answerQuiz('${o.tag}')">${escapeHtml(o.t)}</button>`).join('')}
+        </div>
+      </div>
+      ${q.step>0?`<button type="button" class="link" onclick="app.backQuiz()">‹ Question précédente</button>`:''}
     `;
   },
   // Hero "prochaine séance" : met en avant UN programme. Si l'utilisateur a
@@ -3505,13 +3763,21 @@ const app = {
         intensite: 5, dureeMin: null, circuitAbdosDureeMin: null,
         exercices: (seanceDef.exercices||[]).map(e=>({
           exercice: e.exercice,
-          series: Array.from({length:parseSeriesCount(e.series_reps)}, ()=>({poids:null,reps:null}))
+          series: Array.from({length:parseSeriesCount(e.series_reps)}, ()=>({poids:null,reps:null})),
+          // Format de séance (v1, demande Christophe 30/09) : 'normal' par
+          // defaut, ou 'emom'/'amrap' -- remplace alors la grille de series
+          // classique par un minuteur dedie (cf. emomBlockHTML/amrapBlockHTML).
+          // supersetNext lie CET exercice au SUIVANT dans la liste (pas de
+          // repos entre les deux, le bouton repos n'apparait qu'apres le 2e) --
+          // independant du format, on peut en theorie superset deux EMOM.
+          format: 'normal', supersetNext: false,
         })),
         cardio: seanceDef.type==='cardio' ? {blocs:[{type:(seanceDef.modalitesSuggerees&&seanceDef.modalitesSuggerees[0])||'marche', duree:null, distance:null}], ressenti:null} : null,
         finisherCardio: seanceDef.finisher ? {type:'velo', duree:null} : null,
       };
     }
     this.stopRestTimer();
+    this.stopFormatTimer();
     nav.push('view-log');
     this.renderLog();
   },
@@ -3589,7 +3855,34 @@ const app = {
         const plateCalcPrefill = filledPoids.length ? Math.max(...filledPoids) : (lastPoidsVals.length ? Math.max(...lastPoidsVals) : null);
         const exoImg = exoImageSrc(exState.exercice);
         const estLibre = L.programmeId===FREE_MUSCU_PROGRAM_ID;
-        return `<div class="exo-block">
+        // Formats de séance (v1) : normal/EMOM/AMRAP par exercice + superset
+        // (liaison avec l'exercice SUIVANT, sans repos entre les deux).
+        const format = exState.format || 'normal';
+        const iAmTopHalf = !!exState.supersetNext;
+        const iAmBottomHalf = idx>0 && !!L.exercices[idx-1].supersetNext;
+        const blockClasses = ['exo-block', iAmTopHalf?'superset-top':'', iAmBottomHalf?'superset-bottom':''].filter(Boolean).join(' ');
+        const fmtSelectRow = `<div class="fmt-select-row">
+            <div class="pill-row">
+              <button type="button" class="pill ${format==='normal'?'active':''}" onclick="app.setExerciseFormat(${idx},'normal')">Normal</button>
+              <button type="button" class="pill ${format==='emom'?'active':''}" onclick="app.setExerciseFormat(${idx},'emom')">EMOM</button>
+              <button type="button" class="pill ${format==='amrap'?'active':''}" onclick="app.setExerciseFormat(${idx},'amrap')">AMRAP</button>
+            </div>
+            ${idx<L.exercices.length-1 ? `<button type="button" class="pill superset-toggle ${iAmTopHalf?'active':''}" onclick="app.toggleSupersetNext(${idx})">🔗 Superset avec le suivant</button>` : ''}
+          </div>`;
+        const bodyHTML = format==='emom' ? this.emomBlockHTML(idx, exState.emom)
+          : format==='amrap' ? this.amrapBlockHTML(idx, exState.amrap)
+          : `<div class="series-head ${single?'single':''}">${headCols}</div>
+          <div class="series-grid">${seriesRows}</div>
+          <div class="series-actions-row">
+            <button class="btn btn-secondary btn-sm" onclick="app.addSerie(${idx})">＋ Ajouter une série</button>
+            ${iAmTopHalf
+              ? `<span class="em" style="font-style:italic;">⚡ enchaîne directement, pas de repos</span>`
+              : `<button class="icon-btn" title="Démarrer le repos" onclick="app.startRestTimer(${idx})">${SVG_TIMER}</button>`}
+            ${!single?`<button class="icon-btn" title="Calculateur de disques" onclick="app.openPlateCalc(${plateCalcPrefill!=null?plateCalcPrefill:'null'})">${SVG_PLATE}</button>`:''}
+            <button class="icon-btn" title="Supprimer une série" onclick="app.removeSerie(${idx})">${SVG_TRASH}</button>
+          </div>`;
+        return `<div class="${blockClasses}">
+          ${iAmTopHalf?`<div class="superset-badge">⚡ SUPERSET</div>`:''}
           <div class="exo-header">
             ${exoImg
               ? `<div class="exo-ic has-img" title="Voir le poster anatomique" onclick="app.openExoImage('${encodeURIComponent(exState.exercice)}')"><img src="${exoImg}" alt="${escapeHtml(exState.exercice)}" loading="lazy"></div>`
@@ -3609,14 +3902,8 @@ const app = {
             <button class="link" style="margin-left:6px;font-size:12px;" onclick="app.showExoHistory('${encodeURIComponent(exState.exercice)}')">Historique</button></div>
           ${suggestion?`<div class="em target" style="display:inline-block;margin-top:7px;">${escapeHtml(suggestion)}</div>`:''}
           ${pourcentageCible?`<div class="em target" style="display:block;margin-top:7px;">${pourcentageCible.titre?escapeHtml(pourcentageCible.titre)+' — ':''}${escapeHtml(pourcentageCible.texte)}${pourcentageCible.maxManquant?` <button class="link" style="font-size:12px;" onclick="nav.tab('settings')">renseigne ton max (${escapeHtml(pourcentageCible.maxManquant)})</button>`:''}</div>`:''}
-          <div class="series-head ${single?'single':''}">${headCols}</div>
-          <div class="series-grid">${seriesRows}</div>
-          <div class="series-actions-row">
-            <button class="btn btn-secondary btn-sm" onclick="app.addSerie(${idx})">＋ Ajouter une série</button>
-            <button class="icon-btn" title="Démarrer le repos" onclick="app.startRestTimer(${idx})">${SVG_TIMER}</button>
-            ${!single?`<button class="icon-btn" title="Calculateur de disques" onclick="app.openPlateCalc(${plateCalcPrefill!=null?plateCalcPrefill:'null'})">${SVG_PLATE}</button>`:''}
-            <button class="icon-btn" title="Supprimer une série" onclick="app.removeSerie(${idx})">${SVG_TRASH}</button>
-          </div>
+          ${fmtSelectRow}
+          ${bodyHTML}
         </div>`;
       }).join('');
       if(L.programmeId===FREE_MUSCU_PROGRAM_ID){
@@ -3649,6 +3936,14 @@ const app = {
     }
     html += `<div class="field" style="margin-top:4px;"><label>Notes (optionnel)</label><textarea rows="2" placeholder="Sensations, douleurs, ajustements..." onchange="app.updateNotes(this.value)">${escapeHtml(L.notes||'')}</textarea></div>`;
     document.getElementById('log-body').innerHTML = html;
+    // Les blocs EMOM/AMRAP contiennent un div #fmt-timer-N vide (rempli par
+    // JS, pas par du HTML statique, pour pouvoir etre rafraichi seul chaque
+    // seconde sans re-render tout renderLog -- cf. renderFormatTimer).
+    if(seanceDef.type!=='cardio'){
+      L.exercices.forEach((exState,idx)=>{
+        if(exState.format==='emom' || exState.format==='amrap') this.renderFormatTimer(idx);
+      });
+    }
   },
   /* ---------- SELECTEUR D'EXERCICE PAR GROUPE MUSCULAIRE ---------- */
   // Un seul selecteur (feuille modale, cf. #exo-picker-overlay dans le
@@ -3984,6 +4279,210 @@ const app = {
       <button type="button" class="icon-btn" title="Arrêter le repos" onclick="app.stopRestTimer()">${SVG_CHECK}</button>
     `;
   },
+
+  /* ---------- FORMATS DE SEANCE (v1 : superset / EMOM / AMRAP) ---------- */
+  // Choix explicite de Christophe (30/09) : superset, EMOM et AMRAP en v1,
+  // pas de format "libre" supplementaire pour l'instant (drop-set/circuit
+  // envisages en v2 si besoin). Le format est un choix PAR EXERCICE DE CETTE
+  // SEANCE (this.currentLog), jamais ecrit dans la definition du programme
+  // (PROGRAMS/data/programs) -- au meme titre que le remplacement d'exercice
+  // deja existant (cf. pickExercice), donc regenerable/rejouable sans copier
+  // aucune donnee de format d'une seance a l'autre.
+  setExerciseFormat(idx, format){
+    const exState = this.currentLog.exercices[idx]; if(!exState) return;
+    if(this._fmtTimer && this._fmtTimer.exIdx===idx) this.stopFormatTimer();
+    exState.format = format;
+    if(format==='emom' && !exState.emom) exState.emom = {minutes:10, target:'', rounds:0};
+    if(format==='amrap' && !exState.amrap) exState.amrap = {durationMin:12, rounds:0, reps:0};
+    this.renderLog();
+    this.autosaveLog();
+  },
+  toggleSupersetNext(idx){
+    const exState = this.currentLog.exercices[idx]; if(!exState) return;
+    exState.supersetNext = !exState.supersetNext;
+    this.renderLog();
+    this.autosaveLog();
+  },
+  updateEmomField(idx, field, val){
+    const e = this.currentLog.exercices[idx]?.emom; if(!e) return;
+    e[field] = field==='target' ? val : (val===''?null:Math.max(1,parseInt(val,10)||1));
+    if(this._fmtTimer && this._fmtTimer.exIdx===idx) this.stopFormatTimer();
+    this.renderLog();
+    this.autosaveLog();
+  },
+  updateAmrapField(idx, field, val){
+    const a = this.currentLog.exercices[idx]?.amrap; if(!a) return;
+    a[field] = val===''?null:Math.max(1,parseInt(val,10)||1);
+    if(this._fmtTimer && this._fmtTimer.exIdx===idx) this.stopFormatTimer();
+    this.renderLog();
+    this.autosaveLog();
+  },
+  adjustEmomRounds(idx, delta){
+    const e = this.currentLog.exercices[idx]?.emom; if(!e) return;
+    const max = e.minutes||99;
+    e.rounds = Math.max(0, Math.min(max, (e.rounds||0)+delta));
+    this.renderLog();
+    this.autosaveLog();
+  },
+  adjustAmrapRounds(idx, delta){
+    const a = this.currentLog.exercices[idx]?.amrap; if(!a) return;
+    a.rounds = Math.max(0, (a.rounds||0)+delta);
+    this.renderLog();
+    this.autosaveLog();
+  },
+  adjustAmrapReps(idx, delta){
+    const a = this.currentLog.exercices[idx]?.amrap; if(!a) return;
+    a.reps = Math.max(0, (a.reps||0)+delta);
+    this.renderLog();
+    this.autosaveLog();
+  },
+  // Un seul minuteur de format actif a la fois (meme principe que
+  // this.restTimer) -- demarrer un minuteur EMOM/AMRAP sur un autre exercice
+  // arrete implicitement le precedent, et arrete aussi le minuteur de repos
+  // classique (les deux barres n'ont pas de sens simultanement).
+  toggleFormatTimer(idx){
+    const exState = this.currentLog.exercices[idx]; if(!exState) return;
+    if(this._fmtTimer && this._fmtTimer.exIdx===idx){
+      // Deja le minuteur de cet exercice : pause/reprend.
+      if(this._fmtTimer.running){
+        clearInterval(this._fmtInterval);
+        this._fmtTimer.running = false;
+        this.renderFormatTimer(idx);
+      } else if(this._fmtTimer.remaining>0) {
+        this._fmtTimer.running = true;
+        this._fmtInterval = setInterval(()=>this._tickFormatTimer(), 1000);
+        this.renderFormatTimer(idx);
+      }
+      return;
+    }
+    // Nouveau minuteur pour cet exercice (remplace un eventuel autre en cours).
+    this.stopFormatTimer();
+    this.stopRestTimer();
+    this._unlockRestTimerAudio();
+    const kind = exState.format;
+    const total = kind==='emom' ? (exState.emom.minutes||10)*60 : (exState.amrap.durationMin||12)*60;
+    this._fmtTimer = {exIdx: idx, kind, total, remaining: total, running: true};
+    this.renderFormatTimer(idx);
+    this._fmtInterval = setInterval(()=>this._tickFormatTimer(), 1000);
+  },
+  resetFormatTimer(idx){
+    if(this._fmtTimer && this._fmtTimer.exIdx===idx) this.stopFormatTimer();
+    this.renderFormatTimer(idx);
+  },
+  stopFormatTimer(){
+    clearInterval(this._fmtInterval);
+    const prevIdx = this._fmtTimer ? this._fmtTimer.exIdx : null;
+    this._fmtTimer = null;
+    if(prevIdx!=null) this.renderFormatTimer(prevIdx);
+  },
+  _tickFormatTimer(){
+    const t = this._fmtTimer;
+    if(!t){ clearInterval(this._fmtInterval); return; }
+    t.remaining -= 1;
+    if(t.kind==='emom' && t.remaining>0 && t.remaining % 60 === 0){
+      // Nouvelle minute qui commence : bip court + on avance le compteur de
+      // rounds (l'utilisateur peut toujours le corriger a la main).
+      this._formatTimerCue(false);
+      const e = this.currentLog.exercices[t.exIdx]?.emom;
+      if(e) e.rounds = Math.min(e.minutes||99, (e.rounds||0)+1);
+      this.autosaveLog();
+    }
+    if(t.remaining<=0){
+      t.remaining = 0;
+      t.running = false;
+      clearInterval(this._fmtInterval);
+      this._formatTimerCue(true);
+      if(t.kind==='emom'){
+        const e = this.currentLog.exercices[t.exIdx]?.emom;
+        if(e) e.rounds = e.minutes||e.rounds;
+        this.autosaveLog();
+      }
+    }
+    this.renderFormatTimer(t.exIdx);
+  },
+  _formatTimerCue(isFinal){
+    try{ if(navigator.vibrate) navigator.vibrate(isFinal?[200,100,200,100,200]:[120]); }catch(e){}
+    try{
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if(!Ctx) return;
+      if(!this._audioCtx) this._audioCtx = new Ctx();
+      const ctx = this._audioCtx;
+      if(ctx.state==='suspended') ctx.resume().catch(()=>{});
+      const beep = (start, dur, freq)=>{
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = freq;
+        o.connect(g); g.connect(ctx.destination);
+        g.gain.setValueAtTime(0.0001, ctx.currentTime + start);
+        g.gain.exponentialRampToValueAtTime(0.28, ctx.currentTime + start + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + start + dur);
+        o.start(ctx.currentTime + start);
+        o.stop(ctx.currentTime + start + dur + 0.03);
+      };
+      if(isFinal){ beep(0,0.18,660); beep(0.24,0.18,660); beep(0.48,0.30,990); }
+      else { beep(0,0.12,880); }
+    }catch(e){}
+  },
+  renderFormatTimer(idx){
+    const box = document.getElementById('fmt-timer-'+idx);
+    if(!box) return;
+    const exState = this.currentLog.exercices[idx]; if(!exState) return;
+    const t = (this._fmtTimer && this._fmtTimer.exIdx===idx) ? this._fmtTimer : null;
+    const kind = exState.format;
+    const configuredTotal = kind==='emom' ? (exState.emom.minutes||10)*60 : (exState.amrap.durationMin||12)*60;
+    const remaining = t ? t.remaining : configuredTotal;
+    const mm = Math.floor(remaining/60), ss = remaining%60;
+    const finished = t && t.remaining<=0;
+    const running = t && t.running;
+    box.classList.toggle('done', !!finished);
+    const roundInfo = kind==='emom' ? `<div class="fmt-round">Round ${exState.emom.rounds||0} / ${exState.emom.minutes||10}</div>` : '';
+    box.innerHTML = `
+      <div class="fmt-time">${mm}:${String(ss).padStart(2,'0')}</div>
+      <div class="fmt-sub">${finished ? 'Terminé' : (running ? (kind==='emom'?'EMOM en cours':'AMRAP en cours') : 'Prêt')}</div>
+      ${roundInfo}
+      <div class="fmt-timer-actions">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="app.toggleFormatTimer(${idx})">${running?'⏸ Pause':(t&&!finished?'▶ Reprendre':'▶ Démarrer')}</button>
+        <button type="button" class="icon-btn" title="Réinitialiser" onclick="app.resetFormatTimer(${idx})">${SVG_TRASH}</button>
+      </div>
+    `;
+  },
+  emomBlockHTML(idx, e){
+    return `<div class="fmt-config">
+        <div class="field"><label>Minutes</label><input type="number" inputmode="numeric" min="1" value="${e.minutes}" onchange="app.updateEmomField(${idx},'minutes',this.value)"></div>
+        <div class="field"><label>Objectif par minute (optionnel)</label><input type="text" placeholder="Ex : 8 kettlebell swings" value="${escapeHtml(e.target||'')}" onchange="app.updateEmomField(${idx},'target',this.value)"></div>
+      </div>
+      <div class="fmt-timer-box" id="fmt-timer-${idx}"></div>
+      <div class="fmt-rounds-row">
+        <span>Rounds complétés</span>
+        <div class="fmt-counter">
+          <button type="button" class="icon-btn" onclick="app.adjustEmomRounds(${idx},-1)">－</button>
+          <span class="fmt-counter-val">${e.rounds||0}</span>
+          <button type="button" class="icon-btn" onclick="app.adjustEmomRounds(${idx},1)">＋</button>
+        </div>
+      </div>`;
+  },
+  amrapBlockHTML(idx, a){
+    return `<div class="fmt-config">
+        <div class="field"><label>Durée (minutes)</label><input type="number" inputmode="numeric" min="1" value="${a.durationMin}" onchange="app.updateAmrapField(${idx},'durationMin',this.value)"></div>
+      </div>
+      <div class="fmt-timer-box" id="fmt-timer-${idx}"></div>
+      <div class="fmt-rounds-row">
+        <span>Tours complets</span>
+        <div class="fmt-counter">
+          <button type="button" class="icon-btn" onclick="app.adjustAmrapRounds(${idx},-1)">－</button>
+          <span class="fmt-counter-val">${a.rounds||0}</span>
+          <button type="button" class="icon-btn" onclick="app.adjustAmrapRounds(${idx},1)">＋</button>
+        </div>
+      </div>
+      <div class="fmt-rounds-row">
+        <span>Reps supplémentaires</span>
+        <div class="fmt-counter">
+          <button type="button" class="icon-btn" onclick="app.adjustAmrapReps(${idx},-1)">－</button>
+          <span class="fmt-counter-val">${a.reps||0}</span>
+          <button type="button" class="icon-btn" onclick="app.adjustAmrapReps(${idx},1)">＋</button>
+        </div>
+      </div>`;
+  },
+
   /* ---------- CALCULATEUR DE DISQUES ---------- */
   openPlateCalc(prefillKg){
     if(this._plateCalcBar==null) this._plateCalcBar = 20;
@@ -4063,6 +4562,7 @@ const app = {
   saveSeance(){
     if(!this.autosaveLog()) return;
     this.stopRestTimer();
+    this.stopFormatTimer();
     toast('Séance enregistrée ✅');
     nav.tab('sport');
   },
@@ -4072,6 +4572,7 @@ const app = {
       this.db.seances = this.db.seances.filter(s=>s.id!==this.currentLog.id);
       if(!saveDBOrWarn(this.db)){ this.db.seances = prev; return; }
       this.stopRestTimer();
+      this.stopFormatTimer();
       toast('Séance supprimée');
       nav.tab('sport');
     });
