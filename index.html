@@ -855,6 +855,45 @@ label:has(> input[type="checkbox"]){ min-height:44px; display:flex; align-items:
     transition-duration:.01ms !important; scroll-behavior:auto !important;
   }
 }
+
+/* ===================================================================
+   MOUVEMENT FLUIDE (oct. 2026) -- feuilles du bas, indicateur de barre,
+   glissement entre onglets. Principes : mouvement qui part de la valeur
+   affichee, suivi du doigt 1:1, velocite heritee, ressorts (JS, cf.
+   SpringAnim) plutot que courbes CSS pour tout ce qui peut etre
+   interrompu. prefers-reduced-motion : tout devient immediat.
+   =================================================================== */
+/* Pastilles Nutrition (thème sombre) : texte violet sur fond teinté = 3.7:1 -> éclairci */
+#nutri-hydratation .pill, .meal-card .pill{ color:color-mix(in srgb, var(--accent) 72%, #fff); }
+:root[data-theme="light"] #nutri-hydratation .pill, :root[data-theme="light"] .meal-card .pill{ color:var(--accent); }
+body{ overflow-x:clip; }
+html, body{ overscroll-behavior-x:none; }
+.confirm-overlay.sheet-mode{ align-items:flex-end; padding:0; -webkit-backdrop-filter:none; backdrop-filter:none; }
+.sheet-mode > .confirm-box{
+  max-width:560px; width:100%; margin:0 auto; border-radius:26px 26px 0 0; border-bottom:none;
+  padding:0 18px calc(18px + env(safe-area-inset-bottom));
+  max-height:88vh; overflow:hidden; display:flex; flex-direction:column; will-change:transform;
+}
+.sheet-mode .exo-picker-box{ height:86vh; max-height:88vh; overflow:hidden; }
+.sheet-mode .confirm-box > *{ flex:none; }
+.sheet-mode #exo-picker-grid{ grid-auto-rows:max-content; align-content:start; }
+.sheet-mode #exo-picker-grid, .sheet-mode #muscle-group-picker-list, .sheet-mode #program-picker-list{
+  flex:1 1 auto; min-height:0; max-height:none; overflow-y:auto; -webkit-overflow-scrolling:touch;
+}
+.sheet-grab{
+  touch-action:none; cursor:grab; margin:0 -18px 2px; height:40px; display:flex; align-items:center; justify-content:center;
+  user-select:none; -webkit-user-select:none;
+}
+.sheet-grab::before{ content:""; width:42px; height:5px; border-radius:3px; background:var(--border-strong); }
+.navbar .nav-ind{
+  position:absolute; left:0; top:0; width:0; height:0; border-radius:17px; pointer-events:none; z-index:0;
+  background:color-mix(in srgb, var(--accent) 13%, transparent); will-change:transform,width;
+}
+.navbar button.active{ background:none; }
+@keyframes viewSlideR{ from{opacity:0; transform:translateX(34px);} to{opacity:1; transform:none;} }
+@keyframes viewSlideL{ from{opacity:0; transform:translateX(-34px);} to{opacity:1; transform:none;} }
+.view.slide-r{ animation:viewSlideR .34s cubic-bezier(.22,1,.36,1); }
+.view.slide-l{ animation:viewSlideL .34s cubic-bezier(.22,1,.36,1); }
 </style>
 </head>
 <body>
@@ -1548,7 +1587,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261007173823';
+const APP_BUILD_VERSION = '20261007181452';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -3521,6 +3560,265 @@ function computeNutriWindowStats(days){
   };
 }
 
+
+/* ===================== MOUVEMENT FLUIDE ===================== */
+const REDUCED_MQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+function prefersReducedMotion(){ return !!(REDUCED_MQ && REDUCED_MQ.matches); }
+function clampN(v,a,b){ return Math.min(b,Math.max(a,v)); }
+// Elasticite aux bords : la resistance augmente avec le depassement.
+function rubberBand(over, dim){ const o=Math.abs(over); const r=(o*dim*0.55)/(dim+0.55*o); return over<0?-r:r; }
+
+// Ressort amorti integre par pas fixes (1/240 s). response = duree approx. (s),
+// damping 1 = critique (sans rebond), < 1 = rebond. Conserve x ET v quand on
+// change de cible : une animation interrompue repart de ce qui est affiche.
+function SpringAnim(x, opt){
+  opt = opt || {};
+  this.x=x; this.v=0; this.t=x; this.eps=opt.eps||0.001; this.drag=false; this.run=false;
+  this.cb=function(){}; this.onRest=null; this.last=0;
+  this.setup(opt.response||0.35, opt.damping||1);
+  const self=this;
+  this.tick=function(now){
+    if(self.drag){ self.run=false; return; }
+    const dt=Math.min(0.032,Math.max(0,(now-self.last)/1000)); self.last=now;
+    const n=Math.max(1,Math.ceil(dt/(1/240))), st=dt/n;
+    for(let i=0;i<n;i++){ const a=self.k*(self.t-self.x)-self.c*self.v; self.v+=a*st; self.x+=self.v*st; }
+    if(Math.abs(self.v)<self.eps*20 && Math.abs(self.t-self.x)<self.eps){
+      self.x=self.t; self.v=0; self.run=false; self.cb(self.x);
+      if(self.onRest) self.onRest();
+      return;
+    }
+    self.cb(self.x);
+    requestAnimationFrame(self.tick);
+  };
+}
+SpringAnim.prototype.setup=function(r,z){ this.k=Math.pow(2*Math.PI/r,2); this.c=4*Math.PI*z/r; };
+SpringAnim.prototype.to=function(t){ this.t=t; this.drag=false; if(!this.run){ this.run=true; this.last=performance.now(); requestAnimationFrame(this.tick);} };
+SpringAnim.prototype.snap=function(t){ this.t=t; this.x=t; this.v=0; this.drag=false; this.cb(t); };
+SpringAnim.prototype.set=function(x){ this.x=x; this.cb(x); };
+
+// Feuilles du bas : meme DOM que les anciennes boites centrees (#...-overlay),
+// transformees en feuille a la premiere ouverture. Poignee = seule zone de
+// glissement (le contenu defile normalement). Fermeture par poignee, fond
+// ou bouton ✕, toujours via la fonction close... de l'app (etat remis a zero).
+const Sheets = (function(){
+  const CLOSERS = {
+    'exo-picker-overlay':'closeExercicePicker',
+    'muscle-group-picker-overlay':'closeMuscleGroupPicker',
+    'program-picker-overlay':'closeProgramPicker'
+  };
+  const st = {};
+  function ensure(id){
+    if(st[id]) return st[id];
+    const ov=document.getElementById(id), box=ov.querySelector('.confirm-box');
+    const grab=document.createElement('div'); grab.className='sheet-grab'; box.insertBefore(grab, box.firstChild);
+    ov.classList.add('sheet-mode');
+    const s={id:id, ov:ov, box:box, grab:grab, H:420, open:false, drag:null};
+    s.sp=new SpringAnim(0,{response:0.32,damping:1,eps:0.2});
+    s.sp.cb=function(y){
+      box.style.transform='translateY('+y+'px)';
+      ov.style.backgroundColor='rgba(4,5,8,'+(0.6*clampN(1-y/s.H,0,1)).toFixed(3)+')';
+    };
+    s.sp.onRest=function(){ if(!s.open) hide(s); };
+    if(!ov.getAttribute('onclick')){
+      ov.addEventListener('click',function(e){ if(e.target===ov) closeVia(id); });
+    }
+    grab.addEventListener('pointerdown',function(e){
+      s.H=box.offsetHeight||s.H;
+      s.drag={id:e.pointerId,y0:e.clientY,s0:s.sp.x,pts:[{t:e.timeStamp,y:s.sp.x}]};
+      s.sp.drag=true; try{ grab.setPointerCapture(e.pointerId); }catch(err){}
+    });
+    grab.addEventListener('pointermove',function(e){
+      if(!s.drag||e.pointerId!==s.drag.id) return;
+      let y=s.drag.s0+(e.clientY-s.drag.y0);
+      if(y<0) y=rubberBand(y,s.H);
+      s.sp.set(y); s.drag.pts.push({t:e.timeStamp,y:y});
+    });
+    const end=function(e){
+      if(!s.drag||e.pointerId!==s.drag.id) return;
+      const pts=s.drag.pts, last=pts[pts.length-1]; let first=last;
+      for(let i=pts.length-1;i>=0;i--){ if(last.t-pts[i].t<=100) first=pts[i]; else break; }
+      const dt=(last.t-first.t)/1000, v=dt>0?(last.y-first.y)/dt:0;
+      const projected=s.sp.x+v*0.099;          // projection d'elan (d = 0.99)
+      s.drag=null; s.sp.drag=false;
+      if(prefersReducedMotion()){ if(projected>s.H*0.5) closeVia(id); else s.sp.snap(0); return; }
+      s.sp.setup(0.32,0.8); s.sp.v=v;          // le geste donne de l'elan : leger rebond autorise
+      if(projected>s.H*0.5) closeVia(id,true); else s.sp.to(0);
+    };
+    grab.addEventListener('pointerup',end); grab.addEventListener('pointercancel',end);
+    st[id]=s; return s;
+  }
+  function hide(s){ s.ov.style.display='none'; s.box.style.transform=''; s.ov.style.backgroundColor=''; }
+  function closeVia(id, keepVelocity){
+    const fn=CLOSERS[id]; keepVelocityFlag = !!keepVelocity;
+    if(typeof app!=='undefined' && typeof app[fn]==='function') app[fn](); else Sheets.close(id);
+  }
+  let keepVelocityFlag=false;
+  return {
+    open:function(id){
+      const s=ensure(id), was=s.ov.style.display==='flex';
+      s.open=true; s.ov.style.display='flex';
+      s.H=s.box.offsetHeight||s.H;
+      if(prefersReducedMotion()){ s.sp.snap(0); return; }
+      s.sp.setup(0.32,1);
+      if(!was) s.sp.snap(s.H);                 // part du bas ; sinon repart de la position affichee
+      s.sp.to(0);
+    },
+    close:function(id){
+      const s=st[id]; const ov=document.getElementById(id);
+      if(!s || ov.style.display!=='flex'){ ov.style.display='none'; return; }
+      s.open=false;
+      if(prefersReducedMotion()){ s.sp.snap(s.H); hide(s); return; }
+      s.H=s.box.offsetHeight||s.H;
+      if(!keepVelocityFlag) s.sp.setup(0.32,1);
+      keepVelocityFlag=false;
+      s.sp.to(s.H);
+    }
+  };
+})();
+
+// Indicateur de la barre du bas : un seul element persistant (recree avec
+// la barre, mais son etat de ressort survit), qui glisse d'un onglet a
+// l'autre et repart de sa position courante si on retape pendant le trajet.
+const NavMotion = {
+  prev:null, dir:null,
+  xs:new SpringAnim(0,{response:0.34,damping:1,eps:0.3}),
+  ws:new SpringAnim(0,{response:0.34,damping:1,eps:0.3}),
+  update:function(bar, fam, idx){
+    const ind=bar.querySelector('.nav-ind'), act=bar.querySelectorAll('button')[idx];
+    this.dir=null;
+    if(!ind) return;
+    if(!act){ ind.style.opacity='0'; this.prev=null; return; }
+    const X=act.offsetLeft, W=act.offsetWidth;
+    ind.style.top=act.offsetTop+'px'; ind.style.height=act.offsetHeight+'px';
+    const self=this;
+    const apply=function(){ ind.style.width=self.ws.x+'px'; ind.style.transform='translateX('+self.xs.x+'px)'; };
+    this.xs.cb=apply; this.ws.cb=apply;
+    const p=this.prev;
+    if(p && p.fam===fam && !prefersReducedMotion()){
+      apply();
+      if(p.idx!==idx){ this.dir = idx>p.idx ? 'r' : 'l'; }
+      this.xs.to(X); this.ws.to(W);
+    } else { this.xs.snap(X); this.ws.snap(W); }
+    this.prev={fam:fam, idx:idx};
+  }
+};
+
+// Glissement horizontal entre les onglets d'une famille (Sport : Seance /
+// Programmes / Historique / Stats ; Nutrition : Frigo / Repas / Corps / Stats).
+// La vue suit le doigt 1:1 ; au relacher, l'elan decide (projection), la vue
+// sort avec la vitesse du geste et la suivante entre dans le meme sens.
+// Ignore : champs de saisie, zones defilantes en horizontal, bords de l'ecran
+// (geste retour du systeme), fenetres ouvertes, et la seance en cours.
+const TabSwipe = (function(){
+  const FAM=[
+    ['view-sport','view-programmes','view-history','view-stats'],
+    ['view-recettes','view-aide-repas','view-nutri-corps','view-nutri-stats']
+  ];
+  let g=null, busy=false;
+  function overlayOpen(){ return Array.prototype.some.call(document.querySelectorAll('.confirm-overlay'), function(o){ return o.style.display==='flex'; }); }
+  function blocked(el){
+    if(!el || !el.closest) return true;
+    if(el.closest('input,textarea,select,[contenteditable="true"],.week-strip,.chart-wrap,.confirm-overlay,#view-onboarding')) return true;
+    for(let c=el;c&&c!==document.body;c=c.parentElement){
+      if(c.scrollWidth>c.clientWidth+2){ const o=getComputedStyle(c).overflowX; if(o==='auto'||o==='scroll') return true; }
+    }
+    return false;
+  }
+  function neighbour(fam, idx, dir){ return fam[idx+dir]!==undefined; }
+  function go(fam, idx, dir){
+    const btn=document.querySelectorAll('#navbar button')[idx+dir+1];   // +1 : le 1er bouton est « Accueil »
+    if(btn){ app._swipeNav=true; btn.click(); app._swipeNav=false; return true; }
+    return false;
+  }
+  function velocity(samples){
+    const last=samples[samples.length-1]; let first=last;
+    for(let i=samples.length-1;i>=0;i--){ if(last.t-samples[i].t<=100) first=samples[i]; else break; }
+    const dt=(last.t-first.t)/1000; return dt>0 ? (last.x-first.x)/dt : 0;
+  }
+  function settle(view){ view.style.transform=''; view.style.opacity=''; view.style.willChange=''; view.style.animation=''; }
+  function springBack(s){
+    busy=true;
+    const sp=new SpringAnim(s.pos,{response:0.32,damping:0.85,eps:0.3});
+    sp.v=velocity(s.samples);
+    sp.cb=function(x){ s.view.style.transform='translateX('+x+'px)'; s.view.style.opacity=1-Math.min(Math.abs(x)/s.W,1)*0.6; };
+    sp.onRest=function(){ settle(s.view); busy=false; };
+    sp.to(0);
+  }
+  function commit(s, dir, v){
+    busy=true;
+    const target = dir>0 ? -s.W : s.W;
+    const out=new SpringAnim(s.pos,{response:0.3,damping:1,eps:0.6}); out.v=v;
+    let done=false;
+    const finish=function(){
+      if(done) return; done=true; out.drag=true;
+      settle(s.view);
+      if(!go(s.fam, s.idx, dir)){ busy=false; return; }
+      const nv=document.querySelector('.view.active'); if(!nv){ busy=false; return; }
+      nv.style.animation='none'; nv.style.willChange='transform,opacity';
+      const start = dir>0 ? s.W*0.3 : -s.W*0.3;
+      const inn=new SpringAnim(start,{response:0.34,damping:1,eps:0.6}); inn.v=clampN(v*0.25,-1500,1500);
+      inn.cb=function(x){ nv.style.transform='translateX('+x+'px)'; nv.style.opacity=1-Math.min(Math.abs(x)/(s.W*0.3),1)*0.7; };
+      inn.onRest=function(){ settle(nv); busy=false; };
+      inn.cb(start); inn.to(0);
+    };
+    out.cb=function(x){
+      s.view.style.transform='translateX('+x+'px)'; s.view.style.opacity=1-Math.min(Math.abs(x)/s.W,1)*0.6;
+      if(Math.abs(target-x)<s.W*0.18) finish();
+    };
+    out.onRest=finish;
+    out.to(target);
+  }
+  document.addEventListener('touchstart',function(e){
+    g=null;
+    if(busy||e.touches.length!==1) return;
+    const a=document.querySelector('.view.active'); if(!a) return;
+    const fam=FAM.filter(function(f){ return f.indexOf(a.id)>=0; })[0];
+    if(!fam || overlayOpen() || blocked(e.target)) return;
+    const t=e.touches[0];
+    if(t.clientX<24 || t.clientX>window.innerWidth-24) return;
+    g={x0:t.clientX,y0:t.clientY,fam:fam,idx:fam.indexOf(a.id),view:a,state:'pending',pos:0,W:window.innerWidth,samples:[],tStart:Date.now(),lastDx:0,lastDy:0};
+  },{passive:true});
+  document.addEventListener('touchmove',function(e){
+    if(!g) return;
+    const t=e.touches[0]; let dx=t.clientX-g.x0; const dy=t.clientY-g.y0;
+    g.lastDx=dx; g.lastDy=dy;
+    if(g.state==='pending'){
+      if(Math.max(Math.abs(dx),Math.abs(dy))<10) return;           // hysteresis avant de choisir l'axe
+      if(Math.abs(dx)>Math.abs(dy)*1.4){
+        if(prefersReducedMotion()){ g.state='discrete'; }          // mouvement reduit : pas de suivi, decision a la fin
+        else { g.state='drag'; g.x0=t.clientX; dx=0; g.samples=[{t:e.timeStamp,x:0}]; g.view.style.willChange='transform,opacity'; }
+      } else { g=null; return; }
+    }
+    if(g.state==='discrete'){ if(e.cancelable) e.preventDefault(); return; }
+    if(g.state==='drag'){
+      if(e.cancelable) e.preventDefault();
+      const dir=dx<0?1:-1;
+      g.pos = neighbour(g.fam,g.idx,dir) ? dx : rubberBand(dx,g.W);
+      g.view.style.transform='translateX('+g.pos+'px)';
+      g.view.style.opacity=1-Math.min(Math.abs(g.pos)/g.W,1)*0.6;
+      g.samples.push({t:e.timeStamp,x:g.pos});
+    }
+  },{passive:false});
+  function end(){
+    if(!g) return;
+    const s=g; g=null;
+    if(s.state==='discrete'){
+      if(Math.abs(s.lastDx)>=70 && Math.abs(s.lastDy)<Math.abs(s.lastDx)*0.5 && Date.now()-s.tStart<900){
+        const d=s.lastDx<0?1:-1; if(neighbour(s.fam,s.idx,d)) go(s.fam,s.idx,d);
+      }
+      return;
+    }
+    if(s.state==='pending') return;
+    if(s.state!=='drag') return;
+    const v=velocity(s.samples), proj=s.pos+v*0.099, dir=proj<0?1:-1;
+    const can = neighbour(s.fam,s.idx,dir) && Math.abs(proj)>s.W*0.35 && (s.pos===0 || (s.pos<0)===(proj<0));
+    if(can) commit(s,dir,v); else springBack(s);
+  }
+  document.addEventListener('touchend',end,{passive:true});
+  document.addEventListener('touchcancel',end,{passive:true});
+  return {FAM:FAM};
+})();
+
 /* ===================== APP ===================== */
 const app = {
   db: null,
@@ -3573,7 +3871,15 @@ const app = {
     // Nutrition (violet). C'est ce qui faisait passer le bouton actif au
     // vert au lieu du violet en Nutrition.
     bar.classList.toggle('ctx-nutrition', NAV_NUTRITION_FAMILY.includes(viewId));
-    bar.innerHTML = items.map(it=>`<button ${it.view?`data-view="${it.view}"`:''} class="${it.active?'active':''}" onclick="${it.onclick}">${it.icon}${it.label}</button>`).join('');
+    bar.innerHTML = '<span class="nav-ind" aria-hidden="true"></span>' + items.map(it=>`<button ${it.view?`data-view="${it.view}"`:''} class="${it.active?'active':''}" onclick="${it.onclick}">${it.icon}${it.label}</button>`).join('');
+    const _fam = NAV_SPORT_FAMILY.includes(viewId) ? 'sport' : (NAV_NUTRITION_FAMILY.includes(viewId) ? 'nutri' : 'root');
+    NavMotion.update(bar, _fam, items.findIndex(it=>it.active));
+    // Glissement directionnel de la vue (tap sur un onglet) ; le geste de glissement gere deja le sien.
+    if(NavMotion.dir && !this._swipeNav && !prefersReducedMotion()){
+      const _v = document.getElementById(viewId);
+      if(_v){ _v.classList.remove('slide-r','slide-l'); void _v.offsetWidth; _v.classList.add('slide-'+NavMotion.dir);
+        _v.addEventListener('animationend', function _h(){ _v.classList.remove('slide-r','slide-l'); _v.removeEventListener('animationend', _h); }); }
+    }
   },
 
   /* ---------- HOME ---------- */
@@ -4263,10 +4569,10 @@ const app = {
     document.getElementById('exo-picker-search').value = '';
     this.renderExercicePickerPills();
     this.renderExercicePickerGrid();
-    document.getElementById('exo-picker-overlay').style.display = 'flex';
+    Sheets.open('exo-picker-overlay');
   },
   closeExercicePicker(){
-    document.getElementById('exo-picker-overlay').style.display = 'none';
+    Sheets.close('exo-picker-overlay');
     this._exoPicker = null;
   },
   setExercicePickerGroup(g){
@@ -4339,10 +4645,10 @@ const app = {
         <div class="meta"><div class="t1">${escapeHtml(EXERCICE_MUSCLE_GROUP_LABELS[g])}</div></div>
         <div class="chev">›</div>
       </div>`).join('');
-    document.getElementById('muscle-group-picker-overlay').style.display = 'flex';
+    Sheets.open('muscle-group-picker-overlay');
   },
   closeMuscleGroupPicker(){
-    document.getElementById('muscle-group-picker-overlay').style.display = 'none';
+    Sheets.close('muscle-group-picker-overlay');
     this._pendingExercicePerso = null;
   },
   confirmExercicePersoGroup(groupe){
@@ -4408,9 +4714,9 @@ const app = {
         <div class="meta"><div class="t1">＋ Nouveau programme</div></div>
         <div class="chev">›</div>
       </div>`;
-    document.getElementById('program-picker-overlay').style.display = 'flex';
+    Sheets.open('program-picker-overlay');
   },
-  closeProgramPicker(){ document.getElementById('program-picker-overlay').style.display = 'none'; },
+  closeProgramPicker(){ Sheets.close('program-picker-overlay'); },
   promptSeanceNameFor(programId){
     showPrompt('Nom de cette séance', 'Ex : Jour 2 - Pull', nom=>{
       if(!nom) return;
