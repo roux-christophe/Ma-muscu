@@ -814,6 +814,47 @@ hr.sep{border:none; border-top:1px solid var(--card-border); margin:14px 0;}
 textarea.raw{width:100%; min-height:140px; font-family:ui-monospace,monospace; font-size:12px; background:var(--input-bg); color:var(--text); border:1px solid var(--card-border); border-radius:12px; padding:10px;}
 select.native{appearance:none; -webkit-appearance:none; background-image:none;}
 .week-chip{font-size:12px; color:var(--text-faint); font-weight:700;}
+
+/* ===================================================================
+   AUDIT ACCESSIBILITE / HIG (oct. 2026) -- surcharges regroupees ici
+   pour rester faciles a relire ou a annuler en bloc. Quatre axes :
+   contrastes (>= 4.5:1 en texte courant), cibles tactiles >= 44px,
+   polices >= 11px (sauf barre du bas, 10.5px = norme iOS) et respect de
+   prefers-reduced-motion.
+   =================================================================== */
+:root{ --text-faint:#858A95; }
+:root[data-theme="light"]{
+  --accent:#3F7A00; --accent-2:#0A7F61;
+  --accent-nutrition:#5B49D1; --accent-nutrition-2:#0F7387;
+  --text-dim:#4F5866; --text-faint:#677080;
+}
+/* Cibles tactiles */
+.topbar .back{ min-width:44px; min-height:44px; }
+.icon-btn{ width:44px; height:44px; }
+.pill{ min-height:44px; min-width:44px; }
+.week-strip .wd{ min-width:0; min-height:44px; }
+.btn-ghost, .segmented button{ min-height:44px; }
+.link{ min-height:44px; display:inline-flex; align-items:center; }
+.nutri-day-label{ min-height:44px; }
+.field input[type="date"], #nutri-date{ min-height:44px; font-size:16px; }
+textarea.raw{ font-size:16px; }
+label:has(> input[type="checkbox"]){ min-height:44px; display:flex; align-items:center; }
+.info-btn{ position:relative; }
+.info-btn::after{ content:""; position:absolute; inset:-13px; }
+/* Polices */
+.quickstats .qs .l{ font-size:11px; }
+.series-head{ font-size:11px; }
+.tile .tile-next, .prog-badge{ font-size:12px; }
+.tile .tile-cat{ font-size:11px; }
+/* Onglet actif de la barre du bas, thème clair : 4.38:1 -> >= 4.5:1 */
+:root[data-theme="light"] .navbar button.active{ color:#356800; }
+/* Mouvement reduit (reglage iOS : Accessibilite > Mouvement) */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:.01ms !important; animation-iteration-count:1 !important;
+    transition-duration:.01ms !important; scroll-behavior:auto !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -1507,7 +1548,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20260930112043';
+const APP_BUILD_VERSION = '20261007173823';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
