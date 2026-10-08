@@ -1031,6 +1031,71 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
 #stats-volume-filter .pill{ flex:none; white-space:nowrap; scroll-snap-align:start; }
 .checkin-card [style*="font-weight:800"]{ text-wrap:balance; }
 .quickstats .qs.neutral .v{ color:var(--text-dim); }
+
+/* ===================================================================
+   ACCUEIL compact (oct. 2026) : tout doit tenir sans defilement, encoche
+   et barre du bas comprises. Ordre de priorite : seance, puis nutrition.
+   =================================================================== */
+#view-home{ padding-top:calc(env(safe-area-inset-top) + 6px); padding-bottom:0; }
+.greeting{ padding:0; }
+.greeting .gr-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.greeting .gr-row .sub{ margin:0; font-size:14px; font-weight:600; text-align:right; white-space:nowrap; }
+.greeting .hi{ font-size:30px; margin-top:6px; line-height:1.1; }
+#view-home .hero{ padding:18px; margin:12px 0 0; border-radius:26px; }
+#view-home .hero + #home-nutrition .hero, #home-nutrition .hero{ margin-top:12px; }
+#view-home .hero .headline{ font-size:24px; margin-top:6px; line-height:1.15; text-wrap:balance; }
+#view-home .hero .hero-ico{ width:44px; height:44px; }
+#view-home .hero .hero-ico svg{ width:22px; height:22px; }
+#view-home .hero .chips{ margin-top:10px; gap:6px 8px; }
+#view-home .hero .chip{ padding:5px 10px; font-size:12.5px; }
+#view-home .hero .cta{ margin-top:14px; padding:13px 26px; font-size:16.5px; border-radius:16px; }
+#view-home .hero-switch{ margin-top:8px; }
+.nutri-hero .nh-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.nutri-hero .nh-head svg{ width:18px; height:18px; color:var(--accent); flex:none; }
+.nutri-hero .nh-main{ margin-top:4px; gap:12px; }
+.nutri-hero .nh-num{ font-size:40px; }
+.nutri-hero .nh-num small{ font-size:14px; margin-left:6px; white-space:nowrap; }
+.nutri-hero .nh-sub{ margin-top:6px; font-size:14px; }
+.nutri-hero .ring{ width:96px; height:96px; }
+.nutri-hero .ring .ctr b{ font-size:20px; }
+.nutri-hero .ring .ctr span{ font-size:12px; }
+.macro-row{ margin-top:12px; gap:8px; }
+.macro-tile{ padding:9px 10px 10px; border-radius:14px; }
+.macro-tile .mt-v{ margin-top:3px; font-size:19px; }
+.macro-tile .mt-v small{ font-size:12px; margin-left:2px; }
+.macro-tile .mt-b{ margin-top:7px; height:5px; }
+
+/* Ecrans courts (iPhone SE/mini, Safari avec barres) : on retire le superflu. */
+@media (max-height:740px){
+  .greeting .hi{ font-size:26px; margin-top:2px; }
+  #view-home .hero{ padding:14px; margin-top:10px; }
+  #view-home .hero .headline{ font-size:21px; }
+  #view-home .hero .chips .chip:nth-child(2){ display:none; }
+  #view-home .hero .cta{ margin-top:10px; padding:11px 24px; }
+  .nutri-hero .nh-num{ font-size:34px; }
+  .nutri-hero .ring{ width:80px; height:80px; }
+  .nutri-hero .ring .ctr b{ font-size:17px; }
+  .nutri-hero .ring .ctr span{ display:none; }
+  .macro-row{ margin-top:10px; }
+  .macro-tile .mt-v{ font-size:17px; }
+}
+
+/* Grands ecrans (>= 830 px de haut) : on redonne de l'air, il y a la place. */
+@media (min-height:830px){
+  .greeting .hi{ font-size:34px; margin-top:8px; }
+  #view-home .hero{ padding:20px; margin-top:14px; border-radius:28px; }
+  #view-home .hero .headline{ font-size:26px; }
+  #view-home .hero .hero-ico{ width:50px; height:50px; }
+  #view-home .hero .chips{ margin-top:12px; }
+  #view-home .hero .cta{ margin-top:16px; padding:14px 26px; font-size:17px; }
+  .nutri-hero .nh-num{ font-size:44px; }
+  .nutri-hero .ring{ width:104px; height:104px; }
+  .nutri-hero .ring .ctr b{ font-size:22px; }
+  .macro-row{ margin-top:14px; gap:9px; }
+  .macro-tile{ padding:11px 11px 12px; }
+  .macro-tile .mt-v{ font-size:21px; }
+  .macro-tile .mt-b{ margin-top:9px; height:6px; }
+}
 </style>
 </head>
 <body>
@@ -1039,10 +1104,11 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
   <!-- ===== HOME ===== -->
   <div class="view active" id="view-home">
     <div class="greeting">
-      <div class="brand-badge" id="home-title"><span class="brand-icon">💪</span><span class="brand-word">IronNutra</span></div>
+      <div class="gr-row">
+        <div class="brand-badge" id="home-title"><span class="brand-icon">💪</span><span class="brand-word">IronNutra</span></div>
+        <div class="sub" id="home-date"></div>
+      </div>
       <div class="hi">Bonjour</div>
-      <div class="sub" id="home-date"></div>
-      <div class="sub" style="margin-top:2px;">Prêt pour ta prochaine séance ?</div>
     </div>
 
     <div class="hero" id="home-hero"></div>
@@ -1724,7 +1790,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261008045358';
+const APP_BUILD_VERSION = '20261008053041';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -4413,7 +4479,7 @@ const app = {
         <circle class="trk" cx="60" cy="60" r="50"/>
         ${budget!=null ? `<circle class="bar${over?' over':''}" cx="60" cy="60" r="50" style="--C:${C.toFixed(1)};--off:${(C*(1-shown)).toFixed(1)}"/>` : ''}
       </svg>
-      <div class="ctr">${budget!=null ? `<b>${Math.round(pct*100)}%</b><span>de l'objectif</span>` : `<b>—</b><span>profil à<br>compléter</span>`}</div>
+      <div class="ctr">${budget!=null ? `<b>${Math.round(pct*100)}%</b><span>objectif</span>` : `<b>—</b><span>profil à<br>compléter</span>`}</div>
     </div>`;
     // Tuiles de macros : barres seulement si une cible existe (profil complet).
     const M = profil ? profil.macros : null;
@@ -4421,16 +4487,16 @@ const app = {
       const w = tgt ? Math.min(100, Math.round(val/tgt*100)) : 0;
       return `<div class="macro-tile" style="--mc:${color};--w:${w}%">
         <div class="mt-l"><i></i>${label}</div>
-        <div class="mt-v">${fr(val)}<small>g</small></div>
-        ${tgt ? `<div class="mt-t">/ ${fr(tgt)} g</div><div class="mt-b"><i></i></div>` : ''}
+        <div class="mt-v">${fr(val)}${tgt ? `<small>/${fr(tgt)} g</small>` : '<small>g</small>'}</div>
+        ${tgt ? `<div class="mt-b"><i></i></div>` : ''}
       </div>`;
     };
-    wrap.innerHTML = `<div class="hero nutri-hero ctx-nutrition" style="cursor:pointer;" onclick="nav.tab('nutrition')">
-      <div class="eyebrow">Nutrition · Aujourd'hui</div>
+    const chev = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+    wrap.innerHTML = `<div class="hero nutri-hero ctx-nutrition" style="cursor:pointer;" role="button" tabindex="0" aria-label="Ouvrir le journal Nutrition" onclick="nav.tab('nutrition')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();nav.tab('nutrition')}">
+      <div class="nh-head"><div class="eyebrow">Nutrition · Aujourd'hui</div>${chev}</div>
       <div class="nh-main">
         <div class="nh-text">
-          <div class="nh-num">${fr(cal)}<small>kcal</small></div>
-          ${budget!=null ? `<div class="nh-of">sur ${fr(budget)} kcal aujourd’hui</div>` : ''}
+          <div class="nh-num">${fr(cal)}<small>${budget!=null ? '/ '+fr(budget)+' kcal' : 'kcal'}</small></div>
           <div class="nh-sub${over?' warn':''}">${metaTxt}</div>
         </div>
         ${ring}
@@ -4440,7 +4506,6 @@ const app = {
         ${tile('Glucides', gluc, M&&M.glucides, 'var(--accent-2)')}
         ${tile('Lipides', lip, M&&M.lipides, 'var(--accent-warn)')}
       </div>
-      <button type="button" class="nh-link link" style="width:100%;background:none;border:none;padding:0;min-height:44px;" onclick="event.stopPropagation(); nav.tab('nutrition')"><span>Voir le journal</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
     </div>`;
   },
   startCardioLibre(){ this.openLog(FREE_CARDIO_PROGRAM_ID, 1); },
