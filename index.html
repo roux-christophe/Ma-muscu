@@ -894,6 +894,143 @@ html, body{ overscroll-behavior-x:none; }
 @keyframes viewSlideL{ from{opacity:0; transform:translateX(-34px);} to{opacity:1; transform:none;} }
 .view.slide-r{ animation:viewSlideR .34s cubic-bezier(.22,1,.36,1); }
 .view.slide-l{ animation:viewSlideL .34s cubic-bezier(.22,1,.36,1); }
+
+/* ===================================================================
+   ACCUEIL v2 (oct. 2026) -- carte Seance enrichie, carte Nutrition avec
+   anneau de progression et tuiles de macros. Reutilise les jetons
+   existants (--accent, --accent-2, --card...) : le violet/teal Nutrition
+   vient du scope .ctx-nutrition, le thème clair/sombre suit tout seul.
+   =================================================================== */
+.hero .hero-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
+.hero .hero-ico{
+  flex:none; width:54px; height:54px; border-radius:50%; display:grid; place-items:center;
+  color:var(--accent); border:1.5px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  background:color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.hero .hero-ico svg{ width:26px; height:26px; }
+.hero .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+.hero .chip{
+  display:inline-flex; align-items:center; gap:6px; padding:6px 11px; border-radius:99px;
+  background:var(--card-2); color:var(--text-dim); font-size:13px; font-weight:700;
+}
+.hero .chip svg{ width:14px; height:14px; color:var(--accent); flex:none; }
+.nutri-hero .nh-main{ display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:6px; }
+.nutri-hero .nh-text{ min-width:0; }
+.nutri-hero .nh-num{ font-size:46px; font-weight:900; letter-spacing:-.035em; line-height:1; color:var(--accent); font-variant-numeric:tabular-nums; }
+.nutri-hero .nh-num small{ font-size:18px; font-weight:800; color:var(--text-faint); letter-spacing:-.01em; margin-left:4px; }
+.nutri-hero .nh-of{ margin-top:6px; font-size:13px; font-weight:700; color:var(--text-faint); }
+.nutri-hero .nh-sub{ margin-top:8px; font-size:14.5px; font-weight:700; color:var(--text-dim); }
+.nutri-hero .nh-sub.warn{ color:var(--accent-warn); }
+.nutri-hero .ring{ position:relative; flex:none; width:112px; height:112px; }
+.nutri-hero .ring svg{ width:100%; height:100%; transform:rotate(-90deg); }
+.nutri-hero .ring .trk{ fill:none; stroke:color-mix(in srgb, var(--text) 10%, transparent); stroke-width:11; }
+.nutri-hero .ring .bar{
+  fill:none; stroke-width:11; stroke-linecap:round; stroke:url(#ring-grad);
+  stroke-dasharray:var(--C); stroke-dashoffset:var(--off); animation:ringFill .9s cubic-bezier(.22,1,.36,1);
+}
+.nutri-hero .ring .bar.over{ stroke:var(--accent-warn); }
+.nutri-hero .ring .ctr{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+.nutri-hero .ring .ctr b{ font-size:23px; font-weight:900; letter-spacing:-.02em; color:var(--text); font-variant-numeric:tabular-nums; }
+.nutri-hero .ring .ctr span{ font-size:12px; font-weight:700; color:var(--text-dim); line-height:1.2; }
+@keyframes ringFill{ from{ stroke-dashoffset:var(--C); } }
+.macro-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-top:20px; }
+.macro-tile{ background:var(--card-2); border-radius:16px; padding:11px 11px 12px; min-width:0; }
+.macro-tile .mt-l{ display:flex; align-items:center; gap:6px; font-size:12px; font-weight:800; color:var(--text-dim); letter-spacing:.01em; }
+.macro-tile .mt-l i{ width:8px; height:8px; border-radius:50%; background:var(--mc); flex:none; }
+.macro-tile .mt-v{ margin-top:6px; font-size:21px; font-weight:900; letter-spacing:-.02em; color:var(--text); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.macro-tile .mt-v small{ font-size:13px; font-weight:700; color:var(--text-dim); margin-left:1px; }
+.macro-tile .mt-t{ margin-top:1px; font-size:12px; font-weight:700; color:var(--text-dim); font-variant-numeric:tabular-nums; }
+.macro-tile .mt-b{ margin-top:9px; height:6px; border-radius:3px; background:color-mix(in srgb, var(--text) 10%, transparent); overflow:hidden; }
+.macro-tile .mt-b i{ display:block; height:100%; width:var(--w); border-radius:3px; background:var(--mc); animation:barFill .9s cubic-bezier(.22,1,.36,1); }
+@keyframes barFill{ from{ width:0; } }
+.nutri-hero .nh-link{ margin-top:16px; display:flex; align-items:center; justify-content:space-between; color:var(--accent); font-weight:800; font-size:14.5px; }
+.nutri-hero .nh-link svg{ width:18px; height:18px; }
+
+/* ===================================================================
+   SEANCE EN COURS v2 + STATS/SPORT (oct. 2026)
+   - en-tete compact (pastille de date, progression), serie active mise
+     en avant, navbar masquee pendant la seance (mode focus), chrono,
+     anneau de repos, repli propre quand l'image d'exercice ne charge pas.
+   - Stats : filtres de programme sur UNE ligne defilante.
+   =================================================================== */
+.lh-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.lh-title{ font-size:18px; font-weight:800; letter-spacing:-.01em; line-height:1.25; }
+.lh-chips{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; margin-top:10px; }
+.date-chip{
+  position:relative; display:inline-flex; align-items:center; gap:7px; min-height:44px; padding:0 15px;
+  border-radius:999px; background:var(--card-2); border:1px solid var(--card-border);
+  color:var(--text); font-size:14px; font-weight:700; cursor:pointer; overflow:hidden;
+}
+.date-chip svg{ width:16px; height:16px; color:var(--accent); flex:none; }
+.date-chip input{
+  position:absolute; inset:0; width:100%; height:100%; opacity:0; font-size:16px; cursor:pointer;
+  -webkit-appearance:none; appearance:none; border:0; padding:0; margin:0; background:none;
+}
+.lh-prog{ display:flex; align-items:center; gap:12px; margin-top:14px; }
+.lh-prog[hidden]{ display:none; }
+.lh-bar{ flex:1; height:8px; border-radius:99px; background:var(--card-2); overflow:hidden; }
+.lh-bar i{ display:block; height:100%; width:0; border-radius:99px; background:var(--grad); transition:width .35s cubic-bezier(.2,.8,.2,1); }
+.lh-count{ font-size:13px; font-weight:800; color:var(--text-dim); font-variant-numeric:tabular-nums; white-space:nowrap; }
+
+.log-chrono{
+  margin-left:auto; display:inline-flex; align-items:center; gap:6px; min-height:36px; padding:0 12px;
+  border-radius:999px; background:var(--card-2); border:1px solid var(--card-border);
+  font-size:15px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--text);
+}
+.log-chrono[hidden]{ display:none; }
+.series-row .s-field input{ min-height:44px; }
+.log-chrono svg{ width:15px; height:15px; color:var(--accent); }
+
+/* Exercice en cours / serie active / compteur de series */
+.exo-block{ transition:box-shadow .25s ease; }
+.exo-block.exo-current{
+  background: linear-gradient(var(--card), var(--card)) padding-box, linear-gradient(135deg, var(--accent), var(--accent-2)) border-box;
+  box-shadow:0 10px 28px -16px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.series-row.active-set{
+  background:color-mix(in srgb, var(--accent) 8%, transparent);
+  box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+.series-row.active-set .s-num{ background:var(--grad); color:var(--accent-contrast); }
+.exo-prog{
+  margin-left:auto; display:inline-flex; align-items:center; padding:3px 10px; border-radius:99px;
+  background:var(--card-2); color:var(--text-dim); font-size:12.5px; font-weight:800; font-variant-numeric:tabular-nums;
+}
+.exo-prog:empty{ display:none; }
+.exo-prog.complete{ background:var(--grad); color:var(--accent-contrast); }
+
+/* Repli quand l'image d'exercice ne charge pas (hors ligne, URL cassee). */
+.exo-ic .exo-fb{ display:none; align-items:center; justify-content:center; width:100%; height:100%; color:var(--text-dim); }
+.exo-header .exo-ic.has-img.img-fail img, .list-row .exo-ic.has-img.img-fail img, .exo-ic.img-fail img{ display:none; }
+.exo-ic.img-fail .exo-fb{ display:flex; }
+
+/* Mode focus : pendant une seance, la navbar disparait (plus de faux tap
+   vers un autre onglet) ; le bouton Enregistrer descend en bas d'ecran. */
+body.focus-session .navbar{ display:none; }
+body.focus-session .bottom-bar{ bottom:env(safe-area-inset-bottom); }
+body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-bottom)); }
+
+/* Minuteur de repos avec anneau */
+.rest-timer-bar{ padding:8px 12px 8px 10px; gap:10px; }
+.rt-ring{ position:relative; width:60px; height:60px; flex:none; }
+.rt-ring svg{ width:100%; height:100%; transform:rotate(-90deg); display:block; }
+.rt-ring .trk{ fill:none; stroke:var(--card-2); stroke-width:5; }
+.rt-ring .bar{ fill:none; stroke:var(--accent); stroke-width:5; stroke-linecap:round; transition:stroke-dashoffset 1s linear; }
+.rest-timer-bar.done .rt-ring .bar{ stroke:var(--accent-2); }
+.rt-ring .rt-time{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:15px; min-width:0; }
+.rest-timer-bar .rt-label{ font-size:13px; }
+.rest-timer-bar .rt-btn{ min-height:44px; min-width:44px; }
+.rest-timer-bar .icon-btn{ width:44px; height:44px; }
+
+/* Stats : filtres de programme sur une seule ligne defilante */
+#stats-volume-filter{
+  position:relative; flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain;
+  scroll-snap-type:x proximity; scrollbar-width:none; margin-left:-4px; margin-right:-4px; padding:2px 4px;
+}
+#stats-volume-filter::-webkit-scrollbar{ display:none; }
+#stats-volume-filter .pill{ flex:none; white-space:nowrap; scroll-snap-align:start; }
+.checkin-card [style*="font-weight:800"]{ text-wrap:balance; }
+.quickstats .qs.neutral .v{ color:var(--text-dim); }
 </style>
 </head>
 <body>
@@ -972,7 +1109,7 @@ html, body{ overscroll-behavior-x:none; }
 
   <!-- ===== LOG D'UNE SEANCE ===== -->
   <div class="view" id="view-log">
-    <div class="topbar"><button class="back" onclick="nav.toSport()">‹</button><h1 id="log-title">Séance</h1></div>
+    <div class="topbar"><button class="back" onclick="nav.toSport()">‹</button><h1 id="log-title">Séance</h1><div class="log-chrono" id="log-chrono" role="timer" aria-label="Durée écoulée" hidden></div></div>
     <div class="card" id="log-meta"></div>
     <div id="log-body"></div>
     <div style="height:90px"></div>
@@ -1587,7 +1724,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261007181452';
+const APP_BUILD_VERSION = '20261008045358';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -2053,8 +2190,10 @@ function computeSportQuickstats(){
   const prevWeek = isoWeekKey(addDaysISO(today, -7));
   const curVol = volByWeek[curWeek]||0;
   const prevVol = volByWeek[prevWeek]||0;
-  const progressionPct = prevVol>0 ? Math.round(((curVol-prevVol)/prevVol)*100) : null;
-  return {totalSeances, totalVolume, seancesThisWeek, progressionPct};
+  // Pas de pourcentage tant qu'aucune seance n'a ete saisie cette semaine
+  // (sinon "-100 %" alarmiste alors que la semaine vient de commencer).
+  const progressionPct = (prevVol>0 && curVol>0) ? Math.round(((curVol-prevVol)/prevVol)*100) : null;
+  return {totalSeances, totalVolume, seancesThisWeek, progressionPct, curVol, prevVol};
 }
 
 /* ===================== SEANCE CARDIO LIBRE (hors programme) =====================
@@ -3840,11 +3979,12 @@ const app = {
   renderNavbar(viewId){
     const bar = document.getElementById('navbar');
     if(!bar) return;
+    document.body.classList.toggle('focus-session', viewId==='view-log');
     let items;
     if(NAV_SPORT_FAMILY.includes(viewId)){
       items = [
         {onclick:"nav.toHome()", active:false, label:'Accueil', icon:SVG_HOME},
-        {onclick:"nav.toSport()", active: viewId==='view-sport', label:'Séance', icon:SVG_DUMBBELL},
+        {onclick:"nav.toSport()", active: viewId==='view-sport', label:'Sport', icon:SVG_DUMBBELL},
         {onclick:"nav.push('view-programmes'); app.renderProgrammesVisibilite();", active: viewId==='view-programmes', label:'Programmes', icon:SVG_CLIPBOARD},
         {onclick:"nav.push('view-history'); app.renderHistory();", active: viewId==='view-history', label:'Historique', icon:SVG_CLOCK},
         {onclick:"nav.push('view-stats'); app.renderStats();", active: viewId==='view-stats', label:'Stats', icon:SVG_BARS},
@@ -4007,9 +4147,9 @@ const app = {
     const q = computeSportQuickstats();
     el.innerHTML = `
       <div class="qs"><div class="v">${q.totalSeances}</div><div class="l">Séances</div></div>
-      <div class="qs"><div class="v">${q.totalVolume.toLocaleString('fr-FR')}</div><div class="l">Volume (kg)</div></div>
+      <div class="qs"><div class="v">${q.totalVolume>=10000 ? (q.totalVolume/1000).toLocaleString('fr-FR',{maximumFractionDigits:1})+' t' : q.totalVolume.toLocaleString('fr-FR')}</div><div class="l">${q.totalVolume>=10000 ? 'Volume total' : 'Volume (kg)'}</div></div>
       <div class="qs"><div class="v">${q.seancesThisWeek}</div><div class="l">7 derniers jours</div></div>
-      <div class="qs accent"><div class="v">${q.progressionPct!=null ? (q.progressionPct>=0?'+':'')+q.progressionPct+'%' : '—'}</div><div class="l">Volume vs sem. -1</div></div>
+      <div class="qs ${q.progressionPct!=null && q.progressionPct>=0 ? 'accent' : 'neutral'}"><div class="v">${q.progressionPct!=null ? (q.progressionPct>=0?'+':'')+q.progressionPct+'%' : '—'}</div><div class="l">${q.curVol===0 && q.prevVol>0 ? 'Rien cette semaine' : 'Volume vs sem. préc.'}</div></div>
     `;
   },
   /* ---------- CHECK-IN QUOTIDIEN (sommeil/energie/courbatures) ---------- */
@@ -4210,13 +4350,29 @@ const app = {
     const switchHTML = realPrograms.length>1 ? `<div class="hero-switch">${realPrograms.map(p=>
       `<button type="button" class="${p.id===featured.id?'active':''}" onclick="app.setHeroProgram('${p.id}')">${escapeHtml(p.nom)}</button>`
     ).join('')}</div>` : '';
+    // Derniere fois que CETTE seance a ete faite (donnee reelle du journal).
+    const lastLogs = this.db.seances.filter(s=>s.programmeId===featured.id && s.seanceNumero===numero).map(l=>l.date).sort();
+    let lastTxt = 'Jamais faite';
+    if(lastLogs.length){
+      const d0 = new Date(lastLogs[lastLogs.length-1]+'T12:00:00'), d1 = new Date(todayISO()+'T12:00:00');
+      const nj = Math.max(0, Math.round((d1-d0)/86400000));
+      lastTxt = nj===0 ? "Faite aujourd'hui" : (nj===1 ? 'Dernière fois : hier' : 'Dernière fois : il y a '+nj+' j');
+    }
+    const SVG_CLOCK_SM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+    const SVG_LIST_SM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>';
     el.innerHTML = `
-      <div class="eyebrow">Prochaine séance</div>
-      ${switchHTML}
-      <div class="headline">${escapeHtml(featured.nom)} — Séance ${numero}</div>
-      <div class="meta">
-        <span>${escapeHtml(seance.nom)}</span>
-        <span>${exoCount!=null ? exoCount+' exercice'+(exoCount>1?'s':'') : 'Cardio'}</span>
+      <div class="hero-top">
+        <div style="min-width:0;">
+          <div class="eyebrow">Prochaine séance</div>
+          ${switchHTML}
+          <div class="headline">${escapeHtml(featured.nom)} — Séance ${numero}</div>
+        </div>
+        <div class="hero-ico" aria-hidden="true">${SVG_DUMBBELL}</div>
+      </div>
+      <div class="chips">
+        <span class="chip">${SVG_LIST_SM}${escapeHtml(seance.nom)}</span>
+        <span class="chip">${exoCount!=null ? exoCount+' exercice'+(exoCount>1?'s':'') : 'Cardio'}</span>
+        <span class="chip">${SVG_CLOCK_SM}${lastTxt}</span>
       </div>
       <button type="button" class="cta" onclick="app.openLog('${featured.id}',${numero})">${SVG_PLAY}COMMENCER</button>
     `;
@@ -4237,19 +4393,54 @@ const app = {
     const wrap = document.getElementById('home-nutrition');
     if(!wrap) return;
     const date = todayISO();
-    const cal = this.db.journalAlimentaire.filter(e=>e.date===date).reduce((s,e)=>s+(Number(e.cal)||0),0);
+    const entries = this.db.journalAlimentaire.filter(e=>e.date===date);
+    const sum = k => entries.reduce((s,e)=>s+(Number(e[k])||0),0);
+    const cal = sum('cal'), prot = sum('prot'), gluc = sum('gluc'), lip = sum('lip');
     const profil = calculNutritionProfil();
     const sport = this.db.settings.ajouterCaloriesSport ? caloriesSportDuJour(date) : 0;
     const budget = profil ? profil.objectifCal + sport : null;
     const solde = budget!=null ? budget - cal : null;
+    const fr = n => Math.round(n).toLocaleString('fr-FR');
+    const over = solde!=null && solde<0;
     const metaTxt = budget!=null
-      ? (solde>=0 ? Math.round(solde).toLocaleString('fr-FR')+' kcal restantes' : Math.abs(Math.round(solde)).toLocaleString('fr-FR')+' kcal dépassées') + (sport>0?' (dont +'+sport+' sport)':'')
+      ? (solde>=0 ? fr(solde)+' kcal restantes' : fr(Math.abs(solde))+' kcal dépassées') + (sport>0?' · dont +'+sport+' sport':'')
       : 'Complète ton profil pour voir ton budget';
-    wrap.innerHTML = `<div class="hero ctx-nutrition" style="cursor:pointer;" onclick="nav.tab('nutrition')">
-      <div class="eyebrow">Nutrition</div>
-      <div class="headline">${Math.round(cal).toLocaleString('fr-FR')} kcal</div>
-      <div class="meta"><span>${metaTxt}</span></div>
-      <button type="button" class="cta" onclick="event.stopPropagation(); nav.tab('nutrition')">${SVG_APPLE}VOIR LE JOURNAL</button>
+    // Anneau : pourcentage de l'objectif du jour (plafonne a 100 % visuellement).
+    const C = 2*Math.PI*50, pct = budget ? cal/budget : 0, shown = Math.min(1, Math.max(0, pct));
+    const ring = `<div class="ring" role="img" aria-label="${budget!=null ? Math.round(pct*100)+' % de l’objectif calorique' : 'Objectif non défini'}">
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <defs><linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--accent)"/><stop offset="1" style="stop-color:var(--accent-2)"/></linearGradient></defs>
+        <circle class="trk" cx="60" cy="60" r="50"/>
+        ${budget!=null ? `<circle class="bar${over?' over':''}" cx="60" cy="60" r="50" style="--C:${C.toFixed(1)};--off:${(C*(1-shown)).toFixed(1)}"/>` : ''}
+      </svg>
+      <div class="ctr">${budget!=null ? `<b>${Math.round(pct*100)}%</b><span>de l'objectif</span>` : `<b>—</b><span>profil à<br>compléter</span>`}</div>
+    </div>`;
+    // Tuiles de macros : barres seulement si une cible existe (profil complet).
+    const M = profil ? profil.macros : null;
+    const tile = (label, val, tgt, color) => {
+      const w = tgt ? Math.min(100, Math.round(val/tgt*100)) : 0;
+      return `<div class="macro-tile" style="--mc:${color};--w:${w}%">
+        <div class="mt-l"><i></i>${label}</div>
+        <div class="mt-v">${fr(val)}<small>g</small></div>
+        ${tgt ? `<div class="mt-t">/ ${fr(tgt)} g</div><div class="mt-b"><i></i></div>` : ''}
+      </div>`;
+    };
+    wrap.innerHTML = `<div class="hero nutri-hero ctx-nutrition" style="cursor:pointer;" onclick="nav.tab('nutrition')">
+      <div class="eyebrow">Nutrition · Aujourd'hui</div>
+      <div class="nh-main">
+        <div class="nh-text">
+          <div class="nh-num">${fr(cal)}<small>kcal</small></div>
+          ${budget!=null ? `<div class="nh-of">sur ${fr(budget)} kcal aujourd’hui</div>` : ''}
+          <div class="nh-sub${over?' warn':''}">${metaTxt}</div>
+        </div>
+        ${ring}
+      </div>
+      <div class="macro-row">
+        ${tile('Protéines', prot, M&&M.proteines, 'var(--accent)')}
+        ${tile('Glucides', gluc, M&&M.glucides, 'var(--accent-2)')}
+        ${tile('Lipides', lip, M&&M.lipides, 'var(--accent-warn)')}
+      </div>
+      <button type="button" class="nh-link link" style="width:100%;background:none;border:none;padding:0;min-height:44px;" onclick="event.stopPropagation(); nav.tab('nutrition')"><span>Voir le journal</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
     </div>`;
   },
   startCardioLibre(){ this.openLog(FREE_CARDIO_PROGRAM_ID, 1); },
@@ -4357,13 +4548,21 @@ const app = {
         <input type="text" value="${escapeHtml(editingSeance.nom||'')}" onchange="app.updateEditingSeanceName(this.value)"></div>
       <p class="small-note" style="margin-top:6px;">Tu modifies la liste d'exercices de cette séance dans ton programme personnalisé — ça ne log rien comme une séance faite aujourd'hui.</p>
     ` : `
-      <div class="top-row" style="display:flex;justify-content:space-between;align-items:center;">
-        <div><div style="font-size:17px;font-weight:800;">${escapeHtml(prog.nom)} — ${escapeHtml(seanceDef.nom)}</div>
-        ${semaine!=null?`<div class="week-chip">Semaine ${semaine} du programme</div>`:''}</div>
+      <div class="lh-top">
+        <div style="min-width:0;">
+          <div class="lh-title">${escapeHtml(prog.nom)} — ${escapeHtml(seanceDef.nom)}</div>
+          <div class="lh-chips">
+            <label class="date-chip" aria-label="Date de la séance : ${escapeHtml(relativeDateLabel(L.date))}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
+              <span>${escapeHtml(relativeDateLabel(L.date))}</span>
+              <input type="date" value="${L.date}" onchange="app.changeLogDate(this.value)">
+            </label>
+            ${semaine!=null?`<span class="week-chip">Semaine ${semaine} du programme</span>`:''}
+          </div>
+        </div>
         ${L.isEdit?`<button class="icon-btn" title="Supprimer" onclick="app.deleteCurrentLog()">${SVG_TRASH}</button>`:''}
       </div>
-      <div class="field" style="margin-top:12px;"><label>Date de la séance</label>
-        <input type="date" value="${L.date}" onchange="app.changeLogDate(this.value)"></div>
+      <div class="lh-prog" id="lh-prog" hidden><div class="lh-bar"><i id="lh-fill"></i></div><span class="lh-count" id="lh-count"></span></div>
       ${L.isEdit?'<p class="small-note">Une séance existait déjà à cette date pour cette séance — tu es en train de la modifier.</p>':''}
     `;
 
@@ -4475,7 +4674,7 @@ const app = {
           ${iAmTopHalf?`<div class="superset-badge">⚡ SUPERSET</div>`:''}
           <div class="exo-header">
             ${exoImg
-              ? `<div class="exo-ic has-img" title="Voir le poster anatomique" onclick="app.openExoImage('${encodeURIComponent(exState.exercice)}')"><img src="${exoImg}" alt="${escapeHtml(exState.exercice)}" loading="lazy"></div>`
+              ? `<div class="exo-ic has-img" title="Voir le poster anatomique" onclick="app.openExoImage('${encodeURIComponent(exState.exercice)}')"><img src="${exoImg}" alt="${escapeHtml(exState.exercice)}" loading="lazy" onerror="this.parentNode.classList.add('img-fail')"><span class="exo-fb" aria-hidden="true">${SVG_DUMBBELL}</span></div>`
               : `<div class="exo-ic">${SVG_DUMBBELL}</div>`}
             <div class="exo-info">
               <div class="exo-name">${escapeHtml(exState.exercice)}</div>
@@ -4487,6 +4686,7 @@ const app = {
           <div class="exo-meta-row">
             <span class="em"><b>${escapeHtml(def.series_reps||'')}</b>${def.recup?' · récup '+escapeHtml(def.recup):''}</span>
             ${target?`<span class="em target">Semaine ${semaine} : ${escapeHtml(target)}</span>`:''}
+            <span class="exo-prog" aria-label="Séries validées"></span>
           </div>
           <div class="em" style="display:block;margin-top:7px;">${last? 'Dernière fois ('+fmtDateHuman(last.date)+') : '+formatSeries(last.series) : 'Pas encore de données pour cet exercice'}
             <button class="link" style="margin-left:6px;font-size:12px;" onclick="app.showExoHistory('${encodeURIComponent(exState.exercice)}')">Historique</button></div>
@@ -4535,6 +4735,8 @@ const app = {
       html += `<div class="field" style="margin-top:4px;"><label>Notes (optionnel)</label><textarea rows="2" placeholder="Sensations, douleurs, ajustements..." onchange="app.updateNotes(this.value)">${escapeHtml(L.notes||'')}</textarea></div>`;
     }
     document.getElementById('log-body').innerHTML = html;
+    this.refreshActiveSets();
+    this._logChronoSetup(L, editingSeance);
     // Les blocs EMOM/AMRAP contiennent un div #fmt-timer-N vide (rempli par
     // JS, pas par du HTML statique, pour pouvoir etre rafraichi seul chaque
     // seconde sans re-render tout renderLog -- cf. renderFormatTimer).
@@ -4975,6 +5177,7 @@ const app = {
       const inputs = row.querySelectorAll('input');
       const done = inputs.length>0 && Array.from(inputs).every(inp=>inp.value!=='');
       row.classList.toggle('done', done);
+      this.refreshActiveSets();
       // La serie vient d'etre completee (tous les champs remplis) : on lance
       // automatiquement le repos, comme le ferait un coach entre deux
       // series. Un bouton ▶ reste dispo pour le (re)lancer manuellement.
@@ -5078,16 +5281,76 @@ const app = {
       beep(0.22, 0.16);
     }catch(e){}
   },
+  // Serie active / compteurs : calcule tout depuis le DOM (aucune donnee
+  // ecrite) apres chaque rendu ou saisie. L'exercice "en cours" est le
+  // premier dont toutes les series ne sont pas validees.
+  refreshActiveSets(){
+    const blocks = document.querySelectorAll('#log-body .exo-block');
+    let cur = false, tot = 0, done = 0;
+    blocks.forEach(b=>{
+      const rows = b.querySelectorAll('.series-row');
+      const chip = b.querySelector('.exo-prog');
+      rows.forEach(r=>r.classList.remove('active-set'));
+      if(!rows.length){ b.classList.remove('exo-current'); if(chip){ chip.textContent=''; chip.classList.remove('complete'); } return; }
+      const d = Array.from(rows).filter(r=>r.classList.contains('done')).length;
+      tot += rows.length; done += d;
+      const complete = d===rows.length;
+      if(chip){ chip.textContent = complete ? '✓ '+d+'/'+rows.length : d+'/'+rows.length; chip.classList.toggle('complete', complete); }
+      const isCur = !complete && !cur;
+      b.classList.toggle('exo-current', isCur);
+      if(isCur){ cur = true; const first = Array.from(rows).find(r=>!r.classList.contains('done')); if(first) first.classList.add('active-set'); }
+    });
+    const wrap = document.getElementById('lh-prog');
+    if(wrap){
+      wrap.hidden = tot===0;
+      const f = document.getElementById('lh-fill'); if(f) f.style.width = (tot? Math.round(done/tot*100):0)+'%';
+      const c = document.getElementById('lh-count'); if(c) c.textContent = done+' / '+tot+' séries';
+    }
+  },
+  // Chrono de seance : en memoire seulement (rien n'est enregistre). Affiche
+  // uniquement pour une seance du jour en cours de saisie ; masque au-dela de 4 h
+  // (seance laissee ouverte) pour ne jamais afficher une duree absurde.
+  _logChronoSetup(L, editingSeance){
+    const el = document.getElementById('log-chrono'); if(!el) return;
+    clearInterval(this._chronoTimer);
+    if(editingSeance || L.isEdit || L.date!==todayISO()){ el.hidden = true; return; }
+    if(this._chronoLogId!==L.id){ this._chronoLogId = L.id; this._chronoStart = Date.now(); }
+    const tick = ()=>{
+      const v = document.getElementById('view-log');
+      if(!v || !v.classList.contains('active')){ clearInterval(this._chronoTimer); return; }
+      const sec = Math.floor((Date.now()-this._chronoStart)/1000);
+      if(sec>4*3600){ el.hidden = true; return; }
+      const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), ss = sec%60;
+      el.hidden = false;
+      el.textContent = (h ? h+':'+String(m).padStart(2,'0') : String(m).padStart(2,'0')) + ':' + String(ss).padStart(2,'0');
+    };
+    tick();
+    this._chronoTimer = setInterval(tick, 1000);
+  },
   renderRestTimer(){
     const bar = document.getElementById('rest-timer-bar');
     if(!bar) return;
-    if(!this.restTimer){ bar.hidden = true; bar.innerHTML = ''; return; }
+    if(!this.restTimer){ bar.hidden = true; bar.innerHTML = ''; delete bar.dataset.sig; return; }
     const r = this.restTimer;
     const mm = Math.floor(r.remaining/60), ss = r.remaining%60;
+    const txt = mm+':'+String(ss).padStart(2,'0');
+    const R = 26, C = 2*Math.PI*R;
+    const off = (C*(1 - (r.total ? Math.max(0, Math.min(1, r.remaining/r.total)) : 0))).toFixed(1);
+    const sig = (r.done?'1':'0')+'|'+(r.label||'');
     bar.hidden = false;
     bar.classList.toggle('done', r.done);
+    // Mise a jour en place tant que la structure ne change pas : l'anneau
+    // se vide en continu grace a la transition CSS (re-creer le DOM a
+    // chaque seconde casserait l'animation).
+    const ring = bar.querySelector('.rt-ring .bar');
+    if(ring && bar.dataset.sig===sig){
+      ring.style.strokeDashoffset = off;
+      const t = bar.querySelector('.rt-time'); if(t) t.textContent = txt;
+      return;
+    }
+    bar.dataset.sig = sig;
     bar.innerHTML = `
-      <div class="rt-time">${mm}:${String(ss).padStart(2,'0')}</div>
+      <div class="rt-ring"><svg viewBox="0 0 60 60" aria-hidden="true"><circle class="trk" cx="30" cy="30" r="${R}"/><circle class="bar" cx="30" cy="30" r="${R}" style="stroke-dasharray:${C.toFixed(1)};stroke-dashoffset:${off}"/></svg><div class="rt-time">${txt}</div></div>
       <div class="rt-label">${r.done ? "Repos terminé" : 'Repos'}${r.label ? ' — '+escapeHtml(r.label) : ''}</div>
       <button type="button" class="rt-btn" onclick="app.adjustRestTimer(-15)">-15s</button>
       <button type="button" class="rt-btn" onclick="app.adjustRestTimer(15)">+15s</button>
@@ -7657,11 +7920,14 @@ const app = {
     this.renderRegularity();
     const sel = document.getElementById('stats-exo-select');
     sel.innerHTML = allExerciseNames().map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+    if(!this._statsExo){
+      const lastLog = this.db.seances.slice().sort((a,b)=> a.date<b.date?1:(a.date>b.date?-1:0)).find(l=>l.exercices && l.exercices.some(e=>e.series && e.series.some(x=>x.poids>0)));
+      const pick = lastLog && lastLog.exercices.find(e=>e.series && e.series.some(x=>x.poids>0));
+      if(pick) this._statsExo = pick.exercice;
+    }
+    if(this._statsExo && Array.from(sel.options).some(o=>o.value===this._statsExo)) sel.value = this._statsExo;
     this.renderStatsExo();
-    const filterWrap = document.getElementById('stats-volume-filter');
-    const opts = [{id:'all',label:'Tous'}, ...PROGRAMS.filter(p=>p.id!==FREE_CARDIO_PROGRAM_ID && p.id!==FREE_MUSCU_PROGRAM_ID).map(p=>({id:p.id,label:p.nom}))];
-    this._volumeFilter = this._volumeFilter || 'all';
-    filterWrap.innerHTML = opts.map(o=>`<button type="button" class="pill ${this._volumeFilter===o.id?'active':''}" onclick="app.setVolumeFilter('${o.id}')">${escapeHtml(o.label)}</button>`).join('');
+    this.renderStatsFilter();
     this.renderStatsVolume();
     this.renderRecords();
   },
@@ -7691,6 +7957,7 @@ const app = {
   renderStatsExo(){
     const name = document.getElementById('stats-exo-select').value;
     if(!name) { document.getElementById('stats-exo-chart').innerHTML = ''; return; }
+    this._statsExo = name;
     const entries = this.db.seances.filter(s=>s.exercices && s.exercices.some(e=>e.exercice===name))
       .slice().sort((a,b)=> a.date<b.date?-1:(a.date>b.date?1:0));
     const points = entries.map(l=>{
@@ -7701,7 +7968,18 @@ const app = {
     document.getElementById('stats-exo-chart').innerHTML = lineChartSVG(points) + `<button class="link" style="margin-top:10px;" onclick="app.showExoHistory('${encodeURIComponent(name)}')">Voir le détail complet</button>`;
     scrollChartToEnd('stats-exo-chart');
   },
-  setVolumeFilter(id){ this._volumeFilter = id; this.renderStats(); },
+  renderStatsFilter(){
+    const filterWrap = document.getElementById('stats-volume-filter');
+    if(!filterWrap) return;
+    const opts = [{id:'all',label:'Tous'}, ...PROGRAMS.filter(p=>p.id!==FREE_CARDIO_PROGRAM_ID && p.id!==FREE_MUSCU_PROGRAM_ID).map(p=>({id:p.id,label:p.nom}))];
+    this._volumeFilter = this._volumeFilter || 'all';
+    filterWrap.innerHTML = opts.map(o=>`<button type="button" class="pill ${this._volumeFilter===o.id?'active':''}" aria-pressed="${this._volumeFilter===o.id}" onclick="app.setVolumeFilter('${o.id}')">${escapeHtml(o.label)}</button>`).join('');
+    const act = filterWrap.querySelector('.pill.active');
+    if(act) filterWrap.scrollLeft = Math.max(0, act.offsetLeft - (filterWrap.clientWidth - act.offsetWidth)/2);
+  },
+  // Ne re-rend plus toute la page (ce qui reinitialisait le selecteur
+  // d'exercice) : seulement les pastilles et le graphique de volume.
+  setVolumeFilter(id){ this._volumeFilter = id; this.renderStatsFilter(); this.renderStatsVolume(); },
   renderStatsVolume(){
     const filter = this._volumeFilter || 'all';
     const logs = this.db.seances.filter(l=> (filter==='all'||l.programmeId===filter) && l.exercices && l.exercices.length)
