@@ -1989,7 +1989,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261012193107';
+const APP_BUILD_VERSION = '20261012194832';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -5293,6 +5293,10 @@ const app = {
         const showReps = def.mode!=='poids_only';
         const single = !(showPoids && showReps);
         const useRpe = !!prog.semaines && showPoids && showReps;
+        // RPE cible de la semaine (defini par le coach) rappele sur chaque exercice qui a la colonne RPE.
+        const _wkN = prog.semaines ? semaineAtDate(L.programmeId, L.date) : null;
+        const _wk = (_wkN && prog.semaines[_wkN-1]) ? prog.semaines[_wkN-1] : null;
+        const rpeCibleNote = (useRpe && _wk && _wk.rpe) ? `<span class="em target">${escapeHtml(_wk.rpe.replace(/^RPE\s*/,'RPE cible '))}</span>` : '';
         const headCols = showPoids && showReps
           ? '<div class="sh-num">Série</div><div>KG</div><div>REPS</div>' + (useRpe ? '<div>RPE</div>' : '') + '<div class="sh-check"></div>'
           : showPoids
@@ -5403,6 +5407,7 @@ const app = {
             <span class="em"><b>${escapeHtml(def.series_reps||'')}</b>${def.recup?' · récup '+escapeHtml(def.recup):''}</span>
             ${target?`<span class="em target">Semaine ${semaine} : ${escapeHtml(target)}</span>`:''}
             ${deloadNote}
+            ${rpeCibleNote}
             <span class="exo-prog" aria-label="Séries validées"></span>
           </div>
           <div class="em" style="display:block;margin-top:7px;">${last? 'Dernière fois ('+fmtDateHuman(last.date)+') : '+formatSeries(last.series) : (globalLast ? 'Pas encore fait dans ce programme · ailleurs ('+fmtDateHuman(globalLast.date)+') : '+formatSeries(globalLast.series) : 'Pas encore de données pour cet exercice')}
