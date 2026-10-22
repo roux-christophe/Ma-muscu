@@ -1773,6 +1773,13 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
         <div class="set-l"><span>Formats de séance avancés</span><button type="button" class="info-btn" title="En savoir plus" onclick="app.openInfo(this)" data-info="Superset, EMOM, AMRAP, drop-set, série à l’échec.&#10;&#10;Disponibles uniquement en Musculation libre, jamais sur un programme prescrit.">i</button></div>
         <label class="switch"><input type="checkbox" id="set-formats-avances" aria-label="Formats de séance avancés" onchange="app.toggleFormatsAvances(this.checked)"></label>
       </div>
+      <div class="set-row set-link" onclick="app.testCue()">
+        <div class="set-l"><div><div>Tester la sonnerie</div><div class="set-sub">Bip de fin de repos</div></div></div><div class="chev">▶</div>
+      </div>
+      <div class="set-row">
+        <div class="set-l"><span>Écran allumé au repos</span><button type="button" class="info-btn" title="En savoir plus" onclick="app.openInfo(this)" data-info="Empêche l’iPhone de se mettre en veille tant que le minuteur de repos tourne.&#10;&#10;Pour une appli installée sur l’écran d’accueil, cela demande iOS 18.4 ou plus récent. Consomme un peu plus de batterie.&#10;&#10;Si tu verrouilles l’écran toi-même, le minuteur reste exact : il se remet à l’heure dès que tu rouvres l’appli. En revanche, l’iPhone ne peut pas faire sonner une appli web quand l’écran est verrouillé.">i</button></div>
+        <label class="switch"><input type="checkbox" id="set-wakelock" aria-label="Écran allumé au repos" onchange="app.toggleWakeLock(this.checked)"></label>
+      </div>
     </div>
 
     <div class="section-title">Mes maxs (kg)<button type="button" class="info-btn" title="En savoir plus" onclick="app.openInfo(this)" data-info="Sert à calculer automatiquement les charges des programmes en pourcentage (Powerlifting, 5/3/1, Conjugate Method…).&#10;&#10;C’est un « max d’entraînement » au sens large, pas forcément ton vrai 1RM à l’échec. Mets-le à jour quand tu progresses.">i</button></div>
@@ -2015,7 +2022,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261013192741';
+const APP_BUILD_VERSION = '20261022144911';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -5899,6 +5906,103 @@ const app = {
   addSerie(exIdx){ this.currentLog.exercices[exIdx].series.push({poids:null,reps:null}); this.renderLog(); this.autosaveLog(); },
   removeSerie(exIdx){ const s=this.currentLog.exercices[exIdx].series; if(s.length>1) s.pop(); this.renderLog(); this.autosaveLog(); },
 
+
+  /* ---------- SONNERIE (element <audio> : sur iPhone, Web Audio est coupe par l'interrupteur silencieux) ---------- */
+  _makeWavURL(pattern, minDur){
+    const sr = 22050;
+    const total = Math.max(minDur||0, ...pattern.map(b=>b.t+b.dur)) + 0.08;
+    const n = Math.ceil(total*sr), pcm = new Int16Array(n);
+    pattern.forEach(b=>{
+      const i0 = Math.floor(b.t*sr), len = Math.floor(b.dur*sr);
+      for(let i=0; i<len && i0+i<n; i++){
+        const x = i/sr;
+        const env = Math.min(1, i/(0.008*sr)) * Math.min(1, (len-i)/(0.03*sr));
+        const v = (Math.sin(2*Math.PI*b.f*x) + 0.4*Math.sin(2*Math.PI*b.f*2*x)) / 1.4 * env * 0.95;
+        pcm[i0+i] = Math.max(-32767, Math.min(32767, pcm[i0+i] + Math.round(v*32767)));
+      }
+    });
+    const buf = new ArrayBuffer(44 + n*2), dv = new DataView(buf);
+    const wr = (o,str)=>{ for(let i=0;i<str.length;i++) dv.setUint8(o+i, str.charCodeAt(i)); };
+    wr(0,'RIFF'); dv.setUint32(4, 36+n*2, true); wr(8,'WAVE'); wr(12,'fmt ');
+    dv.setUint32(16,16,true); dv.setUint16(20,1,true); dv.setUint16(22,1,true);
+    dv.setUint32(24,sr,true); dv.setUint32(28,sr*2,true); dv.setUint16(32,2,true); dv.setUint16(34,16,true);
+    wr(36,'data'); dv.setUint32(40, n*2, true);
+    for(let i=0;i<n;i++) dv.setInt16(44+i*2, pcm[i], true);
+    return URL.createObjectURL(new Blob([buf], {type:'audio/wav'}));
+  },
+  _cueURL(kind){
+    if(!this._cueURLs) this._cueURLs = {};
+    if(!this._cueURLs[kind]){
+      const P = {
+        silent: [],
+        rest:   [{t:0,dur:.22,f:880},{t:.32,dur:.22,f:880},{t:.64,dur:.22,f:880},{t:.96,dur:.5,f:1320}],
+        tick:   [{t:0,dur:.15,f:880}],
+        final:  [{t:0,dur:.22,f:660},{t:.3,dur:.22,f:660},{t:.6,dur:.5,f:990}]
+      };
+      this._cueURLs[kind] = this._makeWavURL(P[kind]||[], kind==='silent' ? 0.12 : 0);
+    }
+    return this._cueURLs[kind];
+  },
+  _ensureCueAudio(){
+    if(!this._cueAudio){
+      const a = new Audio(); a.preload = 'auto'; a.setAttribute('playsinline','');
+      this._cueAudio = a;
+    }
+    return this._cueAudio;
+  },
+  // 'transient' : son court qui n'est pas coupe par l'interrupteur silencieux ; repli silencieux si non supporte.
+  _setAudioSession(){
+    try{ if(navigator.audioSession && navigator.audioSession.type !== 'transient') navigator.audioSession.type = 'transient'; }catch(e){}
+  },
+  // A appeler dans un geste utilisateur (debut du repos) : Safari n'autorise un son declenche par
+  // le minuteur que si cet element a deja ete lance une fois par un geste.
+  _unlockCueAudio(){
+    try{
+      if(this._audioUnlocked || this._audioUnlocking) return;
+      const a = this._ensureCueAudio();
+      this._setAudioSession();
+      this._audioUnlocking = true;
+      a.src = this._cueURL('silent');
+      const pr = a.play();
+      const done = ok=>{ this._audioUnlocking = false; if(ok){ this._audioUnlocked = true; try{ a.pause(); }catch(e){} } };
+      if(pr && pr.then) pr.then(()=>done(true)).catch(()=>done(false)); else done(true);
+    }catch(e){ this._audioUnlocking = false; }
+  },
+  // Renvoie true si le son a ete confie a l'element <audio>.
+  _playCue(kind){
+    try{
+      const a = this._cueAudio;
+      if(!a || !this._audioUnlocked) return false;
+      this._setAudioSession();
+      a.pause();
+      a.src = this._cueURL(kind);
+      a.currentTime = 0;
+      const pr = a.play();
+      if(pr && pr.catch) pr.catch(()=>{ this._audioUnlocked = false; kind==='rest' ? this._restTimerFinishedCueWA() : this._formatTimerCueWA(kind==='final'); });
+      return true;
+    }catch(e){ return false; }
+  },
+  _restTimerFinishedCue(){
+    try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(e){}
+    if(!this._playCue('rest')) this._restTimerFinishedCueWA();
+  },
+  _formatTimerCue(isFinal){
+    try{ if(navigator.vibrate) navigator.vibrate(isFinal?[200,100,200,100,200]:[120]); }catch(e){}
+    if(!this._playCue(isFinal?'final':'tick')) this._formatTimerCueWA(isFinal);
+  },
+  // Bouton « Tester la sonnerie » (Reglages) : lance le son depuis un vrai geste.
+  testCue(){
+    try{
+      const a = this._ensureCueAudio();
+      this._setAudioSession();
+      a.pause(); a.src = this._cueURL('rest'); a.currentTime = 0;
+      const pr = a.play();
+      const ok = ()=>{ this._audioUnlocked = true; toast('Sonnerie lancée — tu dois l’entendre. Sinon : volume, ou mode silencieux de l’iPhone.'); };
+      const ko = ()=>{ this._restTimerFinishedCueWA(); toast('Son lancé en mode de secours. Si tu n’entends rien : volume ou mode silencieux.'); };
+      if(pr && pr.then) pr.then(ok).catch(ko); else ok();
+    }catch(e){ this._restTimerFinishedCueWA(); }
+  },
+
   /* ---------- MINUTEUR DE REPOS ---------- */
   startRestTimer(exIdx){
     const L = this.currentLog;
@@ -5922,11 +6026,17 @@ const app = {
     // (creee une seule fois) plutot que d'en recreer une a chaque repos.
     this._unlockRestTimerAudio();
     clearInterval(this._restInterval);
-    this.restTimer = { total: seconds, remaining: seconds, label: label || '', done: false };
+    // Le minuteur repose sur une HEURE DE FIN (endAt), pas sur un compteur
+    // decremente chaque seconde : iOS suspend le JavaScript quand l'ecran se
+    // verrouille, un compteur se figeait alors. Le temps restant est recalcule
+    // a chaque tick et a chaque retour dans l'appli (cf. _syncTimers).
+    this.restTimer = { total: seconds, remaining: seconds, endAt: Date.now()+seconds*1000, label: label || '', done: false };
     this.renderRestTimer();
-    this._restInterval = setInterval(()=>this._tickRestTimer(), 1000);
+    this._restInterval = setInterval(()=>this._tickRestTimer(), 250);
+    this._updateWakeLock();
   },
   _unlockRestTimerAudio(){
+    this._unlockCueAudio();
     try{
       const Ctx = window.AudioContext || window.webkitAudioContext;
       if(!Ctx) return;
@@ -5935,32 +6045,79 @@ const app = {
     }catch(e){}
   },
   _tickRestTimer(){
-    if(!this.restTimer){ clearInterval(this._restInterval); return; }
-    this.restTimer.remaining -= 1;
-    if(this.restTimer.remaining <= 0){
-      this.restTimer.remaining = 0;
-      if(!this.restTimer.done){ this.restTimer.done = true; this._restTimerFinishedCue(); }
+    const r = this.restTimer;
+    if(!r){ clearInterval(this._restInterval); return; }
+    if(r.done) return;
+    const now = Date.now();
+    r.remaining = Math.max(0, Math.ceil((r.endAt - now)/1000));
+    if(r.remaining <= 0){
+      r.done = true;
       clearInterval(this._restInterval);
+      // Bip seulement si la fin vient d'avoir lieu : si l'ecran etait verrouille,
+      // on affiche « Repos terminé » au retour, sans bip en retard.
+      if(now - r.endAt < 2500) this._restTimerFinishedCue();
+      this._updateWakeLock();
     }
     this.renderRestTimer();
   },
   adjustRestTimer(deltaSec){
-    if(!this.restTimer) return;
-    this.restTimer.remaining = Math.max(0, this.restTimer.remaining + deltaSec);
-    this.restTimer.total = Math.max(this.restTimer.total, this.restTimer.remaining);
-    if(this.restTimer.remaining > 0 && this.restTimer.done){
-      this.restTimer.done = false;
+    const r = this.restTimer; if(!r) return;
+    const now = Date.now();
+    const base = r.done ? now : r.endAt;
+    r.endAt = Math.max(now, base + deltaSec*1000);
+    r.remaining = Math.max(0, Math.ceil((r.endAt - now)/1000));
+    r.total = Math.max(r.total, r.remaining);
+    if(r.done && r.remaining > 0){
+      r.done = false;
       clearInterval(this._restInterval);
-      this._restInterval = setInterval(()=>this._tickRestTimer(), 1000);
+      this._restInterval = setInterval(()=>this._tickRestTimer(), 250);
     }
+    this._updateWakeLock();
     this.renderRestTimer();
   },
   stopRestTimer(){
     clearInterval(this._restInterval);
     this.restTimer = null;
+    this._updateWakeLock();
     this.renderRestTimer();
   },
-  _restTimerFinishedCue(){
+  // Resynchronise les minuteurs apres une mise en veille / un retour dans l'appli.
+  _syncTimers(){
+    try{
+      if(this.restTimer && !this.restTimer.done) this._tickRestTimer();
+      if(this._fmtTimer && this._fmtTimer.running) this._tickFormatTimer();
+      this._updateWakeLock();
+    }catch(e){}
+  },
+  // Garde l'ecran allume tant qu'un minuteur tourne (reglage « Écran allumé pendant le repos »).
+  _timersActive(){
+    return !!((this.restTimer && !this.restTimer.done) || (this._fmtTimer && this._fmtTimer.running));
+  },
+  _updateWakeLock(){
+    const want = this._timersActive() && this.db.settings.garderEcranAllume !== false && document.visibilityState === 'visible';
+    if(want){
+      try{
+        if(!('wakeLock' in navigator) || this._wakeLock || this._wakeLockPending) return;
+        this._wakeLockPending = true;
+        navigator.wakeLock.request('screen').then(wl=>{
+          this._wakeLockPending = false;
+          if(!this._timersActive()){ try{ wl.release(); }catch(e){} return; }
+          this._wakeLock = wl;
+          wl.addEventListener('release', ()=>{ if(this._wakeLock===wl) this._wakeLock = null; });
+        }).catch(()=>{ this._wakeLockPending = false; });
+      }catch(e){ this._wakeLockPending = false; }
+    } else if(this._wakeLock){
+      const wl = this._wakeLock; this._wakeLock = null;
+      try{ wl.release(); }catch(e){}
+    }
+  },
+  toggleWakeLock(v){
+    this.db.settings.garderEcranAllume = !!v;
+    if(!saveDBOrWarn(this.db)) return;
+    this._updateWakeLock();
+    toast(v ? 'L’écran restera allumé pendant le repos' : 'L’écran peut se mettre en veille pendant le repos');
+  },
+  _restTimerFinishedCueWA(){
     // navigator.vibrate n'existe tout simplement pas sous Safari/iOS (API de
     // vibration jamais implementee par WebKit, meme en PWA installee sur
     // l'ecran d'accueil) -- ce n'est pas un bug corrigible cote code, juste
@@ -5984,7 +6141,7 @@ const app = {
         o.type = 'sine'; o.frequency.value = 880;
         o.connect(g); g.connect(ctx.destination);
         g.gain.setValueAtTime(0.0001, ctx.currentTime + start);
-        g.gain.exponentialRampToValueAtTime(0.28, ctx.currentTime + start + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.8, ctx.currentTime + start + 0.02);
         g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + start + dur);
         o.start(ctx.currentTime + start);
         o.stop(ctx.currentTime + start + dur + 0.03);
@@ -6143,12 +6300,16 @@ const app = {
     if(this._fmtTimer && this._fmtTimer.exIdx===idx){
       // Deja le minuteur de cet exercice : pause/reprend.
       if(this._fmtTimer.running){
+        this._tickFormatTimer();
         clearInterval(this._fmtInterval);
-        this._fmtTimer.running = false;
+        if(this._fmtTimer) this._fmtTimer.running = false;
+        this._updateWakeLock();
         this.renderFormatTimer(idx);
       } else if(this._fmtTimer.remaining>0) {
         this._fmtTimer.running = true;
-        this._fmtInterval = setInterval(()=>this._tickFormatTimer(), 1000);
+        this._fmtTimer.endAt = Date.now() + this._fmtTimer.remaining*1000;
+        this._fmtInterval = setInterval(()=>this._tickFormatTimer(), 250);
+        this._updateWakeLock();
         this.renderFormatTimer(idx);
       }
       return;
@@ -6159,9 +6320,10 @@ const app = {
     this._unlockRestTimerAudio();
     const kind = exState.format;
     const total = kind==='emom' ? (exState.emom.minutes||10)*60 : (exState.amrap.durationMin||12)*60;
-    this._fmtTimer = {exIdx: idx, kind, total, remaining: total, running: true};
+    this._fmtTimer = {exIdx: idx, kind, total, remaining: total, running: true, endAt: Date.now()+total*1000};
     this.renderFormatTimer(idx);
-    this._fmtInterval = setInterval(()=>this._tickFormatTimer(), 1000);
+    this._fmtInterval = setInterval(()=>this._tickFormatTimer(), 250);
+    this._updateWakeLock();
   },
   resetFormatTimer(idx){
     if(this._fmtTimer && this._fmtTimer.exIdx===idx) this.stopFormatTimer();
@@ -6171,34 +6333,42 @@ const app = {
     clearInterval(this._fmtInterval);
     const prevIdx = this._fmtTimer ? this._fmtTimer.exIdx : null;
     this._fmtTimer = null;
+    this._updateWakeLock();
     if(prevIdx!=null) this.renderFormatTimer(prevIdx);
   },
   _tickFormatTimer(){
     const t = this._fmtTimer;
     if(!t){ clearInterval(this._fmtInterval); return; }
-    t.remaining -= 1;
-    if(t.kind==='emom' && t.remaining>0 && t.remaining % 60 === 0){
-      // Nouvelle minute qui commence : bip court + on avance le compteur de
-      // rounds (l'utilisateur peut toujours le corriger a la main).
-      this._formatTimerCue(false);
-      const e = this.currentLog.exercices[t.exIdx]?.emom;
-      if(e) e.rounds = Math.min(e.minutes||99, (e.rounds||0)+1);
-      this.autosaveLog();
+    if(!t.running) return;
+    const now = Date.now();
+    const old = t.remaining;
+    t.remaining = Math.max(0, Math.ceil((t.endAt - now)/1000));
+    const live = (old - t.remaining) <= 2;   // sinon : retour apres une mise en veille, pas de bips en retard
+    if(t.kind==='emom' && t.remaining < old){
+      // Minutes entamees depuis le dernier tick (plusieurs possibles apres une veille).
+      const crossed = Math.floor((old-1)/60) - Math.floor((Math.max(t.remaining,1)-1)/60);
+      if(crossed > 0){
+        if(live) this._formatTimerCue(false);
+        const e = this.currentLog.exercices[t.exIdx]?.emom;
+        if(e) e.rounds = Math.min(e.minutes||99, (e.rounds||0)+crossed);
+        this.autosaveLog();
+      }
     }
     if(t.remaining<=0){
       t.remaining = 0;
       t.running = false;
       clearInterval(this._fmtInterval);
-      this._formatTimerCue(true);
+      if(now - t.endAt < 2500) this._formatTimerCue(true);
       if(t.kind==='emom'){
         const e = this.currentLog.exercices[t.exIdx]?.emom;
         if(e) e.rounds = e.minutes||e.rounds;
         this.autosaveLog();
       }
+      this._updateWakeLock();
     }
     this.renderFormatTimer(t.exIdx);
   },
-  _formatTimerCue(isFinal){
+  _formatTimerCueWA(isFinal){
     try{ if(navigator.vibrate) navigator.vibrate(isFinal?[200,100,200,100,200]:[120]); }catch(e){}
     try{
       const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -6211,7 +6381,7 @@ const app = {
         o.type = 'sine'; o.frequency.value = freq;
         o.connect(g); g.connect(ctx.destination);
         g.gain.setValueAtTime(0.0001, ctx.currentTime + start);
-        g.gain.exponentialRampToValueAtTime(0.28, ctx.currentTime + start + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.8, ctx.currentTime + start + 0.02);
         g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + start + dur);
         o.start(ctx.currentTime + start);
         o.stop(ctx.currentTime + start + dur + 0.03);
@@ -8903,6 +9073,7 @@ const app = {
   /* ---------- REGLAGES ---------- */
   renderSettings(){
     document.getElementById('set-formats-avances').checked = !!this.db.settings.formatsAvances;
+    document.getElementById('set-wakelock').checked = this.db.settings.garderEcranAllume !== false;
     document.getElementById('set-prenom').value = this.db.settings.prenom || '';
     const isLight = this.db.settings.theme==='light';
     document.getElementById('set-theme-dark').classList.toggle('active', !isLight);
@@ -9105,7 +9276,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
     setTimeout(()=>alert("⚠️ Tes données les plus récentes semblaient endommagées à l'ouverture. L'application a restauré automatiquement la dernière sauvegarde de secours enregistrée — il est possible qu'une séance très récente manque. Vérifie ton historique, et pense à faire \"Copier\" dans Réglages régulièrement."), 400);
   }
   setTimeout(checkForUpdate, 2000);
-  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') checkForUpdate(); });
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible'){ app._syncTimers(); checkForUpdate(); } });
+  window.addEventListener('pageshow', ()=>app._syncTimers());
+  window.addEventListener('focus', ()=>app._syncTimers());
   setInterval(checkForUpdate, 20*60*1000);
 });
 
