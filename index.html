@@ -1178,7 +1178,7 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
    SUIVI CORPOREL v2 (oct. 2026) : resultat d'abord, saisie en feuille du
    bas, tuiles par zone, historique modifiable.
    =================================================================== */
-.sheet-mode #corps-hist-body, .sheet-mode #pesee-sheet-body, .sheet-mode #mens-sheet-body, .sheet-mode #restore-body, .sheet-mode #express-body{
+.sheet-mode #corps-hist-body, .sheet-mode #pesee-sheet-body, .sheet-mode #mens-sheet-body, .sheet-mode #restore-body, .sheet-mode #express-body, .sheet-mode #imgcheck-body{
   flex:1 1 auto; min-height:0; max-height:none; overflow-y:auto; -webkit-overflow-scrolling:touch;
 }
 .sheet-head{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; }
@@ -1296,6 +1296,17 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
 .ex-actions{ display:flex; gap:10px; margin-top:16px; }
 .ex-actions .btn{ flex:1; margin:0; }
 .ex-back{ margin-top:12px; width:100%; text-align:center; }
+
+/* Verification des images */
+.ic-sum{ font-size:15px; font-weight:800; margin:2px 0 4px; }
+.ic-sub{ font-size:13px; color:var(--text-dim); font-weight:600; line-height:1.45; margin-bottom:6px; }
+.ic-bar{ height:8px; border-radius:99px; background:var(--card-2); overflow:hidden; margin:10px 0 4px; }
+.ic-bar i{ display:block; height:100%; width:0; background:var(--grad); transition:width .15s; }
+.ic-h{ font-size:12.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); font-weight:800; margin:16px 0 6px; }
+.ic-h.bad{ color:var(--accent-warn); }
+.ic-li{ display:flex; flex-direction:column; gap:1px; padding:8px 0; border-bottom:1px solid var(--card-border); font-size:14px; font-weight:700; }
+.ic-li:last-child{ border-bottom:none; }
+.ic-li small{ color:var(--text-dim); font-weight:600; font-size:12px; word-break:break-all; }
 </style>
 </head>
 <body>
@@ -1856,6 +1867,9 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
       <div class="set-row set-link" onclick="app.openOnboarding()">
         <div class="set-l"><div>Revoir la présentation</div></div><div class="chev">›</div>
       </div>
+      <div class="set-row set-link" onclick="app.openImgCheck()">
+        <div class="set-l"><div><div>Vérifier les images des exercices</div><div class="set-sub">Repère les miniatures manquantes</div></div></div><div class="chev">›</div>
+      </div>
       <div class="set-row"><span class="set-l">Version de l’appli</span><span class="set-val" id="set-version"></span></div>
     </div>
 
@@ -1942,6 +1956,13 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
   <div class="confirm-box">
     <div class="sheet-head"><div class="sh-title">Séance express</div><button class="icon-btn" title="Fermer" onclick="app.closeExpress()">✕</button></div>
     <div id="express-body"></div>
+  </div>
+</div>
+
+<div class="confirm-overlay" id="imgcheck-overlay">
+  <div class="confirm-box">
+    <div class="sheet-head"><div class="sh-title">Images des exercices</div><button class="icon-btn" title="Fermer" onclick="app.closeImgCheck()">✕</button></div>
+    <div id="imgcheck-body"></div>
   </div>
 </div>
 
@@ -2074,7 +2095,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261023071717';
+const APP_BUILD_VERSION = '20261023075343';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -4324,6 +4345,7 @@ const Sheets = (function(){
     'pesee-overlay':'closePeseeSheet',
     'mens-overlay':'closeMensSheet',
     'express-overlay':'closeExpress',
+    'imgcheck-overlay':'closeImgCheck',
     'restore-overlay':'closeRestore'
   };
   const st = {};
@@ -6446,6 +6468,66 @@ const app = {
     if(existing && existing.exercices && existing.exercices.length){
       showConfirm('Tu as déjà une séance libre aujourd’hui. Ajouter ces exercices à la suite ?', go);
     } else go();
+  },
+
+
+  /* ---------- VERIFICATION DES IMAGES D'EXERCICES ---------- */
+  openImgCheck(){
+    Sheets.open('imgcheck-overlay');
+    this.runImgCheck();
+  },
+  closeImgCheck(){ this._imgCheckRun = (this._imgCheckRun||0)+1; Sheets.close('imgcheck-overlay'); },
+  runImgCheck(){
+    const body = document.getElementById('imgcheck-body');
+    const run = (this._imgCheckRun = (this._imgCheckRun||0)+1);
+    if(navigator.onLine === false){
+      body.innerHTML = '<div class="ic-sum">Hors connexion</div><div class="ic-sub">Le test a besoin du réseau. Reconnecte-toi puis relance.</div><button type="button" class="btn btn-secondary" onclick="app.runImgCheck()">Relancer</button>';
+      return;
+    }
+    const names = Array.from(new Set(Object.keys(EXERCICE_MUSCLE_GROUPS).concat((this.db.exercicesPerso||[]).map(e=>e.nom))));
+    const withImg = names.filter(n=>exoImageSrc(n));
+    const without = names.filter(n=>!exoImageSrc(n));
+    const files = Array.from(new Set(withImg.map(n=>exoImageSrc(n))));
+    const result = {};
+    let done = 0;
+    body.innerHTML = `<div class="ic-sum">Test de ${files.length} images…</div><div class="ic-bar"><i id="ic-fill"></i></div><div class="ic-sub" id="ic-count">0 / ${files.length}</div>`;
+    const finish = ()=>{
+      if(run!==this._imgCheckRun) return;
+      const missing = withImg.filter(n=>result[exoImageSrc(n)]===false);
+      const okCount = files.filter(f=>result[f]!==false).length;
+      this._imgReport = { missing: missing.map(n=>n+' — '+exoImageSrc(n)), without: without.slice() };
+      const li = a=>a.map(x=>`<div class="ic-li">${escapeHtml(x)}</div>`).join('');
+      const liM = missing.map(n=>`<div class="ic-li">${escapeHtml(n)}<small>${escapeHtml(exoImageSrc(n))}</small></div>`).join('');
+      body.innerHTML = `
+        <div class="ic-sum">${okCount} images chargent · ${files.length-okCount} introuvables</div>
+        <div class="ic-sub">${without.length} exercices n’ont aucune image associée dans l’appli.</div>
+        ${missing.length?`<div class="ic-h bad">Fichier introuvable (${missing.length})</div><div class="ic-sub">L’image est prévue mais le fichier est absent ou mal nommé sur GitHub.</div>${liM}`:''}
+        ${without.length?`<div class="ic-h">Sans image associée (${without.length})</div>${li(without)}`:''}
+        <div class="ex-actions"><button type="button" class="btn btn-secondary" onclick="app.runImgCheck()">Relancer</button><button type="button" class="btn btn-primary" onclick="app.copyImgReport()">Copier le rapport</button></div>`;
+    };
+    let idx = 0, active = 0;
+    const next = ()=>{
+      if(run!==this._imgCheckRun) return;
+      while(active<8 && idx<files.length){
+        const f = files[idx++]; active++;
+        const im = new Image(); let settled = false;
+        const end = ok=>{ if(settled) return; settled = true; result[f] = ok; active--; done++;
+          const fill = document.getElementById('ic-fill'), c = document.getElementById('ic-count');
+          if(fill) fill.style.width = Math.round(done/files.length*100)+'%'; if(c) c.textContent = done+' / '+files.length;
+          if(done===files.length) finish(); else next(); };
+        im.onload = ()=>end(true); im.onerror = ()=>end(false);
+        setTimeout(()=>end(false), 10000);
+        im.src = f + (f.indexOf('?')<0 ? '?chk='+Date.now() : '');
+      }
+    };
+    if(!files.length) finish(); else next();
+  },
+  copyImgReport(){
+    const r = this._imgReport; if(!r) return;
+    const txt = 'Images introuvables ('+r.missing.length+') :\n'+r.missing.join('\n')+'\n\nSans image associée ('+r.without.length+') :\n'+r.without.join('\n');
+    const ok = ()=>toast('Rapport copié');
+    try{ if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(ok).catch(()=>toast('Copie impossible')); return; } }catch(e){}
+    toast('Copie impossible');
   },
 
   /* ---------- MINUTEUR DE REPOS ---------- */
