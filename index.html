@@ -1178,7 +1178,7 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
    SUIVI CORPOREL v2 (oct. 2026) : resultat d'abord, saisie en feuille du
    bas, tuiles par zone, historique modifiable.
    =================================================================== */
-.sheet-mode #corps-hist-body, .sheet-mode #pesee-sheet-body, .sheet-mode #mens-sheet-body, .sheet-mode #restore-body{
+.sheet-mode #corps-hist-body, .sheet-mode #pesee-sheet-body, .sheet-mode #mens-sheet-body, .sheet-mode #restore-body, .sheet-mode #express-body{
   flex:1 1 auto; min-height:0; max-height:none; overflow-y:auto; -webkit-overflow-scrolling:touch;
 }
 .sheet-head{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; }
@@ -1256,6 +1256,46 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
 .set-danger{ margin-top:30px; }
 .set-danger .btn{ width:100%; }
 .set-danger .small-note{ margin-top:8px; text-align:center; }
+
+/* Seance express */
+.express-card{ width:100%; display:flex; align-items:center; gap:14px; text-align:left; margin:2px 0 18px; padding:14px 16px;
+  background:linear-gradient(135deg, color-mix(in srgb, var(--accent) 16%, var(--card)), var(--card) 70%);
+  border:1px solid color-mix(in srgb, var(--accent) 40%, var(--card-border)); border-radius:20px; color:var(--text); cursor:pointer; font-family:inherit; }
+.express-card:active{ transform:scale(.99); }
+.express-card .ex-ic{ width:44px; height:44px; flex:none; border-radius:14px; background:var(--grad); color:var(--accent-contrast); display:flex; align-items:center; justify-content:center; }
+.express-card .ex-ic svg{ width:23px; height:23px; }
+.express-card .ex-txt{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.express-card .ex-txt b{ font-size:16.5px; font-weight:800; }
+.express-card .ex-txt small{ font-size:13px; color:var(--text-dim); font-weight:600; }
+.ex-sec{ font-size:12.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); font-weight:800; margin:18px 0 9px; display:flex; align-items:center; gap:8px; }
+.ex-sec:first-child{ margin-top:2px; }
+.ex-pills{ display:flex; flex-wrap:wrap; gap:8px; }
+.ex-pills .pill.preset{ background:none; border-style:dashed; }
+.ex-hint{ font-size:12.5px; color:var(--text-dim); font-weight:600; margin-top:8px; line-height:1.4; }
+.ex-go{ width:100%; margin-top:18px; }
+.ex-sum{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin:2px 0 6px; }
+.ex-sum .big{ font-size:26px; font-weight:800; font-variant-numeric:tabular-nums; }
+.ex-sum .sub{ font-size:13px; color:var(--text-dim); font-weight:700; text-align:right; }
+.ex-note{ font-size:12.5px; color:var(--accent-warn); font-weight:700; margin:6px 0 0; line-height:1.4; }
+.ex-list{ margin-top:10px; }
+.ex-row{ display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid var(--card-border); }
+.ex-row:last-child{ border-bottom:none; }
+.ex-thumb{ width:52px; height:52px; flex:none; border-radius:14px; background:var(--card-2); color:var(--text-dim); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.ex-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+.ex-thumb svg{ width:22px; height:22px; }
+.ex-thumb .ph{ display:none; align-items:center; justify-content:center; }
+.ex-thumb.noimg .ph, .ex-thumb.fail .ph{ display:flex; }
+.ex-thumb.fail img{ display:none; }
+.ex-meta .nw{ white-space:nowrap; }
+#express-body .segmented button{ font-size:14px; padding-left:6px; padding-right:6px; }
+.ex-meta{ flex:1; min-width:0; }
+.ex-meta .n{ font-weight:800; font-size:15px; line-height:1.25; }
+.ex-meta .d{ font-size:12.5px; color:var(--text-dim); font-weight:600; margin-top:2px; }
+.ex-meta .tag{ display:inline-block; font-size:11px; font-weight:800; color:var(--accent); border:1px solid color-mix(in srgb, var(--accent) 45%, transparent); border-radius:999px; padding:1px 7px; margin-left:6px; vertical-align:1px; }
+.ex-row .icon-btn{ flex:none; width:44px; height:44px; }
+.ex-actions{ display:flex; gap:10px; margin-top:16px; }
+.ex-actions .btn{ flex:1; margin:0; }
+.ex-back{ margin-top:12px; width:100%; text-align:center; }
 </style>
 </head>
 <body>
@@ -1300,6 +1340,11 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
     <div class="topbar"><h1>Sport</h1></div>
     <div class="quickstats" id="sport-quickstats"></div>
     <div id="sport-checkin"></div>
+    <button type="button" class="express-card" onclick="app.openExpress()">
+      <span class="ex-ic"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.2 2.5 4.6 13.4a.7.7 0 0 0 .55 1.13H10l-1.1 7.2a.55.55 0 0 0 .98.42l8.5-11a.7.7 0 0 0-.55-1.13H13l1.2-7.1a.55.55 0 0 0-1-.43Z"/></svg></span>
+      <span class="ex-txt"><b>Séance express</b><small>Une durée, des muscles : l’appli compose ta séance</small></span>
+      <span class="chev">›</span>
+    </button>
     <div class="section-title">Programmes</div>
     <div class="tiles-row" id="sport-programs"></div>
     <div class="list-row" style="cursor:pointer;" onclick="nav.push('view-programmes'); app.renderProgrammesVisibilite(); app.renderProgrammesPerso();">
@@ -1893,6 +1938,13 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
   </div>
 </div>
 
+<div class="confirm-overlay" id="express-overlay">
+  <div class="confirm-box">
+    <div class="sheet-head"><div class="sh-title">Séance express</div><button class="icon-btn" title="Fermer" onclick="app.closeExpress()">✕</button></div>
+    <div id="express-body"></div>
+  </div>
+</div>
+
 <div class="confirm-overlay" id="confirm-overlay">
   <div class="confirm-box">
     <p id="confirm-message"></p>
@@ -2022,7 +2074,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261022144911';
+const APP_BUILD_VERSION = '20261023071717';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -2227,6 +2279,9 @@ if(EXERCICE_IMAGES['Squat']) EXERCICE_IMAGES['Squat avec pause'] = EXERCICE_IMAG
 // les noms d'exercices reels de final_programs.json : toute renommaison
 // d'exercice (cf. data/programs/*.json) doit etre repercutee ici.
 const EXERCICE_MUSCLE_GROUPS = {
+  "Dead bug": "abdos",
+  "Bird-dog": "abdos",
+  "Reverse crunch": "abdos",
   "Rowing poitrine appuyée": "dos",
   "Squat avec pause": "quadriceps",
   "Mollets à la machine": "mollets",
@@ -3664,7 +3719,7 @@ function computeTotalPoidsSouleve(L, seanceDef){
   if(!L || !L.exercices || !seanceDef || seanceDef.type==='cardio') return 0;
   let total = 0;
   L.exercices.forEach(exState=>{
-    const def = seanceDef.exercices.find(e=>e.exercice===exState.exercice) || {};
+    const def = seanceDef.exercices.find(e=>e.exercice===exState.exercice) || exState.def || {};
     if(def.mode) return; // poids_only ou reps_only : exclu
     (exState.series||[]).forEach(s=>{
       if(s && s.poids!=null && s.reps!=null) total += s.poids*s.reps;
@@ -4268,6 +4323,7 @@ const Sheets = (function(){
     'corps-hist-overlay':'closeCorpsHist',
     'pesee-overlay':'closePeseeSheet',
     'mens-overlay':'closeMensSheet',
+    'express-overlay':'closeExpress',
     'restore-overlay':'closeRestore'
   };
   const st = {};
@@ -4484,6 +4540,247 @@ const TabSwipe = (function(){
 })();
 
 /* ===================== APP ===================== */
+/* ---------- SEANCE EXPRESS : catalogue + generateur (fonctions pures) ---------- */
+// Niveaux de materiel : 0 = poids du corps, 1 = maison (halteres, elastique, barre de traction, chaise),
+// 2 = salle complete. Un exercice de niveau n est propose des que le materiel choisi est >= n.
+// Types : L = mouvement lourd (plusieurs muscles), I = isolation, G = gainage chronometre (reps = secondes).
+// p = "schema de mouvement" : un seul exercice par schema et par seance (evite deux fois le meme mouvement).
+// Les noms sont EXACTEMENT ceux du catalogue (EXERCICE_MUSCLE_GROUPS) pour garder l'historique des charges.
+const EXPRESS_GROUPS = [
+  {k:'pectoraux', l:'Pectoraux', w:1.3}, {k:'dos', l:'Dos', w:1.4}, {k:'epaules', l:'Épaules', w:1.0},
+  {k:'biceps', l:'Biceps', w:0.8}, {k:'triceps', l:'Triceps', w:0.8}, {k:'abdos', l:'Abdos', w:1.2},
+  {k:'quadriceps', l:'Quadriceps', w:1.3}, {k:'ischios', l:'Ischios', w:0.9}, {k:'fessiers', l:'Fessiers', w:1.0},
+  {k:'mollets', l:'Mollets', w:0.6}
+];
+const EXPRESS_PRESETS = [
+  {l:'Bras', g:['biceps','triceps']},
+  {l:'Jambes', g:['quadriceps','ischios','fessiers','mollets']},
+  {l:'Haut du corps', g:['pectoraux','dos','epaules','biceps','triceps']},
+  {l:'Full body', g:['pectoraux','dos','quadriceps','epaules','abdos']}
+];
+const EXPRESS_TIERS = [
+  {t:2, l:'Salle', hint:'Machines, poulies, barres et haltères.'},
+  {t:1, l:'Maison', hint:'Haltères, élastique, barre de traction, chaise.'},
+  {t:0, l:'Poids du corps', hint:'Aucun matériel.'}
+];
+// [nom, groupe, niveau, type, series, reps (ou secondes), repos (s), schema, options ('u' = unilateral)]
+const EXPRESS_RAW = [
+  // DOS (dont trapezes)
+  ['Tractions','dos',1,'L',3,'6-10',120,'tv'],
+  ['Tractions assistées (machine)','dos',2,'L',3,'8-10',90,'tv'],
+  ['Tirage vertical large','dos',2,'L',4,'8-12',90,'tv'],
+  ['Tirage vertical serre','dos',2,'L',3,'8-12',90,'tv'],
+  ['Tirage vertical prise neutre','dos',2,'L',3,'8-12',90,'tv'],
+  ['Rowing barre','dos',2,'L',4,'6-10',120,'rw'],
+  ['Rowing T-bar','dos',2,'L',3,'8-10',90,'rw'],
+  ['Rowing poitrine appuyée','dos',2,'L',3,'8-12',90,'rw'],
+  ['Rowing haltère unilatéral','dos',1,'L',3,'8-12',75,'rw','u'],
+  ['Rowing élastique','dos',1,'L',3,'12-15',60,'rw'],
+  ['Tirage horizontal à la poulie basse','dos',2,'L',3,'8-12',90,'th'],
+  ['Low row unilateral','dos',2,'L',3,'8-12',75,'th','u'],
+  ['Soulevé de terre','dos',2,'L',4,'5-8',150,'dl'],
+  ['Pull over poulie haute','dos',2,'I',3,'10-15',60,'po'],
+  ['Extension lombaire','dos',2,'I',3,'12-15',60,'lo'],
+  ['Superman','dos',0,'I',3,'12-15',45,'lo'],
+  ['Shrugs haltères','dos',1,'I',3,'10-15',60,'sh'],
+  ['Shrugs barre','dos',2,'I',3,'10-15',60,'sh'],
+  // PECTORAUX
+  ['Développé couché barre','pectoraux',2,'L',4,'6-10',120,'pf'],
+  ['Chestpress','pectoraux',2,'L',3,'8-12',90,'pf'],
+  ['Développé incliné haltères','pectoraux',2,'L',3,'8-12',90,'pi'],
+  ['Developpe incline barre','pectoraux',2,'L',4,'6-10',120,'pi'],
+  ['Chestpress incline','pectoraux',2,'L',3,'8-12',90,'pi'],
+  ['Développé couché décliné','pectoraux',2,'L',3,'8-12',90,'pd'],
+  ['Pec-deck (butterfly)','pectoraux',2,'I',3,'10-15',60,'fl'],
+  ['Écarté couché haltères','pectoraux',2,'I',3,'10-12',60,'fl'],
+  ['Ecarte couche poulie vis-a-vis','pectoraux',2,'I',3,'10-15',60,'fl'],
+  ['Pompes','pectoraux',0,'L',3,'10-20',60,'pu'],
+  ['Pompes larges','pectoraux',0,'L',3,'10-15',60,'pu'],
+  ['Pompes genoux','pectoraux',0,'L',3,'12-15',60,'pu'],
+  // EPAULES
+  ['Développé militaire','epaules',2,'L',4,'6-10',120,'dm'],
+  ['Développé militaire haltères','epaules',1,'L',3,'8-12',90,'dm'],
+  ['Développé Arnold','epaules',1,'L',3,'8-12',75,'dm'],
+  ['Élévation latérale haltères','epaules',1,'I',3,'12-15',45,'el'],
+  ['Élévation latérale à la poulie','epaules',2,'I',3,'12-15',45,'el','u'],
+  ['Élévation frontale haltères','epaules',1,'I',3,'10-12',45,'ef'],
+  ['Oiseau (élévations arrière)','epaules',1,'I',3,'12-15',45,'ob'],
+  ['Oiseau à la machine','epaules',2,'I',3,'12-15',45,'ob'],
+  ['Face pull à la poulie','epaules',2,'I',3,'12-15',45,'fp'],
+  ['Elevations assis 3D halteres','epaules',1,'I',3,'12',45,'e3'],
+  // BICEPS
+  ['Curl barre debout','biceps',2,'I',3,'8-12',60,'cb'],
+  ['Curl haltères alterné','biceps',1,'I',3,'10-12',60,'cd'],
+  ['Curl marteau','biceps',1,'I',3,'10-12',60,'cm'],
+  ['Curl à la corde (poulie, prise marteau)','biceps',2,'I',3,'10-15',60,'cm'],
+  ['Curl incliné haltères','biceps',2,'I',3,'10-12',60,'ci'],
+  ['Biceps curl pupitre','biceps',2,'I',3,'10-12',60,'cp'],
+  ['Curl poulie basse prise serrée','biceps',2,'I',3,'10-15',60,'cl'],
+  ['Curl poulie haute unilatéral (curl araignée)','biceps',2,'I',3,'10-15',45,'cs','u'],
+  // TRICEPS
+  ['Extension triceps à la poulie','triceps',2,'I',3,'10-15',60,'ep'],
+  ['Barre au front (skull crusher)','triceps',2,'I',3,'8-12',75,'sk'],
+  ['Dips sur banc','triceps',0,'I',3,'10-15',60,'dp'],
+  ['Dips machine triceps','triceps',2,'L',3,'8-12',75,'dp'],
+  ['Développé couché prise serrée','triceps',2,'L',3,'6-10',90,'pg'],
+  ['Extension triceps nuque haltère','triceps',1,'I',3,'10-12',60,'en'],
+  ['Extension triceps à un bras à la poulie','triceps',2,'I',3,'10-15',45,'e1','u'],
+  // QUADRICEPS
+  ['Squat','quadriceps',2,'L',4,'6-10',150,'sq'],
+  ['Front squat','quadriceps',2,'L',3,'6-10',120,'sq'],
+  ['Squat gobelet','quadriceps',1,'L',3,'10-12',75,'sq'],
+  ['Squat guide ou hack squat','quadriceps',2,'L',3,'8-12',90,'sq'],
+  ['Presse à cuisses','quadriceps',2,'L',4,'10-12',90,'pr'],
+  ['Fentes arrière avec haltères','quadriceps',1,'L',3,'10',75,'fe','u'],
+  ['Fentes','quadriceps',0,'L',3,'12',60,'fe','u'],
+  ['Squats bulgares','quadriceps',1,'L',3,'8-10',75,'bu','u'],
+  ['Step-up haltères','quadriceps',1,'L',3,'10',60,'su','u'],
+  ['Leg extension','quadriceps',2,'I',3,'12-15',60,'le'],
+  ['Squats sautés','quadriceps',0,'L',3,'12',45,'sj'],
+  // ISCHIOS
+  ['Soulevé de terre roumain','ischios',2,'L',4,'8-10',120,'rd'],
+  ['Soulevé de terre jambes tendues','ischios',1,'L',3,'10-12',90,'rd'],
+  ['Leg curl couche','ischios',2,'I',3,'10-12',75,'lc'],
+  // FESSIERS
+  ['Hip thrust','fessiers',2,'L',4,'8-12',90,'ht'],
+  ['Hip thrust unilatéral','fessiers',2,'L',3,'10',75,'ht','u'],
+  ['Squats sumo','fessiers',1,'L',3,'12',75,'ss'],
+  ['Kettlebell swing','fessiers',1,'L',4,'15',60,'ks'],
+  ['Pont fessier au sol','fessiers',0,'I',3,'15',45,'pf2'],
+  ['Extension de hanche au sol (fire hydrant)','fessiers',0,'I',3,'15',30,'fh','u'],
+  ['Abduction de hanche debout (élastique)','fessiers',1,'I',3,'15-20',30,'ab','u'],
+  // MOLLETS
+  ['Mollets debout','mollets',0,'I',4,'15-20',45,'md'],
+  ['Mollets assis','mollets',2,'I',4,'12-15',45,'ma'],
+  ['Mollets à la presse à cuisses','mollets',2,'I',4,'12-15',45,'mp'],
+  ['Mollet unilatéral haltère','mollets',1,'I',3,'15',30,'mu','u'],
+  // ABDOS
+  ['Crunch','abdos',0,'I',3,'15-20',30,'cr'],
+  ['Crunchs bicyclette','abdos',0,'I',3,'20',30,'bi'],
+  ['Relevés de jambes','abdos',0,'I',3,'12-15',45,'rj'],
+  ['Reverse crunch','abdos',0,'I',3,'12-15',30,'rc'],
+  ['Relevé de jambes suspendu','abdos',1,'I',3,'10-12',60,'rj'],
+  ['Gainage dynamique (planche avec touches d\'épaule)','abdos',0,'I',3,'12',30,'gd'],
+  ['Gainage avec rotation','abdos',0,'I',3,'12',30,'gr','u'],
+  ['Rotation russe (russian twist)','abdos',0,'I',3,'20',30,'rr'],
+  ['Dead bug','abdos',0,'I',3,'10-12',30,'db'],
+  ['Bird-dog','abdos',0,'I',3,'10',30,'bd','u'],
+  ['Roulette abdominale (ab wheel)','abdos',1,'I',3,'10',60,'aw'],
+  ['Pallof press','abdos',1,'I',3,'12',45,'pa','u'],
+  ['Crunch à la poulie haute','abdos',2,'I',3,'12-15',60,'cp'],
+  ['Planche','abdos',0,'G',3,'40',30,'pl'],
+  ['Planche latérale','abdos',0,'G',3,'30',30,'pll','u']
+];
+const EXPRESS_CATALOG = EXPRESS_RAW.map(r=>({nom:r[0], g:r[1], tier:r[2], type:r[3], sets:r[4], reps:r[5], rest:r[6], p:r[7], uni:r[8]==='u', timed:r[3]==='G'}));
+
+function expressRepsAvg(r){
+  const m = String(r).match(/\d+/g); if(!m) return 10;
+  const a = m.map(Number); return a.length>1 ? (a[0]+a[1])/2 : a[0];
+}
+// Temps d'un temps de travail pour UNE serie (secondes) : 3 s par repetition, 4 s de mise en place ; unilateral = deux cotes.
+function expressSetWork(e){
+  const per = e.timed ? expressRepsAvg(e.reps) : expressRepsAvg(e.reps)*3;
+  return (e.uni ? per*2+6 : per) + 4;
+}
+function expressExTime(e){ return Math.round(e.sets*expressSetWork(e) + (e.sets-1)*e.rest + 20); }
+// Duree d'une liste d'exercices ; un exercice marque `superset` s'enchaine avec le suivant (un seul repos par tour).
+function expressPlanTime(plan){
+  let t = 0;
+  for(let i=0;i<plan.length;i++){
+    const e = plan[i], nx = plan[i+1];
+    if(e.superset && nx){
+      const s = Math.max(e.sets, nx.sets);
+      t += Math.round(s*(expressSetWork(e)+expressSetWork(nx)) + (s-1)*Math.max(e.rest,nx.rest) + 30);
+      i++;
+    } else t += expressExTime(e);
+  }
+  return t;
+}
+function expressRng(seed){
+  let a = seed>>>0;
+  return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a>>>15, 1|a); t = t + Math.imul(t ^ t>>>7, 61|t) ^ t; return ((t ^ t>>>14)>>>0)/4294967296; };
+}
+// opts : {duree (min), groupes [cles], tier (0..2), seed, recent (Set de noms), supersets (bool)}
+// -> {plan [{nom,g,type,sets,reps,rest,uni,timed,superset}], total (s), reserve (s), notes []}
+function expressGenerate(opts){
+  const rnd = expressRng(opts.seed||1);
+  const recent = opts.recent || new Set();
+  const reserve = opts.duree>=30 ? 180 : 0;            // echauffement pour les seances d'au moins 30 min
+  const B = opts.duree*60 - reserve;
+  const gDefs = EXPRESS_GROUPS.filter(g=>opts.groupes.includes(g.k));
+  const pool = {}, cnt = {}, closed = new Set(), plan = [];
+  const usedPat = new Set(), usedNom = new Set();
+  gDefs.forEach(g=>{ pool[g.k] = EXPRESS_CATALOG.filter(e=>e.g===g.k && e.tier<=opts.tier); cnt[g.k] = 0; });
+  const score = (e, g)=>{
+    let s = rnd();
+    const nL = plan.filter(x=>x.g===g.k && x.type==='L').length;
+    if(cnt[g.k]===0 && e.type==='L') s += 2.5;
+    if(cnt[g.k]>=1 && e.type!=='L' && nL>=1) s += 1;
+    if(e.type==='L' && nL===1 && g.w>=1.0) s += 1.6;   // gros groupes : deux mouvements lourds (ex. tirage vertical + rowing)
+    if(e.type==='L' && nL>=2) s -= 1.5;
+    if(e.timed && !plan.some(x=>x.g===g.k && x.timed) && cnt[g.k]>=1) s += 0.8;
+    if(opts.tier===2 && e.tier<2 && e.type==='L') s -= 0.8;   // en salle : les mouvements lourds de salle d'abord
+    if(recent.has(e.nom)) s -= 1.2;
+    return s;
+  };
+  const total = ()=>expressPlanTime(plan);
+  const fill = ()=>{
+    for(let guard=0; guard<60; guard++){
+      const open = gDefs.filter(g=>!closed.has(g.k));
+      if(!open.length) break;
+      open.sort((a,b)=> (cnt[a.k]/a.w)-(cnt[b.k]/b.w) || b.w-a.w);
+      const g = open[0];
+      const strict = pool[g.k].filter(e=>!usedNom.has(e.nom) && !usedPat.has(e.p));
+      const room = B*1.06 - total();
+      const fit = strict.filter(e=>expressExTime(e) <= room);
+      if(!fit.length){ closed.add(g.k); continue; }
+      let best = null, bs = -1e9;
+      fit.forEach(e=>{ const s = score(e,g); if(s>bs){ bs = s; best = e; } });
+      plan.push(Object.assign({}, best, {superset:false}));
+      cnt[g.k]++; usedNom.add(best.nom); usedPat.add(best.p);
+    }
+  };
+  const pair = ()=>{
+    plan.forEach(e=>{ e.superset = false; });
+    if(!opts.supersets) return;
+    const bi = plan.findIndex(e=>e.g==='biceps' && e.type==='I'), tr = plan.findIndex(e=>e.g==='triceps' && e.type==='I');
+    if(bi<0 || tr<0) return;
+    const t = plan.splice(tr,1)[0];
+    const b = plan.findIndex(e=>e.g==='biceps' && e.type==='I');
+    plan.splice(b+1,0,t);
+    plan[b].superset = true;
+  };
+  fill();
+  // tri : lourds d'abord, puis isolations, puis gainages ; groupes les plus gros en tete
+  const rank = e=> e.type==='L'?0 : (e.timed?2:1);
+  const gi = e=> gDefs.findIndex(g=>g.k===e.g);
+  const sortPlan = ()=>{
+    const idx = new Map(plan.map((e,i)=>[e,i]));
+    plan.sort((a,b)=> rank(a)-rank(b) || (gDefs[gi(b)].w - gDefs[gi(a)].w) || idx.get(a)-idx.get(b));
+  };
+  sortPlan(); pair();
+  // le superset libere du temps : on retente d'ajouter des exercices
+  if(opts.supersets && plan.some(e=>e.superset)){
+    closed.clear(); fill(); sortPlan(); pair();
+  }
+  const notes = [];
+  gDefs.forEach(g=>{
+    if(!pool[g.k].length) notes.push(g.l+' : aucun exercice avec ce matériel.');
+    else if(!cnt[g.k]) notes.push(g.l+' : pas assez de temps pour ce muscle.');
+    else if(pool[g.k].length<3) notes.push(g.l+' : peu d’exercices avec ce matériel, séance répétitive.');
+  });
+  const tot = total();
+  if(plan.length && (tot+reserve) < opts.duree*60*0.75) notes.push('Séance de '+Math.round((tot+reserve)/60)+' min seulement : pas assez d’exercices pour ces muscles avec ce matériel.');
+  return {plan, total: tot, reserve, notes};
+}
+// Alternatives pour remplacer l'exercice i de la liste (meme groupe, meme materiel, schema pas deja utilise).
+function expressAlternatives(plan, i, tier, recent){
+  const cur = plan[i];
+  const names = new Set(plan.map(e=>e.nom));
+  const pats = new Set(plan.filter((e,j)=>j!==i).map(e=>e.p));
+  return EXPRESS_CATALOG.filter(e=>e.g===cur.g && e.tier<=tier && !names.has(e.nom) && !pats.has(e.p) && (e.type==='L')===(cur.type==='L') && e.timed===cur.timed);
+}
+
 const app = {
   db: null,
   currentLog: null,
@@ -5272,7 +5569,7 @@ const app = {
       if(seanceDef.circuitAbdos){ html += this.circuitAbdosHTML(seanceDef.circuitAbdos, L.circuitAbdosDureeMin); }
     } else {
       html += L.exercices.map((exState, idx)=>{
-        const def = seanceDef.exercices.find(e=>e.exercice===exState.exercice) || {};
+        const def = seanceDef.exercices.find(e=>e.exercice===exState.exercice) || exState.def || {};
         const globalLast = getLastPerformance(exState.exercice, L.id);
         const pctx = getProgramContext(exState.exercice, L, prog);
         const last = pctx.last;
@@ -6003,13 +6300,161 @@ const app = {
     }catch(e){ this._restTimerFinishedCueWA(); }
   },
 
+
+  /* ---------- SEANCE EXPRESS ---------- */
+  openExpress(){
+    const p = this.db.settings.expressPrefs || {};
+    const okG = (p.groupes||[]).filter(k=>EXPRESS_GROUPS.some(g=>g.k===k));
+    this._express = { duree: p.duree||30, groupes: okG, tier: (p.tier===0||p.tier===1||p.tier===2) ? p.tier : 2,
+      seed: Math.floor(Math.random()*1e9)+1, res: null, step: 'form' };
+    this.renderExpress();
+    Sheets.open('express-overlay');
+  },
+  closeExpress(){ Sheets.close('express-overlay'); this._express = null; },
+  _expressSavePrefs(){
+    const E = this._express; if(!E) return;
+    this.db.settings.expressPrefs = {duree:E.duree, groupes:E.groupes.slice(), tier:E.tier};
+    saveDBOrWarn(this.db);
+  },
+  expressSet(field, v){
+    const E = this._express; if(!E) return;
+    E[field] = v; this.renderExpress();
+  },
+  expressToggleGroup(k){
+    const E = this._express; if(!E) return;
+    const i = E.groupes.indexOf(k);
+    if(i>=0) E.groupes.splice(i,1); else E.groupes.push(k);
+    this.renderExpress();
+  },
+  expressPreset(i){
+    const E = this._express; if(!E) return;
+    const g = EXPRESS_PRESETS[i].g;
+    const same = g.length===E.groupes.length && g.every(k=>E.groupes.includes(k));
+    E.groupes = same ? [] : g.slice();
+    this.renderExpress();
+  },
+  _expressRecent(){
+    const names = new Set();
+    this.db.seances.filter(l=>l.exercices && l.exercices.length).slice()
+      .sort((a,b)=> a.date<b.date?1:(a.date>b.date?-1:0)).slice(0,3)
+      .forEach(l=>l.exercices.forEach(e=>names.add(e.exercice)));
+    return names;
+  },
+  expressGenerate(regen){
+    const E = this._express; if(!E || !E.groupes.length) return;
+    if(regen) E.seed += 1;
+    this._expressSavePrefs();
+    E.res = expressGenerate({ duree:E.duree, groupes:E.groupes, tier:E.tier, seed:E.seed, recent:this._expressRecent(), supersets: !!this.db.settings.formatsAvances });
+    E.step = 'plan';
+    this.renderExpress();
+  },
+  expressBack(){ const E = this._express; if(!E) return; E.step = 'form'; this.renderExpress(); },
+  expressSwap(i){
+    const E = this._express; if(!E || !E.res) return;
+    const plan = E.res.plan;
+    const alts = expressAlternatives(plan, i, E.tier, this._expressRecent());
+    if(!alts.length){ toast('Pas d’autre exercice équivalent'); return; }
+    const pick = alts[Math.floor(Math.random()*alts.length)];
+    const old = plan[i];
+    plan[i] = Object.assign({}, pick, {superset: old.superset});
+    E.res.total = expressPlanTime(plan);
+    this.renderExpress();
+  },
+  expressRemove(i){
+    const E = this._express; if(!E || !E.res) return;
+    const plan = E.res.plan;
+    if(plan.length<=1){ toast('Garde au moins un exercice'); return; }
+    if(plan[i].superset) plan[i].superset = false;
+    if(i>0 && plan[i-1].superset) plan[i-1].superset = false;
+    plan.splice(i,1);
+    E.res.total = expressPlanTime(plan);
+    this.renderExpress();
+  },
+  renderExpress(){
+    const E = this._express, body = document.getElementById('express-body');
+    if(!E || !body) return;
+    const prevScroll = body.scrollTop;
+    if(E.step==='form'){
+      const dur = [15,20,30,40,45,60];
+      const presets = EXPRESS_PRESETS.map((p,i)=>{
+        const on = p.g.length===E.groupes.length && p.g.every(k=>E.groupes.includes(k));
+        return `<button type="button" class="pill preset ${on?'active':''}" onclick="app.expressPreset(${i})">${escapeHtml(p.l)}</button>`;
+      }).join('');
+      const groups = EXPRESS_GROUPS.map(g=>`<button type="button" class="pill ${E.groupes.includes(g.k)?'active':''}" onclick="app.expressToggleGroup('${g.k}')">${escapeHtml(g.l)}</button>`).join('');
+      const tiers = EXPRESS_TIERS.map(t=>`<button type="button" class="${E.tier===t.t?'active':''}" onclick="app.expressSet('tier',${t.t})">${escapeHtml(t.l)}</button>`).join('');
+      const hint = EXPRESS_TIERS.find(t=>t.t===E.tier).hint;
+      body.innerHTML = `
+        <div class="ex-sec">Durée</div>
+        <div class="ex-pills">${dur.map(d=>`<button type="button" class="pill ${E.duree===d?'active':''}" onclick="app.expressSet('duree',${d})">${d} min</button>`).join('')}</div>
+        <div class="ex-sec">Muscles</div>
+        <div class="ex-pills" style="margin-bottom:8px;">${presets}</div>
+        <div class="ex-pills">${groups}</div>
+        <div class="ex-sec">Matériel</div>
+        <div class="segmented">${tiers}</div>
+        <div class="ex-hint">${escapeHtml(hint)}</div>
+        <button type="button" class="btn btn-primary ex-go" ${E.groupes.length?'':'disabled'} onclick="app.expressGenerate()">${E.groupes.length?'Générer la séance':'Choisis au moins un muscle'}</button>`;
+    } else {
+      const r = E.res, plan = r.plan;
+      const totMin = Math.round((r.total + r.reserve)/60);
+      const nSeries = plan.reduce((a,e)=>a+e.sets,0);
+      const gl = k=> (EXPRESS_GROUPS.find(g=>g.k===k)||{}).l || k;
+      const rows = plan.map((e,i)=>{
+        const img = exoImageSrc(e.nom);
+        const reps = e.timed ? e.reps+' s' : e.reps;
+        const detail = `<span class="nw">${e.sets} × ${reps}${e.uni?' / côté':''}</span> · <span class="nw">repos ${e.rest} s</span>`;
+        const tag = e.superset ? '<span class="tag">Superset</span>' : '';
+        return `<div class="ex-row">
+          <div class="ex-thumb ${img?'':'noimg'}">${img?`<img src="${img}" alt="" loading="lazy" onerror="this.parentNode.classList.add('fail')">`:''}<span class="ph">${SVG_DUMBBELL}</span></div>
+          <div class="ex-meta"><div class="n">${escapeHtml(e.nom)}${tag}</div><div class="d">${escapeHtml(gl(e.g))} · ${detail}</div></div>
+          <button type="button" class="icon-btn" title="Remplacer" aria-label="Remplacer ${escapeHtml(e.nom)}" onclick="app.expressSwap(${i})">${SVG_SWAP}</button>
+          <button type="button" class="icon-btn" title="Retirer" aria-label="Retirer ${escapeHtml(e.nom)}" onclick="app.expressRemove(${i})">${SVG_TRASH}</button>
+        </div>`;
+      }).join('');
+      const notes = r.notes.map(n=>`<div class="ex-note">${escapeHtml(n)}</div>`).join('');
+      body.innerHTML = `
+        <div class="ex-sum"><div class="big">≈ ${totMin} min</div><div class="sub">${plan.length} exercices · ${nSeries} séries${r.reserve?'<br>échauffement compris':''}</div></div>
+        ${notes}
+        <div class="ex-list">${rows}</div>
+        <div class="ex-actions">
+          <button type="button" class="btn btn-secondary" onclick="app.expressGenerate(true)">Regénérer</button>
+          <button type="button" class="btn btn-primary" onclick="app.expressLaunch()">Lancer la séance</button>
+        </div>
+        <button type="button" class="link ex-back" onclick="app.expressBack()">Modifier durée, muscles ou matériel</button>`;
+    }
+    body.scrollTop = E.step==='form' ? prevScroll : 0;
+  },
+  expressLaunch(){
+    const E = this._express; if(!E || !E.res || !E.res.plan.length) return;
+    const plan = E.res.plan.map(e=>({
+      exercice: e.nom,
+      series: Array.from({length:e.sets}, ()=>({poids:null,reps:null})),
+      format: 'normal', supersetNext: !!e.superset,
+      // prescription portee par l'exercice (lue comme celle d'un programme : repos du minuteur, objectif de reps)
+      def: Object.assign({series_reps: e.sets+'x'+e.reps+(e.timed?'s':''), recup: e.rest+'s'},
+        e.timed ? {mode:'reps_only', commentaire:'Gainage : note les secondes tenues dans REPS.'} : (e.uni ? {commentaire:'Chaque côté.'} : {}))
+    }));
+    const today = todayISO();
+    const existing = this.db.seances.find(s=>s.programmeId===FREE_MUSCU_PROGRAM_ID && s.seanceNumero===1 && s.date===today);
+    const go = ()=>{
+      this.closeExpress();
+      this.openLog(FREE_MUSCU_PROGRAM_ID, 1);
+      const L = this.currentLog;
+      L.exercices = (L.exercices||[]).concat(plan);
+      this.renderLog();
+      this.autosaveLog();
+    };
+    if(existing && existing.exercices && existing.exercices.length){
+      showConfirm('Tu as déjà une séance libre aujourd’hui. Ajouter ces exercices à la suite ?', go);
+    } else go();
+  },
+
   /* ---------- MINUTEUR DE REPOS ---------- */
   startRestTimer(exIdx){
     const L = this.currentLog;
     const prog = PROGRAMS.find(p=>p.id===L.programmeId);
     const seanceDef = prog.seances.find(s=>s.numero===L.seanceNumero);
     const exState = L.exercices[exIdx];
-    const def = (seanceDef.exercices||[]).find(e=>e.exercice===exState.exercice) || {};
+    const def = (seanceDef.exercices||[]).find(e=>e.exercice===exState.exercice) || exState.def || {};
     const seconds = parseRecupSeconds(def.recup) || REST_TIMER_DEFAULT_SEC;
     this._startRestTimerSeconds(seconds, exState.exercice);
   },
