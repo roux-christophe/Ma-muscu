@@ -2095,7 +2095,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261023075343';
+const APP_BUILD_VERSION = '20261023122615';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -5514,7 +5514,7 @@ const app = {
       }
     } else {
       this.currentLog = {
-        id: uid(), programmeId, seanceNumero, date: dateISO, notes:'', isEdit:false,
+        id: uid(), programmeId, seanceNumero, date: dateISO, notes:'', isEdit:false, startedAt: (dateISO===todayISO() ? Date.now() : null),
         // intensite demarre a 5 (modere) plutot que null : sans ca, une
         // seance dont on ne touche jamais le curseur d'intensite ne
         // produisait AUCUNE estimation de calories brulees (silencieux,
@@ -5748,7 +5748,7 @@ const app = {
           ${this.cardioBlockHTML(seanceDef, L.finisherCardio, 'finisher', null, null, true)}
         </div>`;
       }
-      if(!editingSeance) html += `<div class="field" style="margin-top:4px;"><label>Durée de la séance (min)</label><input type="number" inputmode="numeric" placeholder="0" value="${L.dureeMin!=null?L.dureeMin:''}" onchange="app.updateDureeMin(this.value)"></div>`;
+      if(!editingSeance) html += `<div class="field" style="margin-top:4px;"><label>Durée de la séance (min)</label><input type="number" inputmode="numeric" placeholder="${(L.startedAt && !L.endedAt && !L.cardio)?'Auto (chrono)':'0'}" value="${L.dureeMin!=null?L.dureeMin:''}" onchange="app.updateDureeMin(this.value)"></div>`;
     }
     // Intensite/resume/notes : n'ont de sens que pour un log de performance
     // date, pas pour la definition d'une seance perso -- masques en mode
@@ -6703,18 +6703,19 @@ const app = {
       const c = document.getElementById('lh-count'); if(c) c.textContent = done+' / '+tot+' séries';
     }
   },
-  // Chrono de seance : en memoire seulement (rien n'est enregistre). Affiche
-  // uniquement pour une seance du jour en cours de saisie ; masque au-dela de 4 h
+  // Chrono de seance : base sur L.startedAt (enregistre avec la seance), donc il
+  // continue si on quitte puis rouvre la seance ou si l'appli est fermee par iOS.
+  // Masque : seance d'un autre jour, seance deja terminee (endedAt, pose par
+  // "Enregistrer"), ancienne seance sans heure de depart, ou au-dela de 4 h
   // (seance laissee ouverte) pour ne jamais afficher une duree absurde.
   _logChronoSetup(L, editingSeance){
     const el = document.getElementById('log-chrono'); if(!el) return;
     clearInterval(this._chronoTimer);
-    if(editingSeance || L.isEdit || L.date!==todayISO()){ el.hidden = true; return; }
-    if(this._chronoLogId!==L.id){ this._chronoLogId = L.id; this._chronoStart = Date.now(); }
+    if(editingSeance || L.date!==todayISO() || !L.startedAt || L.endedAt){ el.hidden = true; return; }
     const tick = ()=>{
       const v = document.getElementById('view-log');
       if(!v || !v.classList.contains('active')){ clearInterval(this._chronoTimer); return; }
-      const sec = Math.floor((Date.now()-this._chronoStart)/1000);
+      const sec = Math.max(0, Math.floor((Date.now()-L.startedAt)/1000));
       if(sec>4*3600){ el.hidden = true; return; }
       const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), ss = sec%60;
       el.hidden = false;
@@ -7201,10 +7202,19 @@ const app = {
   },
   saveSeance(){
     if(this._editingProgramSeance){ this._saveEditedProgramSeance(); return; }
+    const L = this.currentLog;
+    let dureeAuto = null;
+    if(L && L.startedAt && !L.endedAt && L.date===todayISO()){
+      const ms = Date.now()-L.startedAt;
+      if(ms>0 && ms<=4*3600*1000){
+        L.endedAt = Date.now();
+        if(!L.cardio && L.dureeMin==null){ L.dureeMin = Math.max(1, Math.round(ms/60000)); dureeAuto = L.dureeMin; }
+      }
+    }
     if(!this.autosaveLog()) return;
     this.stopRestTimer();
     this.stopFormatTimer();
-    toast('Séance enregistrée ✅');
+    toast(dureeAuto ? 'Séance enregistrée ✅ · '+dureeAuto+' min' : 'Séance enregistrée ✅');
     nav.tab('sport');
   },
   deleteCurrentLog(){
