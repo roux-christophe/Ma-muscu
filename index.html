@@ -1847,6 +1847,14 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
       </div>
     </div>
 
+    <div class="section-title">Nutrition</div>
+    <div class="set-group">
+      <div class="set-row">
+        <div class="set-l"><span>Ajouter le sport au budget</span><button type="button" class="info-btn" title="En savoir plus" onclick="app.openInfo(this)" data-info="Activé : les calories de tes séances (valeur de la montre si tu la saisis, sinon estimation par intensité) s’ajoutent à ton budget calorique du jour, tu peux donc manger davantage.&#10;&#10;Désactivé : ton budget reste fixe, le sport devient un bonus de déficit. Recommandé quand tu cherches à perdre du poids, car les montres surestiment souvent les calories en musculation et que le journal est rarement complet.">i</button></div>
+        <label class="switch"><input type="checkbox" id="set-sport-budget" aria-label="Ajouter le sport au budget" onchange="app.toggleSportBudget(this.checked)"></label>
+      </div>
+    </div>
+
     <div class="section-title">Mes maxs (kg)<button type="button" class="info-btn" title="En savoir plus" onclick="app.openInfo(this)" data-info="Sert à calculer automatiquement les charges des programmes en pourcentage (Powerlifting, 5/3/1, Conjugate Method…).&#10;&#10;C’est un « max d’entraînement » au sens large, pas forcément ton vrai 1RM à l’échec. Mets-le à jour quand tu progresses.">i</button></div>
     <div class="set-group set-maxs">
       <div class="row">
@@ -2109,7 +2117,7 @@ const RECIPES = [{"id":"bol-petit-dej-yaourt-avoine-fruits","nom":"Bol petit-dé
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261029062720';
+const APP_BUILD_VERSION = '20261029071345';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -3891,6 +3899,11 @@ function intensiteToMET(intensite){
   return 3 + (i-1)*(6/9);
 }
 function estimateCaloriesSeance(L, seanceDef){
+  // Valeur MESUREE (Apple Watch / montre, "calories actives") : prioritaire sur
+  // l'estimation par intensite. Les calories actives d'une montre sont deja
+  // NETTES du repos, comme l'estimation (MET - 1) : on peut donc les ajouter
+  // telles quelles au budget du jour.
+  if(L && Number(L.caloriesMontre)>0) return Math.round(Number(L.caloriesMontre));
   if(!L || !L.intensite) return null;
   const poids = latestPoidsKg();
   if(!poids) return null;
@@ -5803,9 +5816,13 @@ const app = {
     // date, pas pour la definition d'une seance perso -- masques en mode
     // edition (cf. editProgramSeance).
     if(!editingSeance){
+      html += `<div class="field" style="margin-top:12px;"><label>Calories actives de la montre (kcal)</label>
+        <input type="number" inputmode="numeric" placeholder="Ex : 420" value="${L.caloriesMontre>0?L.caloriesMontre:''}" onchange="app.updateCaloriesMontre(this.value)">
+        <p class="small-note" style="margin-top:6px;">Reprends le chiffre « Calories actives » de l’entraînement (Apple Watch ou appli Forme). Si tu le renseignes, il remplace l’estimation par intensité et tu n’as plus à ajuster l’intensité pour tomber juste.</p>
+      </div>`;
       html += `<div class="field" style="margin-top:12px;"><label>Intensité ressentie (1 = léger, 10 = maximal)</label>
         <div class="pill-row">${Array.from({length:10},(_,i)=>i+1).map(n=>`<button type="button" class="pill ${L.intensite===n?'active':''}" onclick="app.setIntensite(${n})">${n}</button>`).join('')}</div>
-        <p class="small-note" style="margin-top:6px;">Sert uniquement à estimer les calories brûlées (approximatif, pas une mesure).</p>
+        <p class="small-note" style="margin-top:6px;">Sert à estimer les calories brûlées quand tu n’as pas la valeur de ta montre (approximatif, pas une mesure).</p>
       </div>`;
       const totalPoids = computeTotalPoidsSouleve(L, seanceDef);
       const calories = estimateCaloriesSeance(L, seanceDef);
@@ -5814,7 +5831,7 @@ const app = {
           <div class="section-title" style="margin-top:0;">Résumé de la séance</div>
           <div class="stat-grid">
             ${totalPoids>0?`<div class="stat-tile accent"><div class="v">${totalPoids.toLocaleString('fr-FR')} kg</div><div class="l">Poids total soulevé</div></div>`:''}
-            ${calories!=null?`<div class="stat-tile accent"><div class="v">≈ ${calories} kcal</div><div class="l">Calories brûlées (ajoutées à ton budget Nutrition du jour)</div></div>`:`<div class="stat-tile"><div class="v">—</div><div class="l">Renseigne la durée ci-dessus (et ton poids dans Nutrition) pour estimer les calories brûlées</div></div>`}
+            ${calories!=null?`<div class="stat-tile accent"><div class="v">≈ ${calories} kcal</div><div class="l">${L.caloriesMontre>0?'Calories actives (montre) — ajoutées':'Calories brûlées (estimation) — ajoutées'} ${this.db.settings.ajouterCaloriesSport!==false?'à':'<b>pas</b> à'} ton budget Nutrition du jour</div></div>`:`<div class="stat-tile"><div class="v">—</div><div class="l">Renseigne la durée ci-dessus (et ton poids dans Nutrition) pour estimer les calories brûlées</div></div>`}
           </div>
           <button type="button" class="btn btn-secondary" style="margin-top:12px;width:100%;" onclick="app.generateRecapImage()">📤 Partage séance</button>
         </div>`;
@@ -6145,6 +6162,7 @@ const app = {
     this.renderProgrammesPerso();
   },
   setIntensite(n){ this.currentLog.intensite = n; this.renderLog(); this.autosaveLog(); },
+  updateCaloriesMontre(v){ const n = parseFloat(String(v).replace(',','.')); this.currentLog.caloriesMontre = (isFinite(n) && n>0 && n<5000) ? Math.round(n) : null; this.renderLog(); this.autosaveLog(); },
   updateDureeMin(v){ this.currentLog.dureeMin = v===''?null:parseFloat(v); this.renderLog(); this.autosaveLog(); },
   updateCircuitAbdosDuree(v){ this.currentLog.circuitAbdosDureeMin = v===''?null:parseFloat(v); this.renderLog(); this.autosaveLog(); },
   circuitAbdosHTML(circuit, dureeMin){
@@ -6686,6 +6704,11 @@ const app = {
       const wl = this._wakeLock; this._wakeLock = null;
       try{ wl.release(); }catch(e){}
     }
+  },
+  toggleSportBudget(v){
+    this.db.settings.ajouterCaloriesSport = !!v;
+    if(!saveDBOrWarn(this.db)) return;
+    toast(v ? 'Le sport est ajouté à ton budget du jour' : 'Budget fixe : le sport n’est plus ajouté');
   },
   toggleWakeLock(v){
     this.db.settings.garderEcranAllume = !!v;
@@ -9709,6 +9732,7 @@ const app = {
   renderSettings(){
     document.getElementById('set-formats-avances').checked = !!this.db.settings.formatsAvances;
     document.getElementById('set-wakelock').checked = this.db.settings.garderEcranAllume !== false;
+    document.getElementById('set-sport-budget').checked = this.db.settings.ajouterCaloriesSport !== false;
     document.getElementById('set-prenom').value = this.db.settings.prenom || '';
     const isLight = this.db.settings.theme==='light';
     document.getElementById('set-theme-dark').classList.toggle('active', !isLight);
