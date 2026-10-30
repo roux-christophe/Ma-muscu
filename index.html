@@ -1883,7 +1883,7 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
       <div class="row" id="ia-dates" style="display:none;margin-top:10px;"><div class="field" style="margin:0;"><label for="ia-du">Du</label><input type="date" id="ia-du" onchange="app.iaDates()"></div><div class="field" style="margin:0;"><label for="ia-au">Au</label><input type="date" id="ia-au" onchange="app.iaDates()"></div></div>
       <span class="ia-lbl">Données à inclure</span><div class="pchips" id="ia-inclure" style="margin-top:6px;"></div>
       <span class="ia-lbl">Ce que je demande</span><div class="pchips" id="ia-objet" style="margin-top:6px;"></div>
-      <div class="field" style="margin-top:14px;margin-bottom:0;"><label for="ia-contexte">Contexte à toujours transmettre</label><textarea id="ia-contexte" rows="3" placeholder="Ex : presse et mollets = machine au maximum de charge ; je change souvent de machine." onchange="app.iaSaveContexte(this.value)"></textarea></div>
+      <div class="field" style="margin-top:14px;margin-bottom:0;"><label for="ia-contexte">Contexte à toujours transmettre</label><textarea id="ia-contexte" rows="3" placeholder="Ex : presse et mollets = machine au maximum de charge ; je change souvent de machine." onchange="app.iaSaveContexte(this.value)"></textarea><div class="ia-warn" id="ia-ctx-hint" style="display:none;">Vide : l’IA ne saura pas quelles machines sont au maximum, ni que tu changes de machine.</div></div>
       <div class="field" style="margin:12px 0 0;"><label for="ia-question">Ma question (optionnel)</label><input type="text" id="ia-question" placeholder="Ex : pourquoi mon poids stagne ?" oninput="app.iaRefresh()"></div>
     </div>
     <div class="ia-size" id="ia-size"></div>
@@ -2209,7 +2209,7 @@ RECIPES.push(...[{"id": "sp-wrap-poulet-yaourt-citron", "nom": "Wrap poulet, cru
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261030173901';
+const APP_BUILD_VERSION = '20261030182039';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -10151,6 +10151,7 @@ const app = {
     if(st.periode==='perso'){ const r0=this.iaRange(); document.getElementById('ia-du').value = r0.since; document.getElementById('ia-au').value = r0.until; }
     this.iaChips('ia-inclure', [['seances','Séances & charges'],['nutrition','Nutrition'],['corps','Poids & mensurations']], k=>st.inclure[k], 'inclure');
     this.iaChips('ia-objet', [['charges','Charges de ma prochaine séance'],['nutrition','Conseils alimentation'],['general','Analyse générale']], k=>st.objet[k], 'objet');
+    const _ch = document.getElementById('ia-ctx-hint'); if(_ch) _ch.style.display = (this.db.settings.iaContexte||'').trim() ? 'none' : 'block';
     const r = this.iaBuildPrompt();
     document.getElementById('ia-prompt-view').value = r.text;
     document.getElementById('ia-size').textContent = `≈ ${r.text.length.toLocaleString('fr-FR')} caractères · ${r.nSeances} séance${r.nSeances>1?'s':''} · ${r.nJours} jour${r.nJours>1?'s':''} d’alimentation`;
@@ -10184,7 +10185,13 @@ const app = {
       L.push('', `SÉANCES (${RG.label}, de la plus ancienne à la plus récente ; format poids×reps par série)`);
       logs.forEach(l=>{
         const prog = PROGRAMS.find(p=>p.id===l.programmeId);
-        const head = `${l.date} · ${prog?prog.nom:l.programmeId} séance ${l.seanceNumero}`
+        let plan = '';
+        if(prog && prog.semaines){
+          const sw = semaineAtDate(l.programmeId, l.date);
+          const wk = (sw && prog.semaines[sw-1]) || null;
+          if(wk) plan = ` · semaine ${sw}/${prog.semaines.length} du plan du coach (${wk.rpe}${wk.allegee?', semaine allégée':''})`;
+        }
+        const head = `${l.date} · ${prog?prog.nom:l.programmeId} séance ${l.seanceNumero}${plan}`
           + (l.dureeMin?` · ${l.dureeMin} min`:'') + (l.caloriesMontre?` · ${l.caloriesMontre} kcal actives (montre)`:'');
         const lines = [];
         (l.exercices||[]).forEach(e=>{
@@ -10228,7 +10235,8 @@ const app = {
       L.push(`- ${w.loggedCount} jours renseignés sur ${RG.jours} ; moyenne ${w.avgCal} kcal, P ${w.avgProt} g, G ${w.avgGluc} g, L ${w.avgLip} g`);
       w.perDay.filter(d=>d.logged).forEach(d=>{
         const sp = caloriesSportDuJour(d.date);
-        L.push(`  ${d.date} : ${Math.round(d.cal)} kcal, P ${Math.round(d.prot)}, G ${Math.round(d.gluc)}, L ${Math.round(d.lip)}${sp?' (sport estimé −'+sp+' kcal)':''}`);
+        const inc = (d.cal < 1000 || (pr && d.cal < 0.5*pr.objectifCal)) ? ' ⚠ journée probablement incomplète' : '';
+        L.push(`  ${d.date} : ${Math.round(d.cal)} kcal, P ${Math.round(d.prot)}, G ${Math.round(d.gluc)}, L ${Math.round(d.lip)}${inc}${sp?' (+ dépense sport estimée '+sp+' kcal)':''}`);
       });
       const cnt = {};
       db.journalAlimentaire.filter(e=>e.date>=since && e.date<=today).forEach(e=>{ cnt[e.nom] = (cnt[e.nom]||0)+1; });
@@ -10253,6 +10261,8 @@ const app = {
       'RÈGLES',
       '- Appuie-toi uniquement sur les séries réellement réalisées ci-dessous.',
       '- Charges : pas d’augmentation de plus de 5 % par rapport à ma dernière séance sur l’exercice (environ +2,5 kg au maximum sur un exercice de base), sauf changement de machine que je te signale. En cas de doute, garde la charge actuelle. Si une machine est au maximum, propose plutôt plus de répétitions ou un tempo plus lent.',
+      '- Quand une séance indique une semaine de plan du coach avec un RPE cible, ce plan est imposé : ne le contredis pas, ne propose que des ajustements prudents et dis explicitement quand tu t’y conformes.',
+      '- Si les jours marqués « probablement incomplète » font douter du journal alimentaire, dis-le avant de tirer des conclusions sur les calories.',
       '- Utilise EXACTEMENT les noms d’exercices écrits dans mes données.',
       '- Nutrition : repères généraux, pas de prescription médicale' + (plancher?'. Ne propose jamais moins de '+plancher+' kcal par jour':'') + '.',
       '- Si les données sont insuffisantes pour conclure, dis-le clairement plutôt que d’inventer.',
