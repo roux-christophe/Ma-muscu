@@ -470,6 +470,7 @@ details.ia-prev{margin:2px 0 14px;font-size:14px;color:var(--text-dim);}
 details.ia-prev summary{padding:10px 2px;cursor:pointer;min-height:24px;}
 #view-ia .card{margin-bottom:12px;}
 #ia-periode{gap:6px;}
+#confirm-message{white-space:pre-line;}
 #ia-periode .pchip{padding:8px 11px;}
 #view-ia .btnrow{display:flex;gap:10px;}
 #view-ia .btnrow .btn{flex:1;}
@@ -2209,7 +2210,7 @@ RECIPES.push(...[{"id": "sp-wrap-poulet-yaourt-citron", "nom": "Wrap poulet, cru
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261030182039';
+const APP_BUILD_VERSION = '20261030183458';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -4259,11 +4260,13 @@ function toast(msg){
 // installée sur l'écran d'accueil iOS, confirm()/alert() peuvent ne pas
 // s'afficher ou se comporter de façon incohérente selon la version d'iOS,
 // ce qui donnait l'impression que "Supprimer" ne faisait rien.
-function showConfirm(message, onConfirm){
+function showConfirm(message, onConfirm, yesLabel){
   const overlay = document.getElementById('confirm-overlay');
   const btnYes = document.getElementById('confirm-yes');
   const btnNo = document.getElementById('confirm-no');
   document.getElementById('confirm-message').textContent = message;
+  btnYes.textContent = yesLabel || 'Confirmer';
+  btnYes.className = yesLabel ? 'btn btn-primary' : 'btn btn-danger';
   overlay.style.display = 'flex';
   const cleanup = ()=>{ overlay.style.display='none'; btnYes.onclick=null; btnNo.onclick=null; };
   btnYes.onclick = ()=>{ cleanup(); onConfirm(); };
@@ -9694,6 +9697,28 @@ const app = {
     if(rel) BODY_PARTS.forEach(bp=>{ document.getElementById('mens-'+bp.key).value = rel[bp.key]!=null ? rel[bp.key] : ''; });
     document.getElementById('mens-del').style.display = rel ? '' : 'none';
   },
+  // Alerte (non bloquante) quand un tour varie plus qu'il n'est plausible depuis
+  // le relevé précédent : tolérance qui grandit avec le temps écoulé. Un écart
+  // aussi grand vient presque toujours d'un point de mesure différent, pas du corps.
+  mensWarnings(date, vals){
+    const out = [];
+    const olds = this.db.mensurations.filter(m=>m.date<date);
+    BODY_PARTS.forEach(bp=>{
+      if(vals[bp.key]==null) return;
+      const prev = olds.filter(m=>m[bp.key]!=null).sort((a,b)=>a.date<b.date?1:-1)[0];
+      if(!prev) return;
+      const days = Math.max(1, Math.round((new Date(date+'T00:00:00')-new Date(prev.date+'T00:00:00'))/86400000));
+      const w = days/7;
+      const membre = (bp.key==='bras' || bp.key==='cuisses');
+      const tol = membre ? 1.5+0.4*w : 2.5+0.7*w;
+      const d = Math.round((vals[bp.key]-prev[bp.key])*10)/10;
+      if(Math.abs(d) > tol){
+        const dur = days<14 ? days+' j' : Math.round(w)+' sem.';
+        out.push(`• ${bp.label} : ${d>0?'+':''}${String(d).replace('.',',')} cm en ${dur} (${prev[bp.key]} → ${vals[bp.key]}). Écart inhabituel.`);
+      }
+    });
+    return out;
+  },
   saveMensuration(){
     const date = document.getElementById('mens-date').value || todayISO();
     if(date>todayISO()){ toast('La date ne peut pas être dans le futur'); return; }
@@ -9706,6 +9731,11 @@ const app = {
       vals[bp.key] = Math.round(v*10)/10;
     }
     if(!Object.keys(vals).length){ toast('Renseigne au moins une mesure'); return; }
+    const warns = this.mensWarnings(date, vals);
+    if(warns.length && !this._mensForce){
+      showConfirm(warns.join('\n') + '\n\nVérifie le point de mesure (bouton ⓘ), puis enregistre quand même si c’est bon.', ()=>{ this._mensForce = true; try{ this.saveMensuration(); } finally { this._mensForce = false; } }, 'Enregistrer');
+      return;
+    }
     const prev = this.db.mensurations, orig = this._mensOrig;
     const old = prev.find(m=>m.date===orig) || prev.find(m=>m.date===date);
     this.db.mensurations = prev.filter(m=>m.date!==date && m.date!==orig);
@@ -10274,7 +10304,7 @@ const app = {
       '{"analyse":"résumé en 2 phrases","objectifs":[{"exercice":"nom exact","poids":82.5,"reps":8,"note":"raison en une phrase"}],"conseils":["conseil entraînement ou récupération"],"nutrition":["repère alimentaire"]}',
       '```',
       '',
-      '--- MES DONNÉES ---',
+      '--- MES DONNÉES (exportées le '+todayISO()+') ---',
     ];
     return {text: head.concat([''], L).join('\n'), nSeances, nJours, names:[...names]};
   },
