@@ -812,6 +812,28 @@ hr.sep{border:none; border-top:1px solid var(--card-border); margin:14px 0;}
 .pchips:empty{display:none;}
 .pchip{min-height:44px; padding:8px 14px; border-radius:999px; border:1px solid var(--card-border); background:var(--card-2); color:var(--text); font:inherit; font-size:14px; font-weight:600; cursor:pointer;}
 .pchip.on{background:var(--chip-bg); color:var(--chip-text); border-color:var(--accent-nutrition);}
+.sauces-box{margin-top:14px;padding-top:12px;border-top:1px solid var(--card-border);}
+.sauces-box .sb-h{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--text-dim);margin-bottom:8px;}
+.sauces-box .sb-h b{color:var(--text);font-weight:600;}
+.sauces-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.sauce-t{border:1px solid var(--card-border);background:var(--card-2);border-radius:14px;padding:8px 10px;display:flex;flex-direction:column;gap:6px;}
+.sauce-t.on{border-color:var(--accent-nutrition);background:var(--chip-bg);}
+.sauce-t .sn{font-size:14px;font-weight:600;color:var(--text);line-height:1.2;}
+.sauce-t .sk{font-size:12px;color:var(--text-dim);font-weight:400;}
+.sauce-t .sc{display:flex;align-items:center;justify-content:space-between;gap:6px;}
+.sauce-t .sc button{width:40px;height:40px;border-radius:12px;border:1px solid var(--card-border);background:var(--card);color:var(--text);font:inherit;font-size:20px;font-weight:600;line-height:1;cursor:pointer;padding:0;}
+.sauce-t .sc button:disabled{opacity:.35;}
+.sauce-t .sc span{min-width:20px;text-align:center;font-size:16px;font-weight:700;color:var(--text);}
+.favhead{display:flex;justify-content:space-between;align-items:center;margin:0 0 6px;}
+.favhead .section-title{margin:0;}
+.favhead button{background:none;border:none;color:var(--text-dim);font:inherit;font-size:13px;padding:8px 2px;cursor:pointer;}
+.favstrip{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;margin:0 -2px 6px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.favstrip::-webkit-scrollbar{display:none;}
+.favchip{flex:0 0 auto;display:flex;align-items:center;gap:6px;min-height:40px;max-width:70vw;padding:6px 14px;border-radius:999px;border:1px solid var(--card-border);background:var(--card-2);color:var(--text);font:inherit;font-size:14px;font-weight:600;cursor:pointer;}
+.favchip .fk{font-weight:400;font-size:12px;color:var(--text-dim);}
+.favchip .fn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.favchip.del{border-color:#c0392b;}
+.favchip.del svg{width:16px;height:16px;flex:0 0 auto;color:#c0392b;}
 .nudge{display:flex; gap:10px; align-items:center; padding:12px 14px; margin:0 0 12px; border-radius:16px; border:1px solid color-mix(in srgb, var(--accent-warn) 55%, var(--card-border)); background:color-mix(in srgb, var(--accent-warn) 12%, var(--card)); font-size:14px; line-height:1.4;}
 .nudge .nb{flex:none; min-height:44px; padding:8px 12px; border-radius:12px; border:1px solid var(--border-strong); background:var(--card-2); color:var(--text); font:inherit; font-weight:700; cursor:pointer;}
 
@@ -1732,7 +1754,7 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
     <div class="section-title">Détails</div>
     <div class="card">
       <div class="field"><label>Nom de l'aliment</label><input type="text" id="nutri-add-nom" placeholder="Ex : Poulet grillé"></div>
-      <div class="field" id="nutri-add-quantite-wrap" style="display:none;margin-top:12px;"><label>Quantité consommée (g ou ml)</label><input type="number" inputmode="numeric" id="nutri-add-quantite" placeholder="100" onfocus="this.select()" oninput="app.recalcFromQuantite()"><div class="pchips" id="nutri-add-chips"></div></div>
+      <div class="field" id="nutri-add-quantite-wrap" style="display:none;margin-top:12px;"><label>Quantité consommée (g ou ml)</label><input type="number" inputmode="numeric" id="nutri-add-quantite" placeholder="100" onfocus="this.select()" oninput="app.recalcFromQuantite()"><div class="pchips" id="nutri-add-chips"></div><div id="nutri-add-sauces"></div></div>
       <p class="small-note" style="margin-top:10px;" id="nutri-add-hint">Renseigne les valeurs pour la quantité que tu as mangée (pas forcément pour 100g).</p>
       <div class="row" style="margin-top:6px;">
         <div class="field"><label>Calories (kcal)</label><input type="number" inputmode="numeric" id="nutri-add-cal" placeholder="0"></div>
@@ -2132,7 +2154,7 @@ RECIPES.push(...[{"id": "sp-wrap-poulet-yaourt-citron", "nom": "Wrap poulet, cru
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261030163857';
+const APP_BUILD_VERSION = '20261030165815';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -3955,6 +3977,31 @@ function computePourcentageCible(def, programmeId, exercice, excludeId, last){
 // Formats usuels (verre, demi, dose...) pour les boissons alcoolisees : la base
 // est en valeurs /100 ml, personne ne boit "250 g" de biere. 1 ml ~ 1 g (ecart
 // < 5 % pour les alcools forts, sans consequence sur un suivi calorique).
+const FF_SAUCES = [
+  {k:'bbq',      l:'Barbecue',  db:"McDonald's - Sauce Barbecue (estimation)"},
+  {k:'moutarde', l:'Moutarde',  db:"McDonald's - Sauce Moutarde (estimation)"},
+  {k:'curry',    l:'Curry',     db:"McDonald's - Sauce Curry (estimation)"},
+  {k:'chinoise', l:'Chinoise',  db:"McDonald's - Sauce Chinoise aigre-douce (estimation)"},
+];
+// Sauces proposees pour les produits "a tremper" des enseignes (nuggets,
+// tenders, wings, frites...) — pas pour les burgers (sauce deja incluse).
+function foodHasSauces(nom){
+  const n = String(nom||'');
+  if(/sauce/i.test(n)) return false;
+  return /^(McDonald'?s|Burger King|KFC|Quick)\b/i.test(n) && (r=>/nugget|tender|wings?|frites|selects|sticks/i.test(r) && !/burger|wrap|mcflurry|salade/i.test(r))(n.replace(/^[^-]*-\s*/,''));
+}
+function ffSauceData(sa){
+  sa = sa || {};
+  const t = {cal:0, prot:0, gluc:0, lip:0, n:0, parts:[]};
+  FF_SAUCES.forEach(s=>{
+    const c = Number(sa[s.k])||0; if(c<=0) return;
+    const f = foodDbByName(s.db); if(!f) return;
+    const g = (f.portionG||25)*c/100;
+    t.cal += f.kcal*g; t.prot += f.prot*g; t.gluc += f.gluc*g; t.lip += f.lip*g;
+    t.n += c; t.parts.push(s.l.toLowerCase() + (c>1?' ×'+c:''));
+  });
+  return t;
+}
 function foodPortionPresets(nom, portionG){
   const n = String(nom||'').toLowerCase();
   const P = (arr)=>arr.map(([l,g])=>({l,g}));
@@ -3971,7 +4018,6 @@ function foodPortionPresets(nom, portionG){
   if(/^vin /.test(n)) return P([['Petit verre (10 cl)',100],['Verre (12 cl)',120],['Grand verre (15 cl)',150],['Bouteille ½ (37,5 cl)',375]]);
   if(/^(whisky|vodka|rhum|gin|cognac|tequila|eau de vie|absinthe)/.test(n)) return P([['Dose (4 cl)',40],['Double (8 cl)',80]]);
   if(/^(liqueur|amaretto|limoncello|cr[èe]me de cassis)/.test(n)) return P([['Verre (4 cl)',40],['Verre (6 cl)',60]]);
-  if(portionG) return [['½ portion',0.5],['1 portion',1],['2 portions',2],['3 portions',3]].map(([l,k])=>({l, g:Math.round(portionG*k)}));
   return [];
 }
 function intensiteToMET(intensite){
@@ -8619,6 +8665,8 @@ const app = {
     document.getElementById('nutri-add-quantite').value = '';
     document.getElementById('nutri-add-quantite-wrap').style.display = 'none';
     const _ch = document.getElementById('nutri-add-chips'); if(_ch) _ch.innerHTML = '';
+    const _sz = document.getElementById('nutri-add-sauces'); if(_sz) _sz.innerHTML = '';
+    this._favManage = false;
     document.getElementById('nutri-add-hint').textContent = "Renseigne les valeurs pour la quantité que tu as mangée (pas forcément pour 100g).";
     document.getElementById('nutri-add-favori').checked = false;
     document.getElementById('nutri-scan-zone').style.display = 'none';
@@ -8670,6 +8718,8 @@ const app = {
     document.getElementById('nutri-db-online-results').innerHTML = '';
     document.getElementById('nutri-db-online-zone').style.display = 'none';
     document.getElementById('nutri-add-save-btn').textContent = 'Enregistrer les modifications';
+    this._favManage = false;
+    this.renderPortionChips();
     this.renderFavoris();
     this.renderPlatsPerso();
     // Pas de "repas types" en mode modification d'un aliment deja au journal
@@ -8876,16 +8926,19 @@ const app = {
     document.getElementById('nutri-db-online-zone').style.display = 'none';
     this.recalcFromQuantite();
   },
+  // Favoris : bandeau horizontal compact (une ligne) au lieu d'une carte
+  // de N lignes qui repoussait tout le formulaire vers le bas. "Gérer"
+  // bascule en mode suppression (les pastilles deviennent des corbeilles).
   renderFavoris(){
     const wrap = document.getElementById('nutri-favoris-zone');
     const favs = this.db.alimentsFavoris;
-    if(!favs.length){ wrap.innerHTML = ''; return; }
-    wrap.innerHTML = `<div class="section-title" style="margin-top:0;">Favoris</div>
-      <div class="card">${favs.map(f=>`
-        <div class="list-row">
-          <div class="meta" style="cursor:pointer" onclick="app.addAlimentFromFavori('${f.id}')"><div class="t1">${escapeHtml(f.nom)}</div><div class="t2">${Math.round(f.cal)||0} kcal${f.portion?' · '+escapeHtml(f.portion):''}</div></div>
-          <button class="icon-btn" title="Retirer des favoris" onclick="event.stopPropagation(); app.deleteFavori('${f.id}')">${SVG_TRASH}</button>
-        </div>`).join('')}</div>`;
+    if(!favs.length){ wrap.innerHTML = ''; this._favManage = false; return; }
+    const man = !!this._favManage;
+    wrap.innerHTML = `<div class="favhead"><div class="section-title">Favoris (${favs.length})</div><button type="button" onclick="app._favManage=!app._favManage; app.renderFavoris()">${man?'Terminé':'Gérer'}</button></div>
+      <div class="favstrip">${favs.map(f=>man
+        ? `<button type="button" class="favchip del" onclick="app.deleteFavori('${f.id}')" aria-label="Retirer ${escapeHtml(f.nom)} des favoris"><span class="fn">${escapeHtml(f.nom)}</span>${SVG_TRASH}</button>`
+        : `<button type="button" class="favchip" onclick="app.addAlimentFromFavori('${f.id}')"><span class="fn">${escapeHtml(f.nom)}</span><span class="fk">${Math.round(f.cal)||0} kcal</span></button>`
+      ).join('')}</div>`;
   },
   deleteFavori(favId){
     showConfirm('Retirer cet aliment des favoris ?', ()=>{
@@ -9176,6 +9229,37 @@ const app = {
     const presets = (ctx && ctx.product100g) ? foodPortionPresets(nom, ctx.product100g.portionG) : [];
     const q = parseFloat(document.getElementById('nutri-add-quantite').value);
     box.innerHTML = presets.map(p=>`<button type="button" class="pchip${q===p.g?' on':''}" onclick="app.setPortionG(${p.g})">${escapeHtml(p.l)}</button>`).join('');
+    this.renderSauces();
+  },
+  // Sauces des enseignes : compteur par sauce, leurs kcal/macros s'AJOUTENT
+  // a l'aliment. Stockees dans product100g.sauces => suivent l'entree du
+  // journal, les favoris et la modification sans code supplementaire.
+  renderSauces(){
+    const z = document.getElementById('nutri-add-sauces');
+    if(!z) return;
+    const ctx = this._nutriAdd;
+    const nom = (document.getElementById('nutri-add-nom')||{}).value;
+    if(!ctx || !ctx.product100g || !foodHasSauces(nom)){ z.innerHTML = ''; return; }
+    const sa = ctx.product100g.sauces || {};
+    const tot = ffSauceData(sa);
+    z.innerHTML = `<div class="sauces-box"><div class="sb-h"><b>Sauces</b><span>${tot.n? '+'+Math.round(tot.cal)+' kcal ('+tot.n+' sauce'+(tot.n>1?'s':'')+')' : 'ajoutées aux calories'}</span></div>
+      <div class="sauces-grid">${FF_SAUCES.map(s=>{
+        const f = foodDbByName(s.db); if(!f) return '';
+        const c = Number(sa[s.k])||0;
+        const kc = Math.round(f.kcal*(f.portionG||25)/100);
+        return `<div class="sauce-t${c?' on':''}"><div class="sn">${s.l} <span class="sk">${kc} kcal</span></div>
+          <div class="sc"><button type="button" aria-label="Retirer une sauce ${s.l}" ${c?'':'disabled'} onclick="app.setSauce('${s.k}',-1)">−</button><span>${c}</span><button type="button" aria-label="Ajouter une sauce ${s.l}" onclick="app.setSauce('${s.k}',1)">+</button></div></div>`;
+      }).join('')}</div></div>`;
+  },
+  setSauce(k, d){
+    const ctx = this._nutriAdd;
+    if(!ctx || !ctx.product100g) return;
+    // copie : product100g peut etre partage avec un favori / une entree du journal
+    const sa = {...(ctx.product100g.sauces||{})};
+    sa[k] = Math.max(0, Math.min(9, (Number(sa[k])||0) + d));
+    if(!sa[k]) delete sa[k];
+    ctx.product100g = {...ctx.product100g, sauces: sa};
+    this.recalcFromQuantite();
   },
   setPortionG(g){
     document.getElementById('nutri-add-quantite').value = g;
@@ -9189,11 +9273,12 @@ const app = {
     if(!q){ return; }
     const p = ctx.product100g;
     const f = q/100;
-    document.getElementById('nutri-add-cal').value = Math.round((p.cal||0)*f);
-    document.getElementById('nutri-add-prot').value = Math.round((p.prot||0)*f*10)/10;
-    document.getElementById('nutri-add-gluc').value = Math.round((p.gluc||0)*f*10)/10;
-    document.getElementById('nutri-add-lip').value = Math.round((p.lip||0)*f*10)/10;
-    document.getElementById('nutri-add-portion').value = q+' g';
+    const sx = ffSauceData(p.sauces);
+    document.getElementById('nutri-add-cal').value = Math.round((p.cal||0)*f + sx.cal);
+    document.getElementById('nutri-add-prot').value = Math.round(((p.prot||0)*f + sx.prot)*10)/10;
+    document.getElementById('nutri-add-gluc').value = Math.round(((p.gluc||0)*f + sx.gluc)*10)/10;
+    document.getElementById('nutri-add-lip').value = Math.round(((p.lip||0)*f + sx.lip)*10)/10;
+    document.getElementById('nutri-add-portion').value = q+' g' + (sx.n ? ' + sauce '+sx.parts.join(', ') : '');
     this.renderNutriAddDetail();
   },
   // Bloc "detail nutritionnel" (sucres/AG satures/fibres/sel + additifs) —
