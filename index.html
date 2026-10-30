@@ -458,6 +458,21 @@ button{font-family:inherit;}
 .exo-meta-row .em{font-size:12.5px; color:var(--text-faint); font-weight:700;}
 .exo-meta-row .em b{color:var(--text-dim); font-weight:800;}
 .em.target{color:var(--chip-text); background:var(--chip-bg); padding:3px 10px; border-radius:99px;}
+.em.ia{display:inline-block; margin-top:7px; padding:5px 12px; border-radius:14px; border:1px dashed var(--accent-nutrition); color:var(--text); background:transparent; line-height:1.4;}
+.ia-lbl{font-size:13px;color:var(--text-dim);margin:14px 0 2px;display:block;}
+.ia-lbl:first-child{margin-top:0;}
+.ia-size{font-size:13px;color:var(--text-dim);margin:10px 2px 12px;}
+.ia-warn{font-size:12.5px;color:var(--accent-warn);margin-top:3px;line-height:1.35;}
+.ia-ok{font-size:12.5px;color:var(--text-dim);margin-top:3px;line-height:1.35;}
+.ia-ul{margin:6px 0 0;padding-left:18px;font-size:14px;line-height:1.5;}
+.ia-ul li{margin-bottom:5px;}
+details.ia-prev{margin:2px 0 14px;font-size:14px;color:var(--text-dim);}
+details.ia-prev summary{padding:10px 2px;cursor:pointer;min-height:24px;}
+#view-ia .card{margin-bottom:12px;}
+#ia-periode{gap:6px;}
+#ia-periode .pchip{padding:8px 11px;}
+#view-ia .btnrow{display:flex;gap:10px;}
+#view-ia .btnrow .btn{flex:1;}
 
 /* ---------- TABLEAU DE SERIES (Serie / KG / REPS / valide) ---------- */
 .series-head{display:grid; grid-template-columns:32px 1fr 1fr 32px; gap:9px; padding:14px 3px 6px; font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; color:var(--text-faint);}
@@ -1033,6 +1048,14 @@ html, body{ overscroll-behavior-x:none; }
 .exo-ic .exo-fb{ display:none; align-items:center; justify-content:center; width:100%; height:100%; color:var(--text-dim); }
 .exo-header .exo-ic.has-img.img-fail img, .list-row .exo-ic.has-img.img-fail img, .exo-ic.img-fail img{ display:none; }
 .exo-ic.img-fail .exo-fb{ display:flex; }
+.exo-ic.has-img{ position:relative; }
+.exo-ic.has-img .exo-fb{ display:flex; position:absolute; inset:0; }
+.exo-ic.has-img.img-ok .exo-fb{ display:none; }
+.exo-ic.has-img:not(.img-ok) img{ opacity:0; }
+.exo-ic.has-img img{ transition:opacity .2s; }
+.ex-thumb{ position:relative; }
+.ex-thumb:not(.noimg):not(.ok):not(.fail) .ph{ display:flex; position:absolute; inset:0; }
+.ex-thumb:not(.noimg):not(.ok) img{ opacity:0; }
 
 /* Mode focus : pendant une seance, la navbar disparait (plus de faux tap
    vers un autre onglet) ; le bouton Enregistrer descend en bas d'ecran. */
@@ -1850,6 +1873,31 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
   </div>
 
   <!-- ===== REGLAGES ===== -->
+  <!-- ===== ANALYSE PAR IA (option "copier / coller", aucune cle API, rien n'est envoye par l'appli) ===== -->
+  <div class="view" id="view-ia">
+    <div class="topbar"><button class="back" onclick="nav.back()">‹</button><h1>Analyse par IA</h1></div>
+    <p class="small-note" style="margin-top:0;">L’appli n’envoie rien : tu copies un résumé de tes données, tu le colles dans ton IA (Claude, ChatGPT…), puis tu rapportes sa réponse ici pour en récupérer les objectifs de charge.</p>
+    <div class="section-title">1 · Préparer mes données</div>
+    <div class="card">
+      <span class="ia-lbl">Période</span><div class="pchips" id="ia-periode" style="margin-top:6px;"></div>
+      <div class="row" id="ia-dates" style="display:none;margin-top:10px;"><div class="field" style="margin:0;"><label for="ia-du">Du</label><input type="date" id="ia-du" onchange="app.iaDates()"></div><div class="field" style="margin:0;"><label for="ia-au">Au</label><input type="date" id="ia-au" onchange="app.iaDates()"></div></div>
+      <span class="ia-lbl">Données à inclure</span><div class="pchips" id="ia-inclure" style="margin-top:6px;"></div>
+      <span class="ia-lbl">Ce que je demande</span><div class="pchips" id="ia-objet" style="margin-top:6px;"></div>
+      <div class="field" style="margin-top:14px;margin-bottom:0;"><label for="ia-contexte">Contexte à toujours transmettre</label><textarea id="ia-contexte" rows="3" placeholder="Ex : presse et mollets = machine au maximum de charge ; je change souvent de machine." onchange="app.iaSaveContexte(this.value)"></textarea></div>
+      <div class="field" style="margin:12px 0 0;"><label for="ia-question">Ma question (optionnel)</label><input type="text" id="ia-question" placeholder="Ex : pourquoi mon poids stagne ?" oninput="app.iaRefresh()"></div>
+    </div>
+    <div class="ia-size" id="ia-size"></div>
+    <div class="btnrow"><button class="btn btn-primary" onclick="app.iaCopy()">Copier pour mon IA</button><button class="btn btn-secondary" id="ia-share" onclick="app.iaShare()">Partager…</button></div>
+    <details class="ia-prev"><summary>Voir exactement ce qui sera copié</summary><textarea class="raw" id="ia-prompt-view" readonly></textarea></details>
+    <div class="section-title">2 · Coller la réponse de l’IA</div>
+    <div class="card">
+      <div class="field" style="margin-bottom:12px;"><textarea id="ia-reponse" rows="5" placeholder="Colle ici la réponse complète de l’IA (avec son bloc JSON final)"></textarea></div>
+      <button class="btn btn-secondary" onclick="app.iaRead()">Lire la réponse</button>
+    </div>
+    <div id="ia-result"></div>
+    <div id="ia-history"></div>
+  </div>
+
   <div class="view" id="view-settings">
     <div class="topbar" style="margin:0 -16px 4px;"><h1>Réglages</h1></div>
 
@@ -1899,6 +1947,13 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
       <div class="row">
         <div class="field"><label for="set-max-deadlift">Soulevé de terre</label><input type="number" inputmode="decimal" id="set-max-deadlift" placeholder="0" onchange="app.setMax('Soulevé de terre', this.value)"></div>
         <div class="field"><label for="set-max-press">Développé militaire</label><input type="number" inputmode="decimal" id="set-max-press" placeholder="0" onchange="app.setMax('Développé militaire', this.value)"></div>
+      </div>
+    </div>
+
+    <div class="section-title">Intelligence artificielle</div>
+    <div class="set-group">
+      <div class="set-row set-link last" onclick="app.iaOpen()">
+        <div class="set-l"><div><div>Analyse par IA</div><div class="set-sub">Prépare tes données pour ton IA, importe ses objectifs</div></div></div><div class="chev">›</div>
       </div>
     </div>
 
@@ -2154,7 +2209,7 @@ RECIPES.push(...[{"id": "sp-wrap-poulet-yaourt-citron", "nom": "Wrap poulet, cru
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261030165815';
+const APP_BUILD_VERSION = '20261030173901';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -2805,10 +2860,12 @@ function defaultSettings(){
     // l'ecran Recettes (cf. RECIPES) : persiste pour eviter de tout recocher
     // a chaque fois, le contenu du frigo changeant peu d'une fois sur l'autre.
     ingredientsDisponibles: [],
+    // Contexte libre ajoute a l'export IA (ex : machines au maximum de charge)
+    iaContexte: '',
   };
 }
 function defaultDB(){
-  return { version: 1, settings: defaultSettings(), seances: [], pesees: [], mensurations: [], journalAlimentaire: [], alimentsFavoris: [], hydratation: [], repasTypes: [], listesCourses: [], recettesACuisiner: [], platsPerso: [], checkins: [], programmesPerso: [], exercicesPerso: [] };
+  return { version: 1, settings: defaultSettings(), seances: [], pesees: [], mensurations: [], journalAlimentaire: [], alimentsFavoris: [], hydratation: [], repasTypes: [], listesCourses: [], recettesACuisiner: [], platsPerso: [], checkins: [], programmesPerso: [], exercicesPerso: [], iaObjectifs: {}, iaConseils: [] };
 }
 function tryParseDB(raw){
   if(!raw) return null;
@@ -2856,6 +2913,10 @@ function tryParseDB(raw){
       // le catalogue integre restera toujours incomplet face a des variantes
       // trop specifiques/personnelles pour justifier un ajout global au code.
       exercicesPerso: Array.isArray(data.exercicesPerso) ? data.exercicesPerso : [],
+      // Analyse par IA (cf. iaOpen) : objectifs de charge importes depuis la reponse
+      // d'une IA {exercice:{poids,reps,note,date}} + historique des conseils.
+      iaObjectifs: (data.iaObjectifs && typeof data.iaObjectifs==='object' && !Array.isArray(data.iaObjectifs)) ? data.iaObjectifs : {},
+      iaConseils: Array.isArray(data.iaConseils) ? data.iaConseils : [],
     });
   }catch(e){ return null; }
 }
@@ -5898,7 +5959,7 @@ const app = {
           ${iAmTopHalf?`<div class="superset-badge">⚡ SUPERSET</div>`:''}
           <div class="exo-header">
             ${exoImg
-              ? `<div class="exo-ic has-img" title="Voir le poster anatomique" onclick="app.openExoImage('${encodeURIComponent(exState.exercice)}')"><img src="${exoImg}" alt="${escapeHtml(exState.exercice)}" loading="lazy" onerror="this.parentNode.classList.add('img-fail')"><span class="exo-fb" aria-hidden="true">${SVG_DUMBBELL}</span></div>`
+              ? `<div class="exo-ic has-img" title="Voir le poster anatomique" onclick="app.openExoImage('${encodeURIComponent(exState.exercice)}')"><img src="${exoImg}" alt="${escapeHtml(exState.exercice)}" loading="lazy" onload="this.parentNode.classList.add('img-ok')" onerror="this.parentNode.classList.add('img-fail')"><span class="exo-fb" aria-hidden="true">${SVG_DUMBBELL}</span></div>`
               : `<div class="exo-ic">${SVG_DUMBBELL}</div>`}
             <div class="exo-info">
               <div class="exo-name">${escapeHtml(exState.exercice)}</div>
@@ -5917,6 +5978,7 @@ const app = {
           <div class="em" style="display:block;margin-top:7px;">${last? 'Dernière fois ('+fmtDateHuman(last.date)+') : '+formatSeries(last.series) : (globalLast ? 'Pas encore fait dans ce programme · ailleurs ('+fmtDateHuman(globalLast.date)+') : '+formatSeries(globalLast.series) : 'Pas encore de données pour cet exercice')}
             <button class="link" style="margin-left:6px;font-size:12px;" onclick="app.showExoHistory('${encodeURIComponent(exState.exercice)}')">Historique</button></div>
           ${suggestion?`<div class="em target" style="display:inline-block;margin-top:7px;">${escapeHtml(suggestion)}</div>`:''}
+          ${(()=>{ const o=this.iaObjectifActif(exState.exercice, L); return o ? `<div class="em ia">🤖 <b>Objectif IA : ${o.poids} kg${o.reps?' × '+o.reps:''}</b>${o.note?' — '+escapeHtml(o.note):''}</div>` : ''; })()}
           ${pourcentageCible?`<div class="em target" style="display:block;margin-top:7px;">${pourcentageCible.titre?escapeHtml(pourcentageCible.titre)+' — ':''}${escapeHtml(pourcentageCible.texte)}${pourcentageCible.maxManquant?` <button class="link" style="font-size:12px;" onclick="nav.tab('settings')">renseigne ton max (${escapeHtml(pourcentageCible.maxManquant)})</button>`:''}</div>`:''}
           ${fmtSelectRow}
           ${bodyHTML}
@@ -6298,7 +6360,7 @@ const app = {
     const rows = circuit.exercices.map(e=>{
       const img = exoImageSrc(e.nom);
       const icon = img
-        ? `<div class="exo-ic has-img" title="Voir le poster anatomique" onclick="app.openExoImage('${encodeURIComponent(e.nom)}')"><img src="${img}" alt="${escapeHtml(e.nom)}" loading="lazy"></div>`
+        ? `<div class="exo-ic has-img" title="Voir le poster anatomique" onclick="app.openExoImage('${encodeURIComponent(e.nom)}')"><img src="${img}" alt="${escapeHtml(e.nom)}" loading="lazy" onload="this.parentNode.classList.add('img-ok')" onerror="this.parentNode.classList.add('img-fail')"><span class="exo-fb" aria-hidden="true">${SVG_DUMBBELL}</span></div>`
         : `<div class="exo-ic">${SVG_DUMBBELL}</div>`;
       return `
       <div class="list-row" style="align-items:flex-start;">
@@ -6619,7 +6681,7 @@ const app = {
         const detail = `<span class="nw">${e.sets} × ${reps}${e.uni?' / côté':''}</span> · <span class="nw">repos ${e.rest} s</span>`;
         const tag = e.superset ? '<span class="tag">Superset</span>' : '';
         return `<div class="ex-row">
-          <div class="ex-thumb ${img?'':'noimg'}">${img?`<img src="${img}" alt="" loading="lazy" onerror="this.parentNode.classList.add('fail')">`:''}<span class="ph">${SVG_DUMBBELL}</span></div>
+          <div class="ex-thumb ${img?'':'noimg'}">${img?`<img src="${img}" alt="" loading="lazy" onload="this.parentNode.classList.add('ok')" onerror="this.parentNode.classList.add('fail')">`:''}<span class="ph">${SVG_DUMBBELL}</span></div>
           <div class="ex-meta"><div class="n">${escapeHtml(e.nom)}${tag}</div><div class="d">${escapeHtml(gl(e.g))} · ${detail}</div></div>
           <button type="button" class="icon-btn" title="Remplacer" aria-label="Remplacer ${escapeHtml(e.nom)}" onclick="app.expressSwap(${i})">${SVG_SWAP}</button>
           <button type="button" class="icon-btn" title="Retirer" aria-label="Retirer ${escapeHtml(e.nom)}" onclick="app.expressRemove(${i})">${SVG_TRASH}</button>
@@ -10030,6 +10092,299 @@ const app = {
     document.body.removeChild(a);
     setTimeout(()=>URL.revokeObjectURL(url), 1000);
     toast('Fichier de sauvegarde téléchargé');
+  },
+
+  /* ---------- ANALYSE PAR IA (copier / coller) ----------
+     Aucune cle API, aucun appel reseau : l'appli fabrique un texte (profil,
+     seances, poids, nutrition + consignes + format de reponse JSON) que
+     l'utilisateur colle dans SON IA (abonnement existant), puis relit la
+     reponse ici. L'IA ne modifie JAMAIS les cibles caloriques ni le
+     plancher de securite : ses propositions de charge sont affichees a
+     cote de l'objectif de double progression de l'appli, jamais a sa place. */
+  iaNorm(t){ return String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,' ').trim(); },
+  iaOpen(){
+    if(!this._ia) this._ia = {periode:4, du:null, au:null, inclure:{seances:true, nutrition:true, corps:true}, objet:{charges:true, nutrition:true, general:false}};
+    document.getElementById('ia-contexte').value = this.db.settings.iaContexte || '';
+    document.getElementById('ia-reponse').value = '';
+    document.getElementById('ia-result').innerHTML = '';
+    document.getElementById('ia-share').style.display = (navigator.share ? '' : 'none');
+    nav.push('view-ia');
+    this.iaRefresh();
+    this.iaRenderHistory();
+  },
+  iaSet(grp, key){
+    const st = this._ia;
+    if(grp==='periode') st.periode = (key==='perso' ? 'perso' : Number(key)); else st[grp][key] = !st[grp][key];
+    if(grp==='periode' && key==='perso'){ const t=todayISO(); st.du = st.du || addDaysISO(t,-28); st.au = st.au || t; }
+    this.iaRefresh();
+  },
+  iaDates(){
+    const st = this._ia;
+    st.du = document.getElementById('ia-du').value || null;
+    st.au = document.getElementById('ia-au').value || null;
+    this.iaRefresh();
+  },
+  iaRange(){
+    const st = this._ia, t = todayISO();
+    if(st.periode==='perso'){
+      let a = st.du || addDaysISO(t,-28), b = st.au || t;
+      if(a>b){ const x=a; a=b; b=x; }
+      const lim = addDaysISO(b,-365); if(a<lim) a = lim;
+      const jours = Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/86400000)+1;
+      return {since:a, until:b, jours, label:`du ${a} au ${b}`};
+    }
+    const w = st.periode;
+    return {since:addDaysISO(t,-7*w), until:t, jours:7*w, label:`${w} dernières semaines`};
+  },
+  iaSaveContexte(v){
+    this.db.settings.iaContexte = String(v||'').trim().slice(0,600);
+    saveDBOrWarn(this.db);
+    this.iaRefresh();
+  },
+  iaChips(id, items, isOn, grp){
+    document.getElementById(id).innerHTML = items.map(([k,l])=>`<button type="button" class="pchip${isOn(k)?' on':''}" onclick="app.iaSet('${grp}','${k}')">${escapeHtml(l)}</button>`).join('');
+  },
+  iaRefresh(){
+    const st = this._ia; if(!st) return;
+    this.iaChips('ia-periode', [[4,'4 sem.'],[8,'8 sem.'],[12,'12 sem.'],['perso','Dates']], k=>st.periode===k, 'periode');
+    const dr = document.getElementById('ia-dates'); dr.style.display = st.periode==='perso' ? 'flex' : 'none';
+    if(st.periode==='perso'){ const r0=this.iaRange(); document.getElementById('ia-du').value = r0.since; document.getElementById('ia-au').value = r0.until; }
+    this.iaChips('ia-inclure', [['seances','Séances & charges'],['nutrition','Nutrition'],['corps','Poids & mensurations']], k=>st.inclure[k], 'inclure');
+    this.iaChips('ia-objet', [['charges','Charges de ma prochaine séance'],['nutrition','Conseils alimentation'],['general','Analyse générale']], k=>st.objet[k], 'objet');
+    const r = this.iaBuildPrompt();
+    document.getElementById('ia-prompt-view').value = r.text;
+    document.getElementById('ia-size').textContent = `≈ ${r.text.length.toLocaleString('fr-FR')} caractères · ${r.nSeances} séance${r.nSeances>1?'s':''} · ${r.nJours} jour${r.nJours>1?'s':''} d’alimentation`;
+  },
+  iaBuildPrompt(){
+    const st = this._ia, db = this.db, s = db.settings;
+    const RG = this.iaRange(), today = RG.until, since = RG.since;
+    const fmt = n => (Math.round(n*10)/10).toString().replace('.',',');
+    const L = [];
+    const poids = latestPoidsKg();
+    const age = ageFromDateNaissance(s.dateNaissance);
+    const pr = calculNutritionProfil();
+    const niv = NIVEAUX_ACTIVITE.find(n=>n.id===(s.niveauActivite||3));
+    L.push('PROFIL');
+    L.push(`- ${s.sexe||'sexe non renseigné'}, ${age!=null?age+' ans':'âge non renseigné'}, ${s.taille?s.taille+' cm':'taille non renseignée'}, poids actuel ${poids?fmt(poids)+' kg':'non renseigné'}`);
+    if(s.objectifPoids) L.push(`- Objectif de poids : ${s.objectifPoids} kg${s.objectifDate?' au '+s.objectifDate:''}${(s.objectifRythme!=null&&s.objectifRythme!=='')?' (rythme '+s.objectifRythme+' kg/semaine)':''}`);
+    if(niv) L.push(`- Activité quotidienne hors séances : ${niv.label}`);
+    let plancher = null;
+    if(pr){
+      plancher = Math.max(pr.bmr, s.sexe==='homme'?1500:1200);
+      L.push(`- Cibles de l’appli : ${pr.objectifCal} kcal/jour (métabolisme de base ${pr.bmr}, dépense estimée ${pr.tdee}${pr.plancherApplique?', plancher de sécurité appliqué':''}) ; protéines ${pr.macros.proteines} g, glucides ${pr.macros.glucides} g, lipides ${pr.macros.lipides} g`);
+    }
+    const maxs = Object.entries(s.maxs||{}).filter(([k,v])=>Number(v)>0);
+    if(maxs.length) L.push('- Maxs renseignés : '+maxs.map(([k,v])=>k+' '+v+' kg').join(', '));
+    if(s.iaContexte) L.push('- Contexte donné par moi : '+s.iaContexte);
+
+    const names = new Set();
+    let nSeances = 0;
+    if(st.inclure.seances){
+      const logs = db.seances.filter(l=>l.date>=since && l.date<=today).slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+      L.push('', `SÉANCES (${RG.label}, de la plus ancienne à la plus récente ; format poids×reps par série)`);
+      logs.forEach(l=>{
+        const prog = PROGRAMS.find(p=>p.id===l.programmeId);
+        const head = `${l.date} · ${prog?prog.nom:l.programmeId} séance ${l.seanceNumero}`
+          + (l.dureeMin?` · ${l.dureeMin} min`:'') + (l.caloriesMontre?` · ${l.caloriesMontre} kcal actives (montre)`:'');
+        const lines = [];
+        (l.exercices||[]).forEach(e=>{
+          const _sr = (e.series||[]).filter(x=>x && x.poids!=null && x.reps!=null).map(x=>fmt(x.poids)+'×'+x.reps);
+          const ser = []; _sr.forEach(t=>{ const l=ser[ser.length-1]; if(l && l.t===t) l.n++; else ser.push({t,n:1}); });
+          ser.forEach((o,i)=>{ ser[i] = o.n>1 ? o.t+' ×'+o.n : o.t; });
+          if(ser.length){ lines.push(`    ${e.exercice} : ${ser.join(', ')}`); names.add(e.exercice); }
+        });
+        if(l.cardio && l.cardio.blocs){
+          const c = l.cardio.blocs.filter(b=>b && (b.duree||b.distance)).map(b=>`${b.type} ${b.duree?b.duree+' min':''}${b.distance?' '+b.distance+' km':''}`.trim());
+          if(c.length) lines.push('    cardio : '+c.join(' + '));
+        }
+        if(lines.length){ nSeances++; L.push('- '+head); lines.forEach(x=>L.push(x)); }
+      });
+      if(!nSeances) L.push('- (aucune séance enregistrée sur la période)');
+    }
+    if(st.inclure.corps){
+      const pes = db.pesees.slice().sort((a,b)=>a.date<b.date?-1:1);
+      const before = pes.filter(p=>p.date<since).slice(-1);
+      const inP = pes.filter(p=>p.date>=since && p.date<=today);
+      L.push('', 'POIDS (kg)');
+      const all = before.concat(inP);
+      L.push(all.length ? '- '+all.map(p=>`${p.date} ${fmt(p.poids)}${p.heure?' ('+p.heure+')':''}`).join(' ; ') : '- (aucune pesée)');
+      const mens = db.mensurations.slice().sort((a,b)=>a.date<b.date?-1:1).filter(m=>m.date<=today).slice(-4);
+      if(mens.length){
+        L.push('', 'MENSURATIONS (cm)');
+        mens.forEach(m=>L.push('- '+m.date+' : '+BODY_PARTS.filter(bp=>m[bp.key]!=null).map(bp=>bp.label.replace('Tour de ','')+' '+m[bp.key]).join(', ')));
+      }
+    }
+    let nJours = 0;
+    if(st.inclure.nutrition){
+      const perDay = [];
+      for(let i=0;i<RG.jours;i++){
+        const iso = addDaysISO(since, i), en = db.journalAlimentaire.filter(e=>e.date===iso);
+        perDay.push({date:iso, logged:en.length>0, cal:en.reduce((a,e)=>a+(Number(e.cal)||0),0), prot:en.reduce((a,e)=>a+(Number(e.prot)||0),0), gluc:en.reduce((a,e)=>a+(Number(e.gluc)||0),0), lip:en.reduce((a,e)=>a+(Number(e.lip)||0),0)});
+      }
+      const lg = perDay.filter(d=>d.logged), av = k=>lg.length?Math.round(lg.reduce((a,d)=>a+d[k],0)/lg.length):0;
+      const w = {perDay, loggedCount:lg.length, avgCal:av('cal'), avgProt:av('prot'), avgGluc:av('gluc'), avgLip:av('lip')};
+      nJours = w.loggedCount;
+      L.push('', `ALIMENTATION (${RG.label} ; kcal / protéines / glucides / lipides par jour renseigné)`);
+      L.push(`- ${w.loggedCount} jours renseignés sur ${RG.jours} ; moyenne ${w.avgCal} kcal, P ${w.avgProt} g, G ${w.avgGluc} g, L ${w.avgLip} g`);
+      w.perDay.filter(d=>d.logged).forEach(d=>{
+        const sp = caloriesSportDuJour(d.date);
+        L.push(`  ${d.date} : ${Math.round(d.cal)} kcal, P ${Math.round(d.prot)}, G ${Math.round(d.gluc)}, L ${Math.round(d.lip)}${sp?' (sport estimé −'+sp+' kcal)':''}`);
+      });
+      const cnt = {};
+      db.journalAlimentaire.filter(e=>e.date>=since && e.date<=today).forEach(e=>{ cnt[e.nom] = (cnt[e.nom]||0)+1; });
+      const top = Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([n,c])=>n+' ×'+c);
+      if(top.length) L.push('- Aliments les plus fréquents : '+top.join(' ; '));
+    }
+    const o = st.objet;
+    const asks = [];
+    if(o.charges) asks.push('Propose la charge et le nombre de répétitions de ma PROCHAINE séance, exercice par exercice (champ "objectifs").');
+    if(o.nutrition) asks.push('Donne des repères d’alimentation d’après mon journal et mon objectif (champ "nutrition").');
+    if(o.general) asks.push('Fais une analyse générale de ma progression : régularité, poids, mensurations, plateaux.');
+    const q = ((document.getElementById('ia-question')||{}).value||'').trim();
+    if(q) asks.push('Ma question : '+q);
+    if(!asks.length) asks.push('Fais une analyse générale de mes données.');
+
+    const head = [
+      'Tu es un coach de musculation et de nutrition sportive, rigoureux et honnête. Voici mes données, saisies dans mon application de suivi (IronNutra). Ne me flatte pas : signale les plateaux, les incohérences de saisie, les jours manquants et les risques.',
+      '',
+      'MA DEMANDE',
+      ...asks.map(a=>'- '+a),
+      '',
+      'RÈGLES',
+      '- Appuie-toi uniquement sur les séries réellement réalisées ci-dessous.',
+      '- Charges : pas d’augmentation de plus de 5 % par rapport à ma dernière séance sur l’exercice (environ +2,5 kg au maximum sur un exercice de base), sauf changement de machine que je te signale. En cas de doute, garde la charge actuelle. Si une machine est au maximum, propose plutôt plus de répétitions ou un tempo plus lent.',
+      '- Utilise EXACTEMENT les noms d’exercices écrits dans mes données.',
+      '- Nutrition : repères généraux, pas de prescription médicale' + (plancher?'. Ne propose jamais moins de '+plancher+' kcal par jour':'') + '.',
+      '- Si les données sont insuffisantes pour conclure, dis-le clairement plutôt que d’inventer.',
+      '',
+      'FORMAT DE RÉPONSE',
+      '1) Une analyse courte en français (10 lignes maximum).',
+      '2) À la fin, un unique bloc ```json respectant exactement ce schéma (poids en kg avec un point décimal, aucun texte après le bloc) :',
+      '```json',
+      '{"analyse":"résumé en 2 phrases","objectifs":[{"exercice":"nom exact","poids":82.5,"reps":8,"note":"raison en une phrase"}],"conseils":["conseil entraînement ou récupération"],"nutrition":["repère alimentaire"]}',
+      '```',
+      '',
+      '--- MES DONNÉES ---',
+    ];
+    return {text: head.concat([''], L).join('\n'), nSeances, nJours, names:[...names]};
+  },
+  iaCopy(){
+    const t = this.iaBuildPrompt().text;
+    const done = ()=>toast('Copié — colle-le dans ton IA ✅');
+    const fb = ()=>{ const ta=document.getElementById('ia-prompt-view'); ta.value=t; ta.closest('details').open=true; ta.focus(); ta.select(); try{ document.execCommand('copy'); done(); }catch(e){ toast('Sélectionne le texte et copie-le'); } };
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done).catch(fb); else fb();
+  },
+  iaShare(){
+    if(!navigator.share) return;
+    navigator.share({title:'Mes données IronNutra', text:this.iaBuildPrompt().text}).catch(()=>{});
+  },
+  iaExercicePool(){
+    const m = new Map();
+    const add = n=>{ if(n){ const k=this.iaNorm(n); if(k && !m.has(k)) m.set(k,n); } };
+    allCatalogExerciceNames().forEach(add);
+    this.db.seances.forEach(l=>(l.exercices||[]).forEach(e=>add(e.exercice)));
+    PROGRAMS.forEach(p=>(p.seances||[]).forEach(se=>(se.exercices||[]).forEach(e=>add(e.exercice))));
+    return m;
+  },
+  iaRead(){
+    const raw = document.getElementById('ia-reponse').value || '';
+    const out = document.getElementById('ia-result');
+    if(!raw.trim()){ toast('Colle d’abord la réponse de l’IA'); return; }
+    let jsonTxt = null;
+    const m = raw.match(/```json\s*([\s\S]*?)```/i) || raw.match(/```\s*(\{[\s\S]*?\})\s*```/);
+    if(m) jsonTxt = m[1]; else { const a=raw.indexOf('{'), b=raw.lastIndexOf('}'); if(a>=0 && b>a) jsonTxt = raw.slice(a,b+1); }
+    let data = null;
+    if(jsonTxt){
+      try{ data = JSON.parse(jsonTxt); }catch(e){
+        try{ data = JSON.parse(jsonTxt.replace(/[“”]/g,'"').replace(/[‘’]/g,"'").replace(/,\s*([}\]])/g,'$1')); }catch(e2){ data = null; }
+      }
+    }
+    if(!data || typeof data!=='object'){
+      out.innerHTML = `<div class="card"><p style="margin:0;">Je ne trouve pas de bloc JSON exploitable dans cette réponse. Redemande à l’IA : « Redonne uniquement le bloc JSON final, au format demandé ».</p></div>`;
+      return;
+    }
+    const pool = this.iaExercicePool();
+    const objs = (Array.isArray(data.objectifs)?data.objectifs:[]).map(o=>{
+      const key = this.iaNorm(o && o.exercice);
+      const nom = pool.get(key) || null;
+      const poids = Number(String((o&&o.poids)).replace(',','.'));
+      const reps = (o && o.reps!=null && o.reps!=='') ? parseInt(o.reps,10) : null;
+      const r = {nom, nomIA:String((o&&o.exercice)||'?'), poids, reps, note:String((o&&o.note)||'').slice(0,160), ok:true, warn:'', info:''};
+      if(!nom){ r.ok=false; r.warn='Exercice non reconnu : ignoré.'; return r; }
+      if(!isFinite(poids) || poids<0 || poids>500){ r.ok=false; r.warn='Charge invalide : ignorée.'; return r; }
+      if(reps!=null && (!isFinite(reps) || reps<1 || reps>60)) r.reps = null;
+      const last = getLastPerformance(nom);
+      const lastMax = last ? Math.max(0,...(last.series||[]).filter(x=>x&&x.poids!=null).map(x=>x.poids)) : 0;
+      if(lastMax>0){
+        const d = (poids-lastMax)/lastMax*100;
+        r.info = `Dernière fois : ${lastMax} kg (${d>=0?'+':''}${Math.round(d)} %)`;
+        if(d>10){ r.warn = `Saut de +${Math.round(d)} % : au-dessus du repère de prudence (+5 %). Décoché par défaut.`; r.check = false; }
+      } else r.info = 'Pas d’historique pour comparer.';
+      return r;
+    });
+    this._iaParsed = {analyse:String(data.analyse||'').slice(0,600), objs, conseils:(Array.isArray(data.conseils)?data.conseils:[]).map(String).slice(0,8), nutrition:(Array.isArray(data.nutrition)?data.nutrition:[]).map(String).slice(0,8)};
+    this.iaRenderResult();
+  },
+  iaRenderResult(){
+    const P = this._iaParsed, out = document.getElementById('ia-result');
+    if(!P) { out.innerHTML=''; return; }
+    const rows = P.objs.map((o,i)=>`
+      <div class="list-row" style="align-items:flex-start;">
+        <input type="checkbox" id="ia-chk-${i}" ${o.ok && o.check!==false?'checked':''} ${o.ok?'':'disabled'} style="width:19px;height:19px;flex-shrink:0;margin-top:3px;">
+        <div class="meta"><div class="t1">${escapeHtml(o.nom||o.nomIA)}</div>
+          <div class="t2"><b>${o.ok?o.poids+' kg'+(o.reps?' × '+o.reps:''):'—'}</b>${o.note?' · '+escapeHtml(o.note):''}</div>
+          ${o.info?`<div class="ia-ok">${escapeHtml(o.info)}</div>`:''}${o.warn?`<div class="ia-warn">⚠️ ${escapeHtml(o.warn)}</div>`:''}</div>
+      </div>`).join('');
+    const ul = a=>a.length?`<ul class="ia-ul">${a.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul>`:'';
+    out.innerHTML = `
+      ${P.analyse?`<div class="section-title">Analyse</div><div class="card"><p style="margin:0;line-height:1.5;">${escapeHtml(P.analyse)}</p></div>`:''}
+      ${P.objs.length?`<div class="section-title">Objectifs de charge proposés</div><div class="card">${rows}<p class="small-note" style="margin:10px 0 0;">Ils s’afficheront en « 🤖 Objectif IA » dans ta prochaine séance, à côté de l’objectif habituel de l’appli (qui reste calculé par l’appli). Ils disparaissent après la séance suivante.</p></div>`:''}
+      ${P.conseils.length?`<div class="section-title">Conseils entraînement</div><div class="card">${ul(P.conseils)}</div>`:''}
+      ${P.nutrition.length?`<div class="section-title">Repères alimentation</div><div class="card">${ul(P.nutrition)}<p class="small-note" style="margin:10px 0 0;">Simples repères : tes cibles caloriques et le plancher de sécurité de l’appli ne sont jamais modifiés par l’IA.</p></div>`:''}
+      <button class="btn btn-primary" onclick="app.iaApply()">Enregistrer${P.objs.some(o=>o.ok)?' (objectifs cochés + conseils)':''}</button>
+      <div style="height:12px;"></div>`;
+  },
+  iaApply(){
+    const P = this._iaParsed; if(!P) return;
+    const prevO = JSON.stringify(this.db.iaObjectifs||{}), prevC = JSON.stringify(this.db.iaConseils||[]);
+    const date = todayISO(); let n = 0;
+    this.db.iaObjectifs = this.db.iaObjectifs || {};
+    P.objs.forEach((o,i)=>{
+      const el = document.getElementById('ia-chk-'+i);
+      if(o.ok && el && el.checked){ this.db.iaObjectifs[o.nom] = {poids:o.poids, reps:o.reps, note:o.note, date}; n++; }
+    });
+    this.db.iaConseils = [{id:uid(), date, analyse:P.analyse, conseils:P.conseils, nutrition:P.nutrition, nObjectifs:n}].concat(this.db.iaConseils||[]).slice(0,10);
+    if(!saveDBOrWarn(this.db)){ this.db.iaObjectifs = JSON.parse(prevO); this.db.iaConseils = JSON.parse(prevC); return; }
+    toast(n?`${n} objectif${n>1?'s':''} IA enregistré${n>1?'s':''} ✅`:'Conseils enregistrés ✅');
+    this._iaParsed = null;
+    document.getElementById('ia-result').innerHTML = '';
+    document.getElementById('ia-reponse').value = '';
+    this.iaRenderHistory();
+  },
+  iaObjectifActif(nom, L){
+    const o = (this.db.iaObjectifs||{})[nom]; if(!o) return null;
+    // L'objectif vaut jusqu'a la SEANCE SUIVANTE de cet exercice (date strictement posterieure).
+    const fait = this.db.seances.some(x=>x.id!==(L&&L.id) && x.date>o.date && (x.exercices||[]).some(e=>e.exercice===nom && (e.series||[]).some(z=>z && z.poids!=null && z.reps!=null)));
+    return fait ? null : o;
+  },
+  iaClearObjectifs(){
+    showConfirm('Retirer tous les objectifs IA en cours ?', ()=>{
+      const prev = this.db.iaObjectifs; this.db.iaObjectifs = {};
+      if(!saveDBOrWarn(this.db)){ this.db.iaObjectifs = prev; return; }
+      this.iaRenderHistory();
+    });
+  },
+  iaRenderHistory(){
+    const w = document.getElementById('ia-history'); if(!w) return;
+    const act = Object.keys(this.db.iaObjectifs||{}).filter(k=>this.iaObjectifActif(k,null));
+    const h = (this.db.iaConseils||[])[0];
+    let html = '';
+    if(act.length) html += `<div class="section-title">Objectifs IA en cours (${act.length})</div><div class="card">${act.map(k=>{const o=this.db.iaObjectifs[k]; return `<div class="list-row"><div class="meta"><div class="t1">${escapeHtml(k)}</div><div class="t2">${o.poids} kg${o.reps?' × '+o.reps:''}</div></div></div>`;}).join('')}<button type="button" class="btn btn-ghost btn-sm" style="margin-top:6px;" onclick="app.iaClearObjectifs()">Tout retirer</button></div>`;
+    if(h){
+      const ul = a=>(a&&a.length)?`<ul class="ia-ul">${a.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul>`:'';
+      html += `<div class="section-title">Dernière analyse · ${escapeHtml(fmtDateHuman(h.date))}</div><div class="card">${h.analyse?`<p style="margin:0 0 6px;line-height:1.5;">${escapeHtml(h.analyse)}</p>`:''}${ul(h.conseils)}${ul(h.nutrition)}</div>`;
+    }
+    w.innerHTML = html;
   },
   exportCopy(){
     const data = JSON.stringify(this.db);
