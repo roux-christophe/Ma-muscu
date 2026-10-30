@@ -1953,7 +1953,11 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
 
     <div class="section-title">Intelligence artificielle</div>
     <div class="set-group">
-      <div class="set-row set-link last" onclick="app.iaOpen()">
+      <div class="set-row" id="set-ia-toggle-row">
+        <div class="set-l"><span>Fonctions IA</span><button type="button" class="info-btn" title="En savoir plus" onclick="app.openInfo(this)" data-info="Pour ceux qui ont une IA (Claude, ChatGPT…) : l’appli prépare un résumé de tes données à copier dans ton IA, puis relit sa réponse pour t’afficher des objectifs de charge. L’appli n’envoie rien toute seule, tu copies et tu colles toi-même." aria-label="En savoir plus">i</button></div>
+        <label class="switch"><input type="checkbox" id="set-ia" aria-label="Fonctions IA" onchange="app.toggleFonctionsIA(this.checked)"></label>
+      </div>
+      <div class="set-row set-link last" id="set-ia-link" style="display:none;" onclick="app.iaOpen()">
         <div class="set-l"><div><div>Analyse par IA</div><div class="set-sub">Prépare tes données pour ton IA, importe ses objectifs</div></div></div><div class="chev">›</div>
       </div>
     </div>
@@ -2210,7 +2214,7 @@ RECIPES.push(...[{"id": "sp-wrap-poulet-yaourt-citron", "nom": "Wrap poulet, cru
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261030183458';
+const APP_BUILD_VERSION = '20261030184139';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -2863,6 +2867,8 @@ function defaultSettings(){
     ingredientsDisponibles: [],
     // Contexte libre ajoute a l'export IA (ex : machines au maximum de charge)
     iaContexte: '',
+    // Fonctions IA (Analyse par IA) : masquées par défaut, tout le monde n'a pas d'IA
+    fonctionsIA: false,
   };
 }
 function defaultDB(){
@@ -5625,13 +5631,14 @@ const app = {
     const sum = k => entries.reduce((s,e)=>s+(Number(e[k])||0),0);
     const cal = sum('cal'), prot = sum('prot'), gluc = sum('gluc'), lip = sum('lip');
     const profil = calculNutritionProfil();
-    const sport = this.db.settings.ajouterCaloriesSport ? caloriesSportDuJour(date) : 0;
+    const sportReel = caloriesSportDuJour(date);
+    const sport = this.db.settings.ajouterCaloriesSport ? sportReel : 0;
     const budget = profil ? profil.objectifCal + sport : null;
     const solde = budget!=null ? budget - cal : null;
     const fr = n => Math.round(n).toLocaleString('fr-FR');
     const over = solde!=null && solde<0;
     const metaTxt = budget!=null
-      ? (solde>=0 ? fr(solde)+' kcal restantes' : fr(Math.abs(solde))+' kcal dépassées') + (sport>0?' · dont +'+sport+' sport':'')
+      ? (solde>=0 ? fr(solde)+' kcal restantes' : fr(Math.abs(solde))+' kcal dépassées') + (sport>0?' · dont +'+sport+' sport':(sportReel>0?' · 🔥 '+sportReel+' brûlées':''))
       : 'Complète ton profil pour voir ton budget';
     // Anneau : pourcentage de l'objectif du jour (plafonne a 100 % visuellement).
     const C = 2*Math.PI*50, pct = budget ? cal/budget : 0, shown = Math.min(1, Math.max(0, pct));
@@ -6022,7 +6029,7 @@ const app = {
           <div class="section-title" style="margin-top:0;">Résumé de la séance</div>
           <div class="stat-grid">
             ${totalPoids>0?`<div class="stat-tile accent"><div class="v">${totalPoids.toLocaleString('fr-FR')} kg</div><div class="l">Poids total soulevé</div></div>`:''}
-            ${calories!=null?`<div class="stat-tile accent"><div class="v">≈ ${calories} kcal</div><div class="l">${L.caloriesMontre>0?'Calories actives (montre) — ajoutées':'Calories brûlées (estimation) — ajoutées'} ${this.db.settings.ajouterCaloriesSport!==false?'à':'<b>pas</b> à'} ton budget Nutrition du jour</div></div>`:`<div class="stat-tile"><div class="v">—</div><div class="l">Renseigne la durée ci-dessus (et ton poids dans Nutrition) pour estimer les calories brûlées</div></div>`}
+            ${calories!=null?`<div class="stat-tile accent"><div class="v">≈ ${calories} kcal</div><div class="l">${L.caloriesMontre>0?'Calories actives (montre)':'Calories brûlées (estimation)'} — ${this.db.settings.ajouterCaloriesSport!==false?'ajoutées à':'<b>non ajoutées</b> à'} ton budget Nutrition du jour</div></div>`:`<div class="stat-tile"><div class="v">—</div><div class="l">Renseigne la durée ci-dessus (et ton poids dans Nutrition) pour estimer les calories brûlées</div></div>`}
           </div>
           <button type="button" class="btn btn-secondary" style="margin-top:12px;width:100%;" onclick="app.generateRecapImage()">📤 Partage séance</button>
         </div>`;
@@ -6895,6 +6902,12 @@ const app = {
       const wl = this._wakeLock; this._wakeLock = null;
       try{ wl.release(); }catch(e){}
     }
+  },
+  toggleFonctionsIA(v){
+    this.db.settings.fonctionsIA = !!v;
+    if(!saveDBOrWarn(this.db)) return;
+    document.getElementById('set-ia-link').style.display = v ? '' : 'none';
+    document.getElementById('set-ia-toggle-row').classList.toggle('last', !v);
   },
   toggleSportBudget(v){
     this.db.settings.ajouterCaloriesSport = !!v;
@@ -8461,7 +8474,8 @@ const app = {
     const prot = entries.reduce((s,e)=>s+(Number(e.prot)||0),0);
     const gluc = entries.reduce((s,e)=>s+(Number(e.gluc)||0),0);
     const lip = entries.reduce((s,e)=>s+(Number(e.lip)||0),0);
-    const sport = this.db.settings.ajouterCaloriesSport ? caloriesSportDuJour(date) : 0;
+    const sportReel = caloriesSportDuJour(date);
+    const sport = this.db.settings.ajouterCaloriesSport ? sportReel : 0;
     const budget = profil.objectifCal + sport;
     const solde = budget - cal;
     const pctCal = budget>0 ? Math.min(100, Math.round(cal/budget*100)) : 0;
@@ -8480,7 +8494,7 @@ const app = {
     const rCal = ring(44, pctCal), rGluc = ring(34, pctGluc), rLip = ring(24, pctLip), rProt = ring(14, pctProt);
     wrap.innerHTML = `<div class="cal-card">
       ${profil.plancherApplique?'<p class="small-note" style="margin-bottom:8px;">⚠️ Objectif ajusté au minimum sûr.</p>':''}
-      <div class="cc-head"><span>Calories</span>${sport>0?`<span>🔥 +${sport} kcal sport</span>`:''}</div>
+      <div class="cc-head"><span>Calories</span>${sport>0?`<span>🔥 +${sport} kcal sport</span>`:(sportReel>0?`<span>🔥 ${sportReel} kcal brûlées</span>`:'')}</div>
       <div class="cc-main-line">
         <div class="cc-main">${Math.round(cal)}<small> / ${budget} kcal</small></div>
         <div class="cc-remain ${solde<0?'over':''}"><b>${Math.abs(Math.round(solde)).toLocaleString('fr-FR')} kcal</b> ${solde>=0?'restantes':'dépassées'}</div>
@@ -8505,7 +8519,7 @@ const app = {
           ${this.legendItemHTML('prot', 'Protéines', prot, profil.macros.proteines, 'g')}
         </div>
       </div>
-      <p class="small-note" style="margin-top:12px;">Budget = ${profil.objectifCal} kcal (objectif)${sport>0?` + ${sport} kcal brûlés en séance aujourd'hui`:''}.</p>
+      <p class="small-note" style="margin-top:12px;">Budget = ${profil.objectifCal} kcal (objectif)${sport>0?` + ${sport} kcal brûlés en séance aujourd'hui`:''}.${(sport===0 && sportReel>0)?` Sport du jour : ${sportReel} kcal brûlées en séance, non ajoutées au budget (réglage « Ajouter le sport au budget »).`:''}</p>
       <button class="link" style="margin-top:15px;" onclick="nav.push('view-nutri-profil'); app.renderNutriProfil();">Paramétrer mes objectifs de macros</button>
     </div>`;
   },
@@ -10032,6 +10046,7 @@ const app = {
     document.getElementById('set-formats-avances').checked = !!this.db.settings.formatsAvances;
     document.getElementById('set-wakelock').checked = this.db.settings.garderEcranAllume !== false;
     document.getElementById('set-sport-budget').checked = this.db.settings.ajouterCaloriesSport !== false;
+    { const on = !!this.db.settings.fonctionsIA; document.getElementById('set-ia').checked = on; document.getElementById('set-ia-link').style.display = on ? '' : 'none'; document.getElementById('set-ia-toggle-row').classList.toggle('last', !on); }
     document.getElementById('set-prenom').value = this.db.settings.prenom || '';
     const isLight = this.db.settings.theme==='light';
     document.getElementById('set-theme-dark').classList.toggle('active', !isLight);
