@@ -2214,7 +2214,7 @@ RECIPES.push(...[{"id": "sp-wrap-poulet-yaourt-citron", "nom": "Wrap poulet, cru
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261030184139';
+const APP_BUILD_VERSION = '20261102192000';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -3668,7 +3668,11 @@ function parseSeriesCount(str){
     const a = parseInt(m[1],10), b = m[2]?parseInt(m[2],10):a;
     total += Math.max(a,b);
   }
-  if(!found) return 3;
+  if(!found){
+    const w = /(\d+)\s*s[ée]ries?/i.exec(str);
+    if(w) return Math.max(1, Math.min(parseInt(w[1],10), 8));
+    return 3;
+  }
   return Math.min(total, 8);
 }
 function parseRecupSeconds(str){
@@ -5865,7 +5869,8 @@ const app = {
         // des qu'un objectif existe, il prend le relais (sinon deux chiffres contradictoires).
         if(pourcentageCible && pourcentageCible.titre==='Charge de départ' && suggestion) pourcentageCible = null;
         const nBase = parseSeriesCount(def.series_reps);
-        const deloadNote = (!L.isEdit && weekFlag(prog, L.date, 'reduceSeries') && !def.mode && deloadSeriesCount(nBase)<nBase) ? `<span class="em target">Deload : ${deloadSeriesCount(nBase)} séries au lieu de ${nBase}</span>` : '';
+        const _dlOn = weekFlag(prog, L.date, 'reduceSeries') && !def.mode && deloadSeriesCount(nBase)<nBase;
+        const deloadNote = _dlOn ? `<span class="em target">Semaine allégée : ${deloadSeriesCount(nBase)} séries au lieu de ${nBase}</span>` : '';
         const showPoids = def.mode!=='reps_only';
         const showReps = def.mode!=='poids_only';
         const single = !(showPoids && showReps);
@@ -5979,7 +5984,7 @@ const app = {
             ${estLibre?`<button class="icon-btn" title="Retirer cet exercice" onclick="app.removeExerciceLibre(${idx})">${SVG_TRASH}</button>`:''}
           </div>
           <div class="exo-meta-row">
-            <span class="em"><b>${escapeHtml(def.series_reps||'')}</b>${def.recup?' · récup '+escapeHtml(def.recup):''}</span>
+            <span class="em"><b${_dlOn?' style="text-decoration:line-through;opacity:.55;"':''}>${escapeHtml(def.series_reps||'')}</b>${def.recup?' · récup '+escapeHtml(def.recup):''}</span>
             ${target?`<span class="em target">Semaine ${semaine} : ${escapeHtml(target)}</span>`:''}
             ${deloadNote}
             ${rpeCibleNote}
