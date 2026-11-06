@@ -1369,6 +1369,73 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
 .ic-li{ display:flex; flex-direction:column; gap:1px; padding:8px 0; border-bottom:1px solid var(--card-border); font-size:14px; font-weight:700; }
 .ic-li:last-child{ border-bottom:none; }
 .ic-li small{ color:var(--text-dim); font-weight:600; font-size:12px; word-break:break-all; }
+
+/* ===== Course : reprise de la course a pied ===== */
+.cr-card{ background:var(--card); border:1px solid var(--card-border); border-radius:20px; padding:16px; margin-bottom:14px; }
+.cr-card.hl{ border-color:color-mix(in srgb, var(--accent) 45%, var(--card-border)); }
+.cr-lbl{ font-size:12px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--text-faint); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+.cr-row{ display:flex; align-items:center; gap:10px; }
+.cr-pill{ display:inline-block; font-size:12.5px; font-weight:800; padding:4px 10px; border-radius:999px; background:var(--chip-bg); color:var(--chip-text); }
+.cr-title{ font-size:21px; font-weight:800; letter-spacing:-.01em; margin-top:10px; line-height:1.25; }
+.cr-note{ font-size:13.5px; color:var(--text-dim); line-height:1.45; margin-top:8px; }
+.cr-note.small{ font-size:12.5px; color:var(--text-faint); }
+.cr-seg{ display:flex; gap:3px; height:44px; margin-top:14px; }
+.cr-seg b{ border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; min-width:0; overflow:hidden; background:var(--card-2); color:var(--text-dim); }
+.cr-seg b.r{ background:var(--accent); color:var(--accent-contrast); }
+.cr-ms{ display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-dim); font-weight:700; margin-top:6px; }
+.cr-warn{ display:flex; gap:10px; background:color-mix(in srgb, var(--accent-warn) 14%, var(--card)); border:1px solid color-mix(in srgb, var(--accent-warn) 40%, transparent); border-radius:14px; padding:12px 14px; margin-top:14px; font-size:13.5px; line-height:1.4; }
+.cr-warn.red{ background:color-mix(in srgb, var(--accent-danger) 14%, var(--card)); border-color:color-mix(in srgb, var(--accent-danger) 40%, transparent); }
+.cr-warn.green{ background:color-mix(in srgb, var(--accent-2) 12%, var(--card)); border-color:color-mix(in srgb, var(--accent-2) 38%, transparent); }
+.cr-opt{ display:flex; align-items:center; gap:12px; padding:13px 14px; border-radius:14px; background:var(--card-2); border:1.5px solid transparent; margin-top:8px; font-size:15px; font-weight:700; cursor:pointer; text-align:left; width:100%; color:var(--text); }
+.cr-opt small{ display:block; font-size:12.5px; color:var(--text-dim); font-weight:500; margin-top:2px; line-height:1.3; }
+.cr-opt.on{ border-color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, var(--card-2)); }
+.cr-opt .dt{ width:22px; height:22px; border-radius:50%; border:2px solid var(--text-faint); flex:none; }
+.cr-opt.on .dt{ border-color:var(--accent); background:radial-gradient(circle, var(--accent) 0 45%, transparent 50%); }
+.cr-chips{ display:flex; flex-wrap:wrap; gap:8px; }
+.cr-chip{ display:inline-flex; align-items:center; gap:6px; padding:9px 14px; min-height:44px; border-radius:999px; background:var(--card-2); border:1px solid var(--card-border); font-size:14px; font-weight:700; color:var(--text-dim); cursor:pointer; }
+.cr-chip.on{ background:color-mix(in srgb, var(--accent) 16%, var(--card-2)); border-color:var(--accent); color:var(--accent); }
+.cr-tag{ font-size:10.5px; font-weight:800; color:var(--accent-contrast); background:var(--accent); border-radius:8px; padding:2px 6px; }
+.cr-scale{ display:grid; grid-template-columns:repeat(11,1fr); gap:4px; }
+.cr-scale button{ min-height:44px; border-radius:8px; border:none; background:var(--card-2); font-size:13px; font-weight:800; color:var(--text-dim); cursor:pointer; padding:0; }
+.cr-scale button.on{ background:var(--accent-warn); color:#241707; }
+.cr-scale button.on.hi{ background:var(--accent-danger); color:#fff; }
+.cr-scale button.on.lo{ background:var(--accent-2); color:#06251b; }
+.cr-step{ display:flex; align-items:center; gap:10px; margin-top:10px; }
+.cr-step .nm{ flex:1; font-size:14.5px; font-weight:700; }
+.cr-step .v{ min-width:84px; text-align:center; font-size:17px; font-weight:800; font-variant-numeric:tabular-nums; }
+.cr-step button{ width:44px; height:44px; border-radius:50%; border:1px solid var(--card-border); background:var(--card-2); color:var(--text); font-size:20px; font-weight:700; cursor:pointer; }
+.cr-bar{ height:10px; border-radius:5px; background:var(--card-2); overflow:hidden; }
+.cr-bar i{ display:block; height:100%; background:var(--grad); border-radius:5px; }
+.cr-verdict{ border-radius:18px; padding:16px; margin-top:14px; border:1px solid transparent; }
+.cr-verdict.vert{ background:color-mix(in srgb, var(--accent-2) 14%, var(--card)); border-color:color-mix(in srgb, var(--accent-2) 45%, transparent); }
+.cr-verdict.orange{ background:color-mix(in srgb, var(--accent-warn) 14%, var(--card)); border-color:color-mix(in srgb, var(--accent-warn) 45%, transparent); }
+.cr-verdict.rouge{ background:color-mix(in srgb, var(--accent-danger) 14%, var(--card)); border-color:color-mix(in srgb, var(--accent-danger) 45%, transparent); }
+.cr-vp{ display:inline-block; font-size:12px; font-weight:800; padding:4px 10px; border-radius:999px; }
+.cr-verdict.vert .cr-vp{ background:color-mix(in srgb, var(--accent-2) 25%, transparent); color:var(--accent-2); }
+.cr-verdict.orange .cr-vp{ background:color-mix(in srgb, var(--accent-warn) 25%, transparent); color:var(--accent-warn); }
+.cr-verdict.rouge .cr-vp{ background:color-mix(in srgb, var(--accent-danger) 25%, transparent); color:var(--accent-danger); }
+.cr-dot{ width:12px; height:12px; border-radius:50%; flex:none; background:var(--text-faint); }
+.cr-dot.vert{ background:var(--accent-2); } .cr-dot.orange{ background:var(--accent-warn); } .cr-dot.rouge{ background:var(--accent-danger); }
+.cr-hist{ display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid var(--card-border); }
+.cr-hist:last-child{ border-bottom:none; }
+.cr-hist .t1{ font-size:14.5px; font-weight:700; }
+.cr-hist .t2{ font-size:12.5px; color:var(--text-dim); margin-top:2px; }
+.cr-ladder{ display:flex; align-items:center; gap:3px; margin-top:6px; }
+.cr-ladder i{ flex:1; height:8px; border-radius:4px; background:var(--card-2); }
+.cr-ladder i.d{ background:var(--accent); } .cr-ladder i.c{ background:var(--accent-2); }
+.cr-btnrow{ display:flex; gap:10px; margin-top:14px; }
+.cr-btnrow .btn{ flex:1 1 0; }
+/* Minuteur */
+#view-course-run{ padding-top:8px; }
+.cr-run-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.cr-phase{ text-align:center; font-size:34px; font-weight:800; letter-spacing:.04em; margin-top:22px; color:var(--accent); }
+.cr-phase.walk{ color:var(--text-dim); }
+.cr-time{ text-align:center; font-size:84px; font-weight:800; letter-spacing:-2px; font-variant-numeric:tabular-nums; line-height:1; margin-top:6px; }
+.cr-speed{ text-align:center; font-size:22px; font-weight:800; margin-top:12px; min-height:28px; }
+.cr-speed span{ color:var(--text-dim); font-weight:700; }
+.cr-next.soon{ border-color:var(--accent); }
+#course-card{ margin-top:-6px; }
+.sheet-mode #course-setup-body, .sheet-mode #course-after-body{ flex:1 1 auto; min-height:0; max-height:none; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 </style>
 </head>
 <body>
@@ -1418,6 +1485,11 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
       <span class="ex-txt"><b>Séance express</b><small>Une durée, des muscles : l’appli compose ta séance</small></span>
       <span class="chev">›</span>
     </button>
+    <button type="button" class="express-card" id="course-card" onclick="app.courseOpen()">
+      <span class="ex-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="15" cy="4.5" r="1.8"/><path d="M4.5 21l3.2-6.2 3.3 1.2 2-4.4-3.2-2.8-4.3 3"/><path d="M12.5 11.8l3 2.2 4-1"/><path d="M10.8 8.2l3 .6 2.2 2.2"/></svg></span>
+      <span class="ex-txt"><b>Course à pied</b><small id="course-card-sub">Reprise progressive, de quelques minutes à 1 h</small></span>
+      <span class="chev">›</span>
+    </button>
     <div class="section-title">Programmes</div>
     <div class="tiles-row" id="sport-programs"></div>
     <div class="list-row" style="cursor:pointer;" onclick="nav.push('view-programmes'); app.renderProgrammesVisibilite(); app.renderProgrammesPerso();">
@@ -1430,6 +1502,28 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
     </div>
     <div class="section-title">Activité récente</div>
     <div id="sport-recent"></div>
+  </div>
+
+  <!-- ===== COURSE : reprise de la course a pied ===== -->
+  <div class="view" id="view-course">
+    <div class="topbar"><button class="back" onclick="nav.toSport()">‹</button><h1>Course à pied</h1></div>
+    <div id="course-body"></div>
+  </div>
+
+  <div class="view" id="view-course-run">
+    <div class="cr-run-top"><button class="back" aria-label="Retour (la sortie continue)" onclick="nav.back()">‹</button><span class="cr-pill" id="cr-run-lieu"></span></div>
+    <div style="text-align:center;margin-top:18px;"><span class="cr-pill" id="cr-run-pill"></span></div>
+    <div class="cr-phase" id="cr-run-phase"></div>
+    <div class="cr-time" id="cr-run-time">0:00</div>
+    <div class="cr-speed" id="cr-run-speed"></div>
+    <div class="cr-bar" style="margin:20px 8px 0;"><i id="cr-run-bar" style="width:0%"></i></div>
+    <div class="cr-card cr-next" id="cr-run-next" style="margin-top:22px;">
+      <div class="cr-row"><div style="flex:1;min-width:0;"><div class="cr-lbl" style="margin:0;">Ensuite</div><div id="cr-run-next-name" style="font-size:20px;font-weight:800;margin-top:4px;"></div><div id="cr-run-next-sub" style="font-size:13px;color:var(--text-dim);font-weight:700;margin-top:2px;"></div></div>
+      <div style="text-align:right;"><div class="cr-lbl" style="margin:0;justify-content:flex-end;">Écoulé</div><div id="cr-run-elapsed" style="font-size:20px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums;">0:00</div></div></div>
+    </div>
+    <div class="cr-card" id="cr-run-tip" style="font-size:14px;line-height:1.45;"></div>
+    <div class="cr-btnrow"><button type="button" class="btn btn-secondary" id="cr-run-pause" onclick="app.courseTogglePause()">Pause</button><button type="button" class="btn btn-secondary" style="color:var(--accent-warn);" onclick="app.courseStop()">Je m’arrête</button></div>
+    <p class="cr-note small" style="text-align:center;">Garde l’écran allumé : le signal sonore peut être coupé écran verrouillé. Avec une Apple Watch, utilise ses alertes d’intervalles.</p>
   </div>
 
   <!-- ===== TEST DE PROFIL D'ENTRAINEMENT ===== -->
@@ -2069,6 +2163,20 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
   </div>
 </div>
 
+<div class="confirm-overlay" id="course-setup-overlay">
+  <div class="confirm-box">
+    <div class="sheet-head"><div class="sh-title">Reprise de la course</div><button class="icon-btn" title="Fermer" onclick="app.courseCloseSetup()">✕</button></div>
+    <div id="course-setup-body"></div>
+  </div>
+</div>
+
+<div class="confirm-overlay" id="course-after-overlay">
+  <div class="confirm-box">
+    <div class="sheet-head"><div class="sh-title">Comment vont tes articulations ?</div><button class="icon-btn" title="Fermer" onclick="app.courseCloseAfter()">✕</button></div>
+    <div id="course-after-body"></div>
+  </div>
+</div>
+
 <div class="confirm-overlay" id="express-overlay">
   <div class="confirm-box">
     <div class="sheet-head"><div class="sh-title">Séance express</div><button class="icon-btn" title="Fermer" onclick="app.closeExpress()">✕</button></div>
@@ -2214,7 +2322,7 @@ RECIPES.push(...[{"id": "sp-wrap-poulet-yaourt-citron", "nom": "Wrap poulet, cru
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261102192000';
+const APP_BUILD_VERSION = '20261106120000';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -2259,7 +2367,7 @@ const SVG_BOOKMARK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
 // ambiguite visuelle entre "annuler" et "remplacer par un autre exercice".
 const SVG_SWAP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>';
 
-const NAV_SPORT_FAMILY = ['view-sport','view-programmes','view-seance-list','view-log','view-exo-history','view-history','view-stats','view-profil-quiz'];
+const NAV_SPORT_FAMILY = ['view-sport','view-course','view-course-run','view-programmes','view-seance-list','view-log','view-exo-history','view-history','view-stats','view-profil-quiz'];
 const NAV_NUTRITION_FAMILY = ['view-nutrition','view-recettes','view-aide-repas','view-recette-detail','view-liste-courses','view-nutri-corps','view-nutri-stats','view-nutri-profil','view-nutri-add','view-copier-repas','view-nutri-plat-new'];
 function seanceIconSVG(isCardio){ return isCardio ? SVG_HEART : SVG_DUMBBELL; }
 
@@ -4607,6 +4715,8 @@ const Sheets = (function(){
     'pesee-overlay':'closePeseeSheet',
     'mens-overlay':'closeMensSheet',
     'express-overlay':'closeExpress',
+    'course-setup-overlay':'courseCloseSetup',
+    'course-after-overlay':'courseCloseAfter',
     'imgcheck-overlay':'closeImgCheck',
     'restore-overlay':'closeRestore'
   };
@@ -5085,12 +5195,12 @@ const app = {
   renderNavbar(viewId){
     const bar = document.getElementById('navbar');
     if(!bar) return;
-    document.body.classList.toggle('focus-session', viewId==='view-log');
+    document.body.classList.toggle('focus-session', viewId==='view-log' || viewId==='view-course-run');
     let items;
     if(NAV_SPORT_FAMILY.includes(viewId)){
       items = [
         {onclick:"nav.toHome()", active:false, label:'Accueil', icon:SVG_HOME},
-        {onclick:"nav.toSport()", active: viewId==='view-sport', label:'Sport', icon:SVG_DUMBBELL},
+        {onclick:"nav.toSport()", active: viewId==='view-sport' || viewId==='view-course', label:'Sport', icon:SVG_DUMBBELL},
         {onclick:"nav.push('view-programmes'); app.renderProgrammesVisibilite();", active: viewId==='view-programmes', label:'Programmes', icon:SVG_CLIPBOARD},
         {onclick:"nav.push('view-history'); app.renderHistory();", active: viewId==='view-history', label:'Historique', icon:SVG_CLOCK},
         {onclick:"nav.push('view-stats'); app.renderStats();", active: viewId==='view-stats', label:'Stats', icon:SVG_BARS},
@@ -5347,7 +5457,7 @@ const app = {
         const p = PROGRAMS.find(pp=>pp.id===l.programmeId);
         const s = p.seances.find(ss=>ss.numero===l.seanceNumero);
         const isCardio = s.type==='cardio';
-        const label = l.programmeId===FREE_CARDIO_PROGRAM_ID ? 'Cardio libre' : (l.programmeId===FREE_MUSCU_PROGRAM_ID ? 'Musculation libre' : (escapeHtml(p.nom)+' — Séance '+l.seanceNumero));
+        const label = l.programmeId===FREE_CARDIO_PROGRAM_ID ? (l.course ? 'Course à pied · niveau '+l.course.niveau : 'Cardio libre') : (l.programmeId===FREE_MUSCU_PROGRAM_ID ? 'Musculation libre' : (escapeHtml(p.nom)+' — Séance '+l.seanceNumero));
         const dur = computeDureeTotaleMin(l, s);
         const parts = [isCardio ? 'Cardio' : ((s.exercices?.length||0)+' exercices')];
         if(dur) parts.push(dur+' min');
@@ -5815,7 +5925,7 @@ const app = {
     const seanceDef = prog.seances.find(s=>s.numero===L.seanceNumero);
     const editingSeance = this._editingProgramSeance;
     document.getElementById('log-title').textContent = editingSeance ? 'Modifier la séance'
-      : L.programmeId===FREE_CARDIO_PROGRAM_ID ? 'Cardio libre' : (L.programmeId===FREE_MUSCU_PROGRAM_ID ? 'Musculation libre' : ('Séance ' + L.seanceNumero));
+      : L.programmeId===FREE_CARDIO_PROGRAM_ID ? (L.course ? 'Course à pied · niveau '+L.course.niveau : 'Cardio libre') : (L.programmeId===FREE_MUSCU_PROGRAM_ID ? 'Musculation libre' : ('Séance ' + L.seanceNumero));
     const semaine = computeSemaine(L.programmeId);
     const saveBtn = document.getElementById('log-save-btn');
     if(saveBtn) saveBtn.textContent = editingSeance ? 'Mettre à jour la séance' : 'Enregistrer la séance';
@@ -7560,7 +7670,7 @@ const app = {
       const p = PROGRAMS.find(pp=>pp.id===l.programmeId);
       const s = p.seances.find(ss=>ss.numero===l.seanceNumero);
       const isCardio = s.type==='cardio';
-      const titre = l.programmeId===FREE_CARDIO_PROGRAM_ID ? 'Cardio libre' : (l.programmeId===FREE_MUSCU_PROGRAM_ID ? 'Musculation libre' : (escapeHtml(p.nom)+' — Séance '+l.seanceNumero+' · '+escapeHtml(s.nom)));
+      const titre = l.programmeId===FREE_CARDIO_PROGRAM_ID ? (l.course ? 'Course à pied · niveau '+l.course.niveau : 'Cardio libre') : (l.programmeId===FREE_MUSCU_PROGRAM_ID ? 'Musculation libre' : (escapeHtml(p.nom)+' — Séance '+l.seanceNumero+' · '+escapeHtml(s.nom)));
       const vol = computeTotalPoidsSouleve(l, s);
       const parts = [relativeDateLabel(l.date)];
       if(vol>0) parts.push(vol.toLocaleString('fr-FR')+' kg');
@@ -10241,7 +10351,7 @@ const app = {
           const wk = (sw && prog.semaines[sw-1]) || null;
           if(wk) plan = ` · semaine ${sw}/${prog.semaines.length} du plan du coach (${wk.rpe}${wk.allegee?', semaine allégée':''})`;
         }
-        const head = `${l.date} · ${prog?prog.nom:l.programmeId} séance ${l.seanceNumero}${plan}`
+        const head = `${l.date} · ${l.course ? 'Course à pied · niveau '+l.course.niveau : (prog?prog.nom:l.programmeId)+' séance '+l.seanceNumero}${plan}`
           + (l.dureeMin?` · ${l.dureeMin} min`:'') + (l.caloriesMontre?` · ${l.caloriesMontre} kcal actives (montre)`:'');
         const lines = [];
         (l.exercices||[]).forEach(e=>{
@@ -10253,6 +10363,11 @@ const app = {
         if(l.cardio && l.cardio.blocs){
           const c = l.cardio.blocs.filter(b=>b && (b.duree||b.distance)).map(b=>`${b.type} ${b.duree?b.duree+' min':''}${b.distance?' '+b.distance+' km':''}`.trim());
           if(c.length) lines.push('    cardio : '+c.join(' + '));
+        }
+        if(l.course){
+          const cc = l.course, dz = cc.douleur||{};
+          const zl = (dz.zone && dz.zone!=='aucune') ? ({genou:'genou',tibia:'tibia',mollet:'mollet/Achille',hanche:'hanche',pied:'pied'}[dz.zone]||dz.zone)+(dz.sous?' ('+dz.sous+')':'')+' '+dz.intens+'/10'+(dz.quand?' '+(dz.quand==='pendant'?'pendant':'après'):'') : 'aucune douleur';
+          lines.push('    reprise de la course : niveau '+cc.niveau+'/18, '+(cc.lieu==='tapis' ? 'tapis'+(cc.tapis?' ('+cc.tapis.course+' km/h course, '+cc.tapis.marche+' km/h marche, pente '+cc.tapis.pente+' %)':'') : 'extérieur')+' ; douleur : '+zl+((dz.alertes&&dz.alertes.length)?' + alertes '+dz.alertes.join(', '):'')+' ; effort : '+({facile:'trop facile',juste:'juste bien',dur:'trop dur'}[cc.effort]||'?')+' ; verdict '+cc.couleur+(cc.lendemain?' ; lendemain : '+({plus:'plus de douleur',encore:'encore un peu',pire:'pire'}[cc.lendemain]||cc.lendemain):''));
         }
         if(lines.length){ nSeances++; L.push('- '+head); lines.forEach(x=>L.push(x)); }
       });
@@ -10539,6 +10654,595 @@ function checkForUpdate(){
 function applyUpdate(){
   location.href = location.pathname + '?v=' + Date.now();
 }
+
+
+/* ===================== COURSE : reprise de la course a pied =====================
+   Programme par NIVEAUX (18), pas par semaines datees : on monte quand les
+   sorties se passent bien (douleur + effort), on repete ou on recule sinon.
+   Toutes les sorties sont aussi enregistrees comme des seances de "Cardio
+   libre" (type course a pied) -> historique, stats, calories, export IA
+   fonctionnent sans code en double. Donnees propres : db.course.
+   Ce n'est pas un avis medical ; l'appli propose, l'utilisateur decide. */
+const COURSE_MAX = 18;
+// run/walk en secondes ; {cont:min} = course continue. Echauffement 5 min de
+// marche avant, retour au calme 5 min de marche apres (toujours).
+const COURSE_LEVELS = [null,
+  {n:1, reps:6, run:60,  walk:180}, {n:2, reps:7, run:60,  walk:120}, {n:3, reps:6, run:90,  walk:120},
+  {n:4, reps:7, run:90,  walk:90 }, {n:5, reps:6, run:120, walk:90 }, {n:6, reps:4, run:210, walk:120},
+  {n:7, reps:4, run:240, walk:90 }, {n:8, reps:3, run:360, walk:120}, {n:9, reps:2, run:600, walk:120},
+  {n:10, cont:20}, {n:11, cont:25}, {n:12, cont:30}, {n:13, cont:35}, {n:14, cont:40},
+  {n:15, cont:45}, {n:16, cont:50}, {n:17, cont:55}, {n:18, cont:60}
+];
+const COURSE_JALONS = {12:'30 min', 15:'45 min', 18:'1 h'};
+const COURSE_ZONES = [{k:'genou',l:'Genou'},{k:'tibia',l:'Tibia'},{k:'mollet',l:'Mollet / Achille'},{k:'hanche',l:'Hanche'},{k:'pied',l:'Pied'},{k:'aucune',l:'Aucune'}];
+const COURSE_SOUS_GENOU = [{k:'devant',l:'Devant'},{k:'exterieur',l:'Extérieur'},{k:'interieur',l:'Intérieur'},{k:'derriere',l:'Derrière'}];
+const COURSE_ALERTES = [{k:'aigue',l:'Douleur aiguë'},{k:'boiterie',l:'Boiterie'},{k:'gonflement',l:'Gonflement'},{k:'nuit',l:'Douleur la nuit'}];
+const COURSE_TAPIS_DEFAUT = {marche:5.5, course:7.0, pente:0.5};
+
+function courseFmtSec(s){ const m=Math.floor(s/60), r=s%60; return m ? (r ? m+' min '+r : m+' min') : r+' s'; }
+function courseFmtClock(s){ s=Math.max(0,Math.round(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+function courseFmtNum(x){ return String(Math.round(x*10)/10).replace('.',','); }
+function courseFmtSpeed(x){ return (Math.round(x*10)/10).toFixed(1).replace('.',','); }
+function courseSegments(n, tapis){
+  const L = COURSE_LEVELS[n], sp = tapis || COURSE_TAPIS_DEFAUT, seg = [];
+  seg.push({kind:'warm', sec:300, speed:sp.marche, label:'Échauffement'});
+  if(L.cont){
+    seg.push({kind:'run', sec:L.cont*60, speed:sp.course, label:'Course continue', idx:1, total:1});
+  } else {
+    for(let i=1;i<=L.reps;i++){
+      seg.push({kind:'run', sec:L.run, speed:sp.course, label:'Course', idx:i, total:L.reps});
+      seg.push({kind:'walk', sec:L.walk, speed:sp.marche, label:'Marche', idx:i, total:L.reps});
+    }
+  }
+  seg.push({kind:'cool', sec:300, speed:sp.marche, label:'Retour au calme'});
+  return seg;
+}
+function courseTotalSec(n){ return courseSegments(n).reduce((a,s)=>a+s.sec,0); }
+function courseRunMin(n){ const L=COURSE_LEVELS[n]; return L.cont ? L.cont : Math.round(L.reps*L.run/6)/10; }
+function courseLevelTitle(n){ const L=COURSE_LEVELS[n]; return L.cont ? L.cont+' min de course continue' : L.reps+' × ('+courseFmtSec(L.run)+' de course, '+courseFmtSec(L.walk)+' de marche)'; }
+function courseDaysBetween(a, b){ return Math.round((new Date(b+'T00:00:00') - new Date(a+'T00:00:00'))/86400000); }
+
+Object.assign(app, {
+  /* ---------- etat ---------- */
+  courseState(){ const c = this.db && this.db.course; return (c && c.actif) ? c : null; },
+  courseStartLevel(depart, sensible){ const t = {arret:[3,1], irregulier:[5,3], regulier:[7,5]}[depart] || [3,1]; return sensible ? t[1] : t[0]; },
+  // Plancher d'adaptation : pas de course continue (niveau 10+) avant le temps
+  // qu'il faut aux tendons, meme si tout parait facile (rythme "naturel" :
+  // 2 sorties par niveau, a 2 sorties/semaine ; plus court en mode standard).
+  courseGate(level){
+    const C = this.courseState();
+    if(!C || level < 10) return {bloque:false};
+    let w = Math.ceil((level - C.niveauDepart) * 2 / Math.max(2, C.profil.sorties||2));
+    if(!C.profil.sensible) w = Math.ceil(w * 0.75);
+    const need = w * 7, days = courseDaysBetween(C.dateDebut, todayISO());
+    return days >= need ? {bloque:false} : {bloque:true, jours:need-days, semaines:w};
+  },
+  courseLegsRecent(){
+    const t = todayISO(), y = addDaysISO(t, -1), LEG = ['quadriceps','ischios','fessiers','mollets'];
+    const hit = {};
+    (this.db.seances||[]).forEach(l=>{
+      if(l.date!==t && l.date!==y) return;
+      const n = new Set();
+      (l.exercices||[]).forEach(e=>{
+        if(LEG.includes(muscleGroupOf(e.exercice)) && (e.series||[]).some(s=>s && Number(s.poids)>0)) n.add(e.exercice);
+      });
+      if(n.size>=2) hit[l.date===t ? 'auj' : 'hier'] = true;
+    });
+    return hit.auj ? "aujourd’hui" : (hit.hier ? 'hier' : null);
+  },
+
+  /* ---------- carte Sport + ouverture ---------- */
+  courseRenderCard(){
+    const el = document.getElementById('course-card-sub'); if(!el) return;
+    const C = this.courseState();
+    el.textContent = C ? ('Niveau '+C.niveau+' / '+COURSE_MAX+' · '+courseLevelTitle(C.niveau)) : 'Reprise progressive, de quelques minutes à 1 h';
+  },
+  courseOpen(){
+    nav.push('view-course');
+    this.courseRender();
+  },
+
+  /* ---------- ecran Course ---------- */
+  courseRender(){
+    const box = document.getElementById('course-body'); if(!box) return;
+    const C = this.courseState();
+    if(!C){
+      box.innerHTML = `
+        <div class="cr-card hl">
+          <div class="cr-title" style="margin-top:0;">Reprise de la course</div>
+          <div class="cr-note">Un programme en 18 niveaux, de 1 min de course entrecoupée de marche jusqu’à 1 h en continu. Tu montes quand tes sorties se passent bien, tu répètes ou tu recules si tu as mal.</div>
+          <div class="cr-note">Sur tapis (avec vitesses et pente) ou en extérieur. Pas de GPS ni de compte : tout reste sur ton téléphone.</div>
+          <button type="button" class="btn btn-primary" style="margin-top:16px;" onclick="app.courseOpenSetup(false)">Commencer</button>
+        </div>
+        <p class="cr-note small" style="text-align:center;">Ceci n’est pas un avis médical. En cas de douleur persistante, consulte un médecin ou un kiné.</p>`;
+      return;
+    }
+    const n = C.niveau, segs = courseSegments(n, C.tapis);
+    let html = '';
+    // Sortie en cours / a enregistrer
+    if(C.enCours){
+      html += C.enCours.fin!=null
+        ? `<div class="cr-warn green" style="margin-top:0;margin-bottom:14px;"><span>✅</span><div style="flex:1;"><b>Sortie terminée</b>, il reste à noter tes articulations.<div style="margin-top:8px;"><button type="button" class="btn btn-primary btn-sm" onclick="app.courseOpenAfter()">Terminer l’enregistrement</button></div></div></div>`
+        : `<div class="cr-warn green" style="margin-top:0;margin-bottom:14px;"><span>⏱️</span><div style="flex:1;"><b>Sortie en cours</b> (niveau ${C.enCours.niveau}).<div style="margin-top:8px;"><button type="button" class="btn btn-primary btn-sm" onclick="app.courseResumeRun()">Reprendre le minuteur</button></div></div></div>`;
+    }
+    // Suivi du lendemain
+    const pend = this.coursePendingLendemain();
+    if(pend){
+      const z = COURSE_ZONES.find(x=>x.k===pend.zone);
+      html += `<div class="cr-card hl"><div class="cr-lbl">Suivi d’hier</div>
+        <div style="font-size:16px;font-weight:800;">Comment va ${z && z.k!=='aucune' ? 'ton '+escapeHtml(z.l.toLowerCase().replace(' / achille','')) : 'ta douleur'} ce matin ?</div>
+        <div class="cr-note">Sortie du ${escapeHtml(relativeDateLabel(pend.date).toLowerCase())}, douleur ${pend.intens}/10. Une douleur encore présente le lendemain fait répéter le niveau.</div>
+        <div class="cr-chips" style="margin-top:12px;">
+          <button type="button" class="cr-chip" onclick="app.courseLendemain('${pend.id}','plus')">Plus de douleur</button>
+          <button type="button" class="cr-chip" onclick="app.courseLendemain('${pend.id}','encore')">Encore un peu</button>
+          <button type="button" class="cr-chip" onclick="app.courseLendemain('${pend.id}','pire')">Pire qu’hier</button>
+        </div></div>`;
+    }
+    // Carte du niveau
+    const warns = [];
+    const legs = this.courseLegsRecent();
+    if(legs) warns.push(`<div class="cr-warn"><span>⚠️</span><div><b>Séance de jambes ${legs}.</b> Pour tes articulations, laisse environ 48 h entre une séance de jambes lourde et la course.</div></div>`);
+    const last = (C.sorties||[]).slice(-1)[0];
+    if(last && courseDaysBetween(last.date, todayISO())<=0) warns.push(`<div class="cr-warn"><span>⚠️</span><div><b>Sortie déjà faite aujourd’hui.</b> Laisse au moins 48 h entre deux sorties de course.</div></div>`);
+    else if(last && courseDaysBetween(last.date, todayISO())===1) warns.push(`<div class="cr-warn"><span>⚠️</span><div><b>Dernière sortie hier.</b> Laisse au moins 48 h entre deux sorties : mieux vaut attendre demain.</div></div>`);
+    if(last && last.couleur==='rouge' && courseDaysBetween(last.date, todayISO())<4) warns.push(`<div class="cr-warn red"><span>🛑</span><div><b>Dernière sortie en rouge.</b> Prends quelques jours de repos avant de repartir. Si la douleur persiste, consulte.</div></div>`);
+    const lieux = C.profil.lieux || ['tapis'];
+    const lieu = lieux.includes(C.lieu) ? C.lieu : lieux[0];
+    const segHtml = (()=>{
+      // apercu compact : echauffement, 3 premiers blocs, "...", retour au calme
+      const L = COURSE_LEVELS[n];
+      if(L.cont) return `<b style="flex:3;">5'</b><b class="r" style="flex:${Math.max(6, Math.min(14, L.cont/3))};">${L.cont} min</b><b style="flex:3;">5'</b>`;
+      const mn = L.run/60, mw = L.walk/60;
+      let s = `<b style="flex:3;">5'</b>`;
+      const show = Math.min(3, L.reps);
+      for(let i=0;i<show;i++){ s += `<b class="r" style="flex:${Math.max(2,mn*2)};">${courseFmtSec(L.run).replace(' min ',"'").replace(' min',"'").replace(' s','"')}</b><b style="flex:${Math.max(2,mw*2)};">${courseFmtSec(L.walk).replace(' min ',"'").replace(' min',"'").replace(' s','"')}</b>`; }
+      if(L.reps>show) s += `<b style="flex:1.5;">…</b>`;
+      return s + `<b style="flex:3;">5'</b>`;
+    })();
+    html += `<div class="cr-card hl">
+      <div class="cr-row"><span class="cr-pill">Niveau ${n} / ${COURSE_MAX}</span><span style="margin-left:auto;font-size:13px;color:var(--text-dim);font-weight:700;">≈ ${Math.round(courseTotalSec(n)/60)} min au total</span></div>
+      <div class="cr-title">${escapeHtml(courseLevelTitle(n))}</div>
+      <div class="cr-note">Allure « je peux parler » (effort 4 à 5 sur 10). La vitesse est un repère, pas un objectif.</div>
+      <div class="cr-seg">${segHtml}</div>
+      <div class="cr-ms"><span>Échauffement</span><span>${courseFmtNum(courseRunMin(n))} min de course</span><span>Retour au calme</span></div>
+      ${warns.join('')}
+      ${lieux.length>1 ? `<div class="cr-chips" style="margin-top:14px;">${lieux.map(l=>`<button type="button" class="cr-chip ${lieu===l?'on':''}" onclick="app.courseSetLieu('${l}')">${l==='tapis'?'Tapis':'Extérieur'}</button>`).join('')}</div>` : ''}
+      <button type="button" class="btn btn-primary" style="margin-top:14px;" onclick="app.courseStart()" ${C.enCours?'disabled':''}>Démarrer la sortie</button>
+    </div>`;
+    // Tapis
+    if(lieu==='tapis'){
+      const T = C.tapis;
+      html += `<div class="cr-card"><div class="cr-lbl">Réglages du tapis</div>
+        ${this._courseStepper('Marche', courseFmtSpeed(T.marche)+' km/h', "marche")}
+        ${this._courseStepper('Course', courseFmtSpeed(T.course)+' km/h', "course")}
+        ${this._courseStepper('Pente', courseFmtSpeed(T.pente)+' %', "pente")}
+        <div class="cr-note small">Valeurs de départ : règle-les sur ton tapis (marche rapide confortable, course où tu peux parler). 0 % si ton tapis ne fait pas les demi-pourcents. L’appli ne change jamais la vitesse toute seule et ne la monte pas en même temps que la durée.</div></div>`;
+    } else {
+      html += `<div class="cr-card"><div class="cr-lbl">En extérieur</div><div class="cr-note" style="margin-top:0;">Pas de vitesse à tenir : reste à un effort où tu peux parler. Chemin ou piste plutôt que bitume dur si possible, et évite les descentes raides. Avec ta montre, tu peux suivre l’allure, l’appli ne l’exige pas.</div></div>`;
+    }
+    // Progression
+    const gateN = this.courseGate(n+1 > COURSE_MAX ? COURSE_MAX : n+1);
+    let ladder = '';
+    for(let i=1;i<=COURSE_MAX;i++) ladder += `<i class="${i<n?'d':(i===n?'c':'')}"></i>`;
+    const nextJalon = [12,15,18].find(j=>j>=n);
+    html += `<div class="cr-card"><div class="cr-lbl">Ta progression <button type="button" class="info-btn" title="Comment ça marche" onclick="app.openInfo(this)" data-info="${escapeHtml(this.courseRulesText())}">i</button></div>
+      <div class="cr-ladder">${ladder}</div>
+      <div class="cr-ms"><span>Niveau 1</span><span>Niv. 12 · 30 min continu</span><span>Niv. 15 · 45 min</span><span>18 · 1 h</span></div>
+      <div class="cr-note">${C.vertsDeSuite||0} / 2 sortie${(C.vertsDeSuite||0)>1?'s':''} verte${(C.vertsDeSuite||0)>1?'s':''} sur ce niveau. ${nextJalon ? 'Prochain jalon : niveau '+nextJalon+' ('+COURSE_JALONS[nextJalon]+').' : ''}</div>
+      ${gateN.bloque && n<COURSE_MAX ? `<div class="cr-note small">La course continue ne s’ouvre pas avant environ ${gateN.semaines} semaines depuis ton début, même si tout te paraît facile (encore ${gateN.jours} jours pour le niveau ${n+1}).</div>` : ''}
+    </div>`;
+    // Sorties
+    const rec = (C.sorties||[]).slice(-6).reverse();
+    html += `<div class="cr-card"><div class="cr-lbl">Mes dernières sorties</div>` + (rec.length ? rec.map(s=>{
+      const z = COURSE_ZONES.find(x=>x.k===s.zone);
+      const pain = (s.zone && s.zone!=='aucune') ? (z?z.l:s.zone)+' '+s.intens+'/10' : 'aucune douleur';
+      return `<div class="cr-hist"><span class="cr-dot ${s.couleur}"></span><div style="flex:1;min-width:0;"><div class="t1">Niveau ${s.niveau} · ${s.min} min · ${s.lieu==='tapis'?'tapis':'extérieur'}</div><div class="t2">${escapeHtml(relativeDateLabel(s.date))} · ${escapeHtml(pain)}${s.lendemain==='encore'?' · encore le lendemain':(s.lendemain==='pire'?' · pire le lendemain':'')}</div></div></div>`;
+    }).join('') : `<div class="cr-note" style="margin-top:0;">Aucune sortie pour l’instant.</div>`) + `</div>`;
+    // Reglages
+    html += `<div class="cr-card"><div class="cr-lbl">Réglages de la course</div>
+      <div class="cr-row"><div style="flex:1;font-size:14.5px;font-weight:700;">${C.profil.sorties} sorties par semaine · ${C.profil.sensible?'articulations sensibles':'mode standard'}<div class="cr-note small" style="margin-top:2px;">Objectif ${C.profil.objectif===60?'1 h':C.profil.objectif+' min'} sans s’arrêter</div></div><button type="button" class="btn btn-secondary btn-sm" onclick="app.courseOpenSetup(true)">Modifier</button></div>
+      <div class="cr-step"><span class="nm">Niveau actuel</span><button type="button" aria-label="Niveau précédent" onclick="app.courseNiveauAdj(-1)">−</button><span class="v">${n}</span><button type="button" aria-label="Niveau suivant" onclick="app.courseNiveauAdj(1)">+</button></div>
+      <div class="cr-note small">Tu peux choisir ton niveau toi-même. L’appli te prévient si tu vas bien au-delà de ce qu’elle recommande.</div>
+      <button type="button" class="btn btn-danger" style="margin-top:14px;" onclick="app.courseReset()">Recommencer la course à zéro</button></div>
+      <p class="cr-note small" style="text-align:center;">Ceci n’est pas un avis médical. En cas de douleur persistante, de gonflement ou de douleur la nuit, consulte un médecin ou un kiné.</p>`;
+    box.innerHTML = html;
+  },
+  _courseStepper(nom, val, champ){
+    return `<div class="cr-step"><span class="nm">${nom}</span><button type="button" aria-label="${nom} moins" onclick="app.courseTapisAdj('${champ}',-1)">−</button><span class="v">${val}</span><button type="button" aria-label="${nom} plus" onclick="app.courseTapisAdj('${champ}',1)">+</button></div>`;
+  },
+  courseRulesText(){
+    const C = this.courseState(); const sens = !C || C.profil.sensible;
+    return 'Après chaque sortie tu notes ta douleur (zone, intensité de 0 à 10) et ton effort. VERT : 0 à 2 → après 2 sorties vertes, niveau suivant. ORANGE : 3'+(sens?'':' à 4')+' → on répète le niveau. ROUGE : '+(sens?'4':'5')+' ou plus, ou douleur aiguë, boiterie, gonflement, douleur la nuit → on recule d’un niveau et un repos est conseillé. Une douleur encore présente le lendemain matin fait répéter le niveau. Si 2 sorties vertes et trop faciles, l’appli te propose de sauter un niveau (tu décides). La course continue de 30 min ne s’ouvre pas avant plusieurs semaines, car les tendons s’adaptent plus lentement que le souffle. Ces seuils sont des repères prudents, pas un avis médical.';
+  },
+  coursePendingLendemain(){
+    const C = this.courseState(); if(!C) return null;
+    const s = (C.sorties||[]).slice(-1)[0];
+    if(!s || s.lendemain || !s.zone || s.zone==='aucune') return null;
+    const d = courseDaysBetween(s.date, todayISO());
+    return (d>=1 && d<=3) ? s : null;
+  },
+  courseSetLieu(l){ const C = this.courseState(); if(!C) return; C.lieu = l; saveDB(this.db); this.courseRender(); },
+  courseTapisAdj(champ, dir){
+    const C = this.courseState(); if(!C) return;
+    const lim = {marche:[3,7,0.5], course:[5,14,0.5], pente:[0,3,0.5]}[champ]; if(!lim) return;
+    const v = Math.round((C.tapis[champ] + dir*lim[2])*10)/10;
+    if(v<lim[0] || v>lim[1]) return;
+    if(champ==='pente' && v>2 && dir>0) toast('Au-delà de 2 %, on charge davantage mollets et tendons d’Achille.');
+    C.tapis[champ] = v; saveDB(this.db); this.courseRender();
+  },
+  courseNiveauAdj(dir){
+    const C = this.courseState(); if(!C) return;
+    const v = C.niveau + dir; if(v<1 || v>COURSE_MAX) return;
+    const apply = ()=>{ C.niveau = v; C.vertsDeSuite = 0; C.facilesDeSuite = 0; C.orangesDeSuite = 0; saveDB(this.db); this.courseRender(); this.courseRenderCard(); };
+    const g = dir>0 ? this.courseGate(v) : {bloque:false};
+    if(dir>0 && g.bloque) showConfirm('Le niveau '+v+' est de la course continue : il ne s’ouvre normalement pas avant environ '+g.semaines+' semaines (encore '+g.jours+' jours). Tes tendons s’adaptent plus lentement que ton souffle. Passer quand même ?', apply, 'Passer quand même');
+    else apply();
+  },
+  courseReset(){
+    showConfirm('Recommencer la course à zéro ? Ton niveau et ton suivi de course sont effacés. Tes séances déjà enregistrées restent dans l’historique.', ()=>{
+      this.courseStopTimers();
+      this.db.course = {actif:false};
+      saveDB(this.db); this.courseRender(); this.courseRenderCard();
+    });
+  },
+
+  /* ---------- inscription / modification des choix ---------- */
+  courseOpenSetup(edit){
+    const C = this.courseState();
+    const musc = (this.db.seances||[]).filter(l=>l.programmeId!==FREE_CARDIO_PROGRAM_ID && l.date>=addDaysISO(todayISO(),-28) && (l.exercices||[]).length).length;
+    const reco = musc>=12 ? 2 : 3;   // 3 seances de muscu/sem. ou plus -> 2 sorties conseillees
+    this._cs = edit && C
+      ? {edit:true, depart:C.profil.depart, sensible:C.profil.sensible, sorties:C.profil.sorties, lieux:(C.profil.lieux||['tapis']).slice(), objectif:C.profil.objectif, reco}
+      : {edit:false, depart:'arret', sensible:true, sorties:Math.min(reco,3), lieux:['tapis','exterieur'], objectif:60, reco};
+    this.courseSetupRender();
+    Sheets.open('course-setup-overlay');
+  },
+  courseCloseSetup(){ Sheets.close('course-setup-overlay'); this._cs = null; },
+  courseSetupSet(k, v){
+    const S = this._cs; if(!S) return;
+    if(k==='lieu'){ const i = S.lieux.indexOf(v); if(i>=0){ if(S.lieux.length>1) S.lieux.splice(i,1); } else S.lieux.push(v); }
+    else S[k] = v;
+    this.courseSetupRender();
+  },
+  courseSetupRender(){
+    const S = this._cs, box = document.getElementById('course-setup-body'); if(!S||!box) return;
+    const opt = (k, val, titre, sub)=>`<button type="button" class="cr-opt ${S[k]===val?'on':''}" onclick="app.courseSetupSet('${k}','${val}')"><span class="dt"></span><span>${titre}${sub?`<small>${sub}</small>`:''}</span></button>`;
+    const start = this.courseStartLevel(S.depart, S.sensible);
+    box.innerHTML = `
+      ${S.edit ? '' : `<div class="cr-note" style="margin-top:0;">Quelques questions pour choisir ton niveau de départ. Tu pourras tout modifier ensuite.</div>`}
+      <div class="cr-lbl" style="margin-top:14px;">Où en es-tu ?</div>
+      ${opt('depart','arret','Je ne cours plus depuis plus d’un an','On commence par une alternance course/marche courte')}
+      ${opt('depart','irregulier','Je cours un peu, de façon irrégulière','')}
+      ${opt('depart','regulier','Je cours déjà régulièrement','')}
+      <div class="cr-lbl" style="margin-top:18px;">Articulations</div>
+      <button type="button" class="cr-opt ${S.sensible?'on':''}" onclick="app.courseSetupSet('sensible',${!S.sensible})"><span class="dt"></span><span>Articulations sensibles<small>Genoux, chevilles, tibias… Progression plus lente, seuil de douleur plus strict (rouge dès 4/10).</small></span></button>
+      <div class="cr-lbl" style="margin-top:18px;">Sorties par semaine</div>
+      <div class="cr-chips">${[2,3,4].map(k=>`<button type="button" class="cr-chip ${S.sorties===k?'on':''}" onclick="app.courseSetupSet('sorties',${k})">${k}${k===S.reco?' <span class="cr-tag">conseillé</span>':''}</button>`).join('')}</div>
+      <div class="cr-note small">Au moins 48 h entre deux sorties. Si tu fais aussi de la musculation, l’appli évite de coller la course à tes séances de jambes.</div>
+      <div class="cr-lbl" style="margin-top:18px;">Où cours-tu ?</div>
+      <div class="cr-chips">${['tapis','exterieur'].map(l=>`<button type="button" class="cr-chip ${S.lieux.includes(l)?'on':''}" onclick="app.courseSetupSet('lieu','${l}')">${l==='tapis'?'Tapis':'Extérieur'}</button>`).join('')}</div>
+      <div class="cr-lbl" style="margin-top:18px;">Ton objectif</div>
+      <div class="cr-chips">${[30,45,60].map(k=>`<button type="button" class="cr-chip ${S.objectif===k?'on':''}" onclick="app.courseSetupSet('objectif',${k})">${k===60?'1 h sans m’arrêter':k+' min'}</button>`).join('')}</div>
+      <div class="cr-note small">L’objectif s’atteint par paliers (30, 45 puis 60 min) : compte plusieurs mois, sans date imposée.</div>
+      <button type="button" class="btn btn-primary" style="margin-top:18px;" onclick="app.courseSetupSave()">${S.edit ? 'Enregistrer' : 'Commencer au niveau '+start}</button>
+      <p class="cr-note small" style="text-align:center;">Ceci n’est pas un avis médical. En cas de douleur persistante, consulte un médecin ou un kiné.</p>`;
+  },
+  courseSetupSave(){
+    const S = this._cs; if(!S) return;
+    const profil = {depart:S.depart, sensible:S.sensible, sorties:S.sorties, lieux:S.lieux.slice(), objectif:S.objectif};
+    if(S.edit && this.db.course && this.db.course.actif){
+      this.db.course.profil = profil;
+      if(!profil.lieux.includes(this.db.course.lieu)) this.db.course.lieu = profil.lieux[0];
+    } else {
+      const niv = this.courseStartLevel(S.depart, S.sensible);
+      this.db.course = {actif:true, dateDebut:todayISO(), profil, niveau:niv, niveauDepart:niv, vertsDeSuite:0, facilesDeSuite:0, orangesDeSuite:0,
+        tapis:Object.assign({}, COURSE_TAPIS_DEFAUT), lieu:profil.lieux[0], sorties:[], enCours:null};
+    }
+    saveDBOrWarn(this.db);
+    this.courseCloseSetup();
+    this.courseRender(); this.courseRenderCard();
+  },
+
+  /* ---------- minuteur ---------- */
+  _courseSegsOf(R){ return courseSegments(R.niveau, R.lieu==='tapis' ? R.tapis : null); },
+  courseStart(){
+    const C = this.courseState(); if(!C || C.enCours) return;
+    // Geste utilisateur : debloque le son (iOS) avant que le minuteur tourne seul.
+    try{ this._unlockRestTimerAudio(); }catch(e){}
+    const lieux = C.profil.lieux || ['tapis'];
+    const lieu = lieux.includes(C.lieu) ? C.lieu : lieux[0];
+    C.enCours = {start:Date.now(), pausedMs:0, pausedAt:null, niveau:C.niveau, lieu, tapis:Object.assign({}, C.tapis), date:todayISO(), fin:null};
+    saveDB(this.db);
+    this._courseBeepStart();
+    this.courseResumeRun();
+  },
+  courseResumeRun(){
+    const C = this.courseState(); if(!C || !C.enCours || C.enCours.fin!=null) return;
+    try{ this._unlockRestTimerAudio(); }catch(e){}
+    this._courseIdx = null; this._courseWarned = false; this._courseLastTick = Date.now();
+    clearInterval(this._courseInt);
+    nav.push('view-course-run');
+    this._courseBuildRun();
+    this._courseInt = setInterval(()=>this._courseTick(), 250);
+    this._courseTick();
+    this._courseWakeLock(true);
+  },
+  _courseBuildRun(){
+    const R = this.db.course.enCours;
+    document.getElementById('cr-run-lieu').textContent = R.lieu==='tapis' ? 'Tapis · pente '+courseFmtSpeed(R.tapis.pente)+' %' : 'Extérieur';
+    document.getElementById('cr-run-pause').textContent = R.pausedAt ? 'Reprendre' : 'Pause';
+    document.getElementById('cr-run-tip').innerHTML = '<b>Reste à un effort où tu peux parler.</b> Si une douleur apparaît, passe en marche : tu pourras la noter à la fin.';
+  },
+  _courseTick(){
+    const C = this.courseState(), R = C && C.enCours;
+    if(!R || R.fin!=null){ clearInterval(this._courseInt); this._courseWakeLock(false); return; }
+    const segs = this._courseSegsOf(R), total = segs.reduce((a,s)=>a+s.sec,0);
+    const nowReal = Date.now();
+    const ref = R.pausedAt || nowReal;
+    const el = Math.max(0, (ref - R.start - R.pausedMs)/1000);
+    if(el >= total){ this._courseFinish(true); return; }
+    let acc = 0, idx = 0;
+    for(let i=0;i<segs.length;i++){ if(el < acc + segs[i].sec){ idx = i; break; } acc += segs[i].sec; }
+    const seg = segs[idx], rem = Math.ceil(acc + seg.sec - el);
+    const gap = nowReal - (this._courseLastTick||nowReal); this._courseLastTick = nowReal;
+    if(this._courseIdx!==null && idx!==this._courseIdx){
+      // Signal seulement si le changement vient d'avoir lieu (pas apres une veille).
+      if(gap < 3000 && !R.pausedAt) this._courseCue(seg.kind==='run' ? 'run' : 'walk');
+      this._courseWarned = false;
+    }
+    this._courseIdx = idx;
+    const nxt = segs[idx+1];
+    if(!R.pausedAt && nxt && rem<=10 && !this._courseWarned){
+      this._courseWarned = true;
+      if(gap < 3000) this._courseBeep([[660,0.08]]);
+    }
+    // affichage
+    const isRun = seg.kind==='run';
+    const ph = document.getElementById('cr-run-phase');
+    ph.textContent = seg.kind==='warm' ? 'ÉCHAUFFEMENT' : (seg.kind==='cool' ? 'RETOUR AU CALME' : (isRun ? 'COURSE' : 'MARCHE'));
+    ph.className = 'cr-phase' + (isRun ? '' : ' walk');
+    document.getElementById('cr-run-time').textContent = courseFmtClock(rem);
+    const pill = seg.total ? ('NIVEAU '+R.niveau+' · '+(seg.total>1 ? 'INTERVALLE '+seg.idx+' / '+seg.total : 'COURSE CONTINUE')) : ('NIVEAU '+R.niveau);
+    document.getElementById('cr-run-pill').textContent = pill;
+    document.getElementById('cr-run-speed').innerHTML = R.lieu==='tapis' ? courseFmtSpeed(seg.speed)+' km/h <span>· pente '+courseFmtSpeed(R.tapis.pente)+' %</span>' : '<span>Effort où tu peux parler</span>';
+    document.getElementById('cr-run-bar').style.width = Math.min(100, ((el-acc)/seg.sec*100)).toFixed(1)+'%';
+    const nm = document.getElementById('cr-run-next-name'), sb = document.getElementById('cr-run-next-sub');
+    if(nxt){
+      nm.textContent = nxt.kind==='cool' ? 'Retour au calme' : (nxt.kind==='run' ? 'Course' : 'Marche') + (R.lieu==='tapis' ? ' · '+courseFmtSpeed(nxt.speed)+' km/h' : '');
+      sb.textContent = 'dans '+courseFmtClock(rem) + (R.lieu==='tapis' ? ' · rappel 10 s avant pour régler le tapis' : '');
+    } else { nm.textContent = 'Fin de la sortie'; sb.textContent = 'dans '+courseFmtClock(rem); }
+    document.getElementById('cr-run-next').classList.toggle('soon', !!nxt && rem<=10);
+    document.getElementById('cr-run-elapsed').textContent = courseFmtClock(el)+' / '+courseFmtClock(total);
+  },
+  courseTogglePause(){
+    const C = this.courseState(), R = C && C.enCours; if(!R || R.fin!=null) return;
+    try{ this._unlockRestTimerAudio(); }catch(e){}
+    if(R.pausedAt){ R.pausedMs += Date.now() - R.pausedAt; R.pausedAt = null; this._courseLastTick = Date.now(); }
+    else R.pausedAt = Date.now();
+    saveDB(this.db);
+    document.getElementById('cr-run-pause').textContent = R.pausedAt ? 'Reprendre' : 'Pause';
+    this._courseTick();
+  },
+  courseStop(){
+    const C = this.courseState(), R = C && C.enCours; if(!R || R.fin!=null) return;
+    showConfirm('Terminer la sortie maintenant ? Tu pourras noter tes articulations juste après.', ()=>this._courseFinish(false), 'Terminer');
+  },
+  _courseFinish(auto){
+    const C = this.courseState(), R = C && C.enCours; if(!R || R.fin!=null) return;
+    const segs = this._courseSegsOf(R), total = segs.reduce((a,s)=>a+s.sec,0);
+    const ref = R.pausedAt || Date.now();
+    R.fin = Math.min(total, Math.max(1, Math.round((ref - R.start - R.pausedMs)/1000)));
+    R.planifie = total;
+    saveDB(this.db);
+    this.courseStopTimers();
+    try{ document.getElementById('cr-run-phase').textContent='TERMINÉ'; document.getElementById('cr-run-phase').className='cr-phase'; document.getElementById('cr-run-time').textContent='0:00'; }catch(e){}
+    if(auto) this._courseBeep([[880,0.15],[880,0.15],[1175,0.3]], 0.22);
+    this.courseOpenAfter();
+  },
+  courseStopTimers(){ clearInterval(this._courseInt); this._courseInt = null; this._courseWakeLock(false); },
+  _courseWakeLock(on){
+    try{
+      if(!on){ if(this._courseWL){ this._courseWL.release().catch(()=>{}); this._courseWL = null; } return; }
+      if(!('wakeLock' in navigator) || this._courseWL || this._courseWLPending) return;
+      this._courseWLPending = true;
+      navigator.wakeLock.request('screen').then(wl=>{ this._courseWLPending=false; this._courseWL = wl; wl.addEventListener('release', ()=>{ if(this._courseWL===wl) this._courseWL=null; }); }).catch(()=>{ this._courseWLPending=false; });
+    }catch(e){ this._courseWLPending=false; }
+  },
+  _courseCue(kind){
+    try{ if(navigator.vibrate) navigator.vibrate(kind==='run' ? [250,100,250] : [400]); }catch(e){}
+    this._courseBeep(kind==='run' ? [[988,0.14],[1319,0.18]] : [[784,0.14],[587,0.2]], 0.2);
+  },
+  _courseBeepStart(){ this._courseBeep([[880,0.12]]); },
+  _courseBeep(notes, gap){
+    try{
+      const Ctx = window.AudioContext || window.webkitAudioContext; if(!Ctx) return;
+      if(!this._audioCtx) this._audioCtx = new Ctx();
+      const ctx = this._audioCtx; if(ctx.state==='suspended') ctx.resume().catch(()=>{});
+      let t = 0;
+      notes.forEach(([f,d])=>{
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = f; o.connect(g); g.connect(ctx.destination);
+        g.gain.setValueAtTime(0.0001, ctx.currentTime+t);
+        g.gain.exponentialRampToValueAtTime(0.8, ctx.currentTime+t+0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+t+d);
+        o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+d+0.03);
+        t += (gap||d+0.06);
+      });
+    }catch(e){}
+  },
+
+  /* ---------- apres la sortie : douleurs, effort, decision ---------- */
+  courseOpenAfter(){
+    const C = this.courseState(), R = C && C.enCours; if(!R || R.fin==null) return;
+    if(!this._ca) this._ca = {zone:'aucune', sous:null, intens:0, quand:'apres', alertes:[], effort:'juste', parle:true, distance:'', step:'form', res:null, vitesse:false};
+    this.courseAfterRender();
+    Sheets.open('course-after-overlay');
+  },
+  courseCloseAfter(){ Sheets.close('course-after-overlay'); this.courseRender(); },
+  courseAfterSet(k, v){
+    const A = this._ca; if(!A) return;
+    if(k==='alerte'){ const i = A.alertes.indexOf(v); if(i>=0) A.alertes.splice(i,1); else A.alertes.push(v); }
+    else if(k==='zone'){ A.zone = v; if(v==='aucune'){ A.intens = 0; A.sous = null; A.alertes = []; } else { if(A.intens===0) A.intens = 1; if(v!=='genou') A.sous = null; } }
+    else if(k==='distance'){ A.distance = v; return; }
+    else A[k] = v;
+    this.courseAfterRender();
+  },
+  courseAfterRender(){
+    const A = this._ca, C = this.courseState(), R = C && C.enCours, box = document.getElementById('course-after-body'); if(!A||!R||!box) return;
+    const min = Math.max(1, Math.round(R.fin/60));
+    if(A.step==='result') return this.courseAfterRenderResult();
+    const chip = (k,val,label,on)=>`<button type="button" class="cr-chip ${on?'on':''}" onclick="app.courseAfterSet('${k}','${val}')">${label}</button>`;
+    const sc = Array.from({length:11}, (_,i)=>`<button type="button" class="${A.intens===i?'on '+(i>=(C.profil.sensible?4:5)?'hi':(i<=2?'lo':'')):''}" onclick="app.courseAfterSet('intens',${i})" ${A.zone==='aucune'?'disabled':''}>${i}</button>`).join('');
+    box.innerHTML = `
+      <div class="cr-note" style="margin-top:0;">Niveau ${R.niveau} · ${min} min${R.fin<(R.planifie||R.fin)*0.75?' (sortie écourtée)':''} · ${R.lieu==='tapis'?'tapis':'extérieur'}</div>
+      <div class="cr-lbl" style="margin-top:14px;">Zone de douleur</div>
+      <div class="cr-chips">${COURSE_ZONES.map(z=>chip('zone',z.k,z.l,A.zone===z.k)).join('')}</div>
+      ${A.zone==='genou' ? `<div class="cr-lbl" style="margin-top:14px;">Où dans le genou</div><div class="cr-chips">${COURSE_SOUS_GENOU.map(z=>chip('sous',z.k,z.l,A.sous===z.k)).join('')}</div>` : ''}
+      ${A.zone!=='aucune' ? `
+        <div class="cr-lbl" style="margin-top:14px;">Intensité (0 à 10)</div><div class="cr-scale">${sc}</div>
+        <div class="cr-lbl" style="margin-top:14px;">Quand</div><div class="cr-chips">${chip('quand','pendant','Pendant',A.quand==='pendant')}${chip('quand','apres','Après',A.quand==='apres')}</div>
+        <div class="cr-lbl" style="margin-top:14px;">Signaux d’alerte</div><div class="cr-chips">${COURSE_ALERTES.map(a=>`<button type="button" class="cr-chip ${A.alertes.includes(a.k)?'on':''}" onclick="app.courseAfterSet('alerte','${a.k}')">${a.l}</button>`).join('')}</div>` : ''}
+      <div class="cr-lbl" style="margin-top:18px;">Et l’effort ?</div>
+      <div class="cr-chips">${chip('effort','facile','Trop facile',A.effort==='facile')}${chip('effort','juste','Juste bien',A.effort==='juste')}${chip('effort','dur','Trop dur',A.effort==='dur')}</div>
+      <button type="button" class="cr-opt ${A.parle?'on':''}" onclick="app.courseAfterSet('parle',${!A.parle})"><span class="dt"></span><span>J’aurais pu parler en phrases entières</span></button>
+      ${R.lieu==='exterieur' ? `<div class="field" style="margin-top:14px;"><label>Distance (km), si tu l’as</label><input type="text" inputmode="decimal" placeholder="ex. 3,2" value="${escapeHtml(A.distance)}" oninput="app.courseAfterSet('distance',this.value)"></div>` : ''}
+      <button type="button" class="btn btn-primary" style="margin-top:18px;" onclick="app.courseAfterDecide()">Voir la décision</button>`;
+  },
+  // Calcule couleur + decision (fonction pure : n'ecrit rien).
+  courseCompute(A, R, C){
+    const sens = C.profil.sensible, n = C.niveau;
+    const intens = A.zone==='aucune' ? 0 : A.intens;
+    let couleur = 'vert';
+    if(A.alertes.length || intens >= (sens?4:5)) couleur = 'rouge';
+    else if(intens >= 3) couleur = 'orange';
+    const incomplet = R.planifie && R.fin < R.planifie*0.75;
+    let verts = C.vertsDeSuite||0, faciles = C.facilesDeSuite||0, oranges = C.orangesDeSuite||0;
+    let action = 'repete', vers = n, prop = null, msg = '', titre = '';
+    if(couleur==='rouge'){
+      action = 'recule'; vers = Math.max(1, n-1); verts = faciles = oranges = 0;
+      titre = n>1 ? 'On recule au niveau '+vers : 'On reste au niveau 1';
+      msg = (A.alertes.length ? 'Un signal d’alerte ('+A.alertes.map(a=>COURSE_ALERTES.find(x=>x.k===a).l.toLowerCase()).join(', ')+') passe avant tout. ' : 'Douleur à '+intens+'/10 : au-dessus de ton seuil. ')
+        + 'Prends quelques jours de repos avant de repartir. Si ça persiste, ou en cas de gonflement ou de douleur la nuit, consulte un médecin ou un kiné.';
+    } else if(couleur==='orange'){
+      verts = 0; faciles = 0; oranges += 1;
+      titre = 'On répète le niveau '+n;
+      msg = (A.effort==='facile' ? 'Tu l’as trouvée facile, mais la douleur prime : ' : '') + 'douleur à '+intens+'/10, on ne monte pas. Si elle a disparu demain matin, la prochaine sortie reste normale.';
+      if(oranges>=2 && n>1){ prop = {type:'recul', vers:n-1}; msg += ' Deux sorties orange de suite : je te conseille de reculer d’un niveau.'; }
+    } else if(incomplet){
+      titre = 'Sortie écourtée : on garde le niveau '+n;
+      msg = 'Tu n’as pas fait au moins les trois quarts de la séance, elle ne compte pas pour monter de niveau.';
+    } else {
+      oranges = 0; verts += 1; faciles = (A.effort==='facile' && A.parle) ? faciles+1 : 0;
+      if(n>=COURSE_MAX){ titre = 'Tu es au dernier niveau'; msg = 'Objectif atteint : continue à courir 1 h en gardant un effort où tu peux parler.'; }
+      else if(verts>=2){
+        const g1 = this.courseGate(n+1);
+        if(g1.bloque){ action = 'bloque'; verts = 2; titre = 'On garde le niveau '+n+' pour l’instant'; msg = 'Deux sorties vertes, mais la course continue du niveau '+(n+1)+' ne s’ouvre pas avant environ '+g1.semaines+' semaines depuis ton début (encore '+g1.jours+' jours). Tes tendons s’adaptent plus lentement que ton souffle.'; }
+        else {
+          action = 'monte'; vers = n+1; titre = 'Niveau suivant : '+vers; msg = 'Deux sorties vertes : tu montes d’un niveau.'; verts = faciles = 0;
+          if(A.effort==='facile' && A.parle && (C.facilesDeSuite||0)+1>=2 && n+2<=COURSE_MAX && !this.courseGate(n+2).bloque){
+            prop = {type:'saut', vers:n+2}; msg = 'Deux sorties faciles et sans douleur : tu peux aller plus vite que prévu.';
+          }
+        }
+      } else {
+        titre = 'On répète le niveau '+n; msg = 'Encore une sortie verte sur ce niveau pour monter.';
+      }
+    }
+    const sugVit = (action==='repete' || action==='bloque') && couleur==='vert' && !incomplet && A.effort==='facile' && A.parle && R.lieu==='tapis';
+    return {couleur, action, vers, prop, titre, msg, intens, incomplet:!!incomplet, verts, faciles, oranges, sugVit};
+  },
+  courseAfterDecide(){
+    const A = this._ca, C = this.courseState(), R = C && C.enCours; if(!A||!R) return;
+    A.res = this.courseCompute(A, R, C); A.step = 'result'; A.vitesse = false;
+    this.courseAfterRender();
+  },
+  courseAfterRenderResult(){
+    const A = this._ca, C = this.courseState(), R = C.enCours, r = A.res, box = document.getElementById('course-after-body');
+    const lab = {vert:'VERT', orange:'ORANGE', rouge:'ROUGE'}[r.couleur];
+    const p = r.prop;
+    let btns = '';
+    if(p && p.type==='saut') btns = `<div class="cr-note" style="margin-top:14px;">Passer directement au niveau ${p.vers} (en sautant le niveau ${r.vers}) ?<br><b>${escapeHtml(courseLevelTitle(p.vers))}</b></div>
+      <button type="button" class="btn btn-primary" style="margin-top:10px;" onclick="app.courseAfterSave('prop')">Oui, niveau ${p.vers}</button>
+      <button type="button" class="btn btn-secondary" style="margin-top:10px;" onclick="app.courseAfterSave('base')">Non, niveau ${r.vers} comme prévu</button>`;
+    else if(p && p.type==='recul') btns = `<button type="button" class="btn btn-primary" style="margin-top:14px;" onclick="app.courseAfterSave('prop')">Reculer au niveau ${p.vers}</button>
+      <button type="button" class="btn btn-secondary" style="margin-top:10px;" onclick="app.courseAfterSave('base')">Rester au niveau ${C.niveau}</button>`;
+    else btns = `<button type="button" class="btn btn-primary" style="margin-top:14px;" onclick="app.courseAfterSave('base')">Enregistrer</button>`;
+    box.innerHTML = `
+      <div class="cr-verdict ${r.couleur}"><span class="cr-vp">${lab}</span>
+        <div style="font-size:17px;font-weight:800;margin-top:8px;">${escapeHtml(r.titre)}</div>
+        <div class="cr-note" style="color:var(--text);opacity:.85;">${escapeHtml(r.msg)}</div></div>
+      ${r.sugVit ? `<button type="button" class="cr-opt ${A.vitesse?'on':''}" onclick="app.courseAfterSet('vitesse',${!A.vitesse})"><span class="dt"></span><span>Essayer +0,5 km/h en course (${courseFmtSpeed(C.tapis.course)} → ${courseFmtSpeed(C.tapis.course+0.5)})<small>Sortie facile sur un niveau où la durée n’augmente pas : le bon moment pour tester un peu plus vite.</small></span></button>` : ''}
+      ${btns}
+      <button type="button" class="btn btn-ghost" style="margin-top:6px;" onclick="app.courseAfterBack()">‹ Modifier mes réponses</button>`;
+  },
+  courseAfterBack(){ if(this._ca){ this._ca.step = 'form'; this.courseAfterRender(); } },
+  courseAfterSave(choice){
+    const A = this._ca, C = this.courseState(), R = C && C.enCours; if(!A||!R||!A.res) return;
+    const r = A.res, avant = C.niveau;
+    let apres = r.vers;
+    if(choice==='prop' && r.prop) apres = r.prop.vers;
+    else if(r.action==='recule') apres = r.vers;
+    else if(r.action==='monte') apres = r.vers;
+    else apres = C.niveau;
+    const min = Math.max(1, Math.round(R.fin/60));
+    const dist = parseFloat(String(A.distance||'').replace(',','.'));
+    const L = {
+      id: uid(), programmeId: FREE_CARDIO_PROGRAM_ID, seanceNumero: 1, date: R.date, notes: '',
+      startedAt: R.start, endedAt: Date.now(), intensite: ({facile:4, juste:5, dur:7})[A.effort]||5, dureeMin: null, circuitAbdosDureeMin: null,
+      exercices: [],
+      cardio: {blocs:[{type:'course a pied', duree:min, distance:(isFinite(dist)&&dist>0&&dist<200)?dist:null}], ressenti:({facile:'facile', juste:'moyen', dur:'difficile'})[A.effort]||'moyen'},
+      course: {niveau:R.niveau, lieu:R.lieu, tapis:R.lieu==='tapis'?R.tapis:null, planifieSec:R.planifie||null, realSec:R.fin,
+        douleur:{zone:A.zone, sous:A.sous, intens:r.intens, quand:A.quand, alertes:A.alertes.slice()},
+        effort:A.effort, parle:A.parle, couleur:r.couleur, action:r.action, lendemain:null, niveauAvant:avant, niveauApres:apres}
+    };
+    this.db.seances.push(L);
+    C.sorties = C.sorties||[];
+    C.sorties.push({id:L.id, date:R.date, niveau:R.niveau, lieu:R.lieu, min, couleur:r.couleur, zone:A.zone, intens:r.intens, lendemain:null, niveauAvant:avant, niveauApres:apres});
+    if(C.sorties.length>60) C.sorties = C.sorties.slice(-60);
+    const changed = apres!==avant;
+    C.niveau = apres;
+    if(changed){ C.vertsDeSuite = 0; C.facilesDeSuite = 0; C.orangesDeSuite = 0; }
+    else { C.vertsDeSuite = r.verts; C.facilesDeSuite = r.faciles; C.orangesDeSuite = r.oranges; }
+    if(A.vitesse && r.sugVit) C.tapis.course = Math.round((C.tapis.course+0.5)*10)/10;
+    C.enCours = null;
+    this._ca = null;
+    saveDBOrWarn(this.db);
+    Sheets.close('course-after-overlay');
+    if(nav.stack[nav.stack.length-1]==='view-course-run') nav.back();
+    this.courseRender(); this.courseRenderCard();
+    toast(changed ? 'Sortie enregistrée · niveau '+apres : 'Sortie enregistrée');
+  },
+
+  /* ---------- suivi du lendemain ---------- */
+  courseLendemain(id, rep){
+    const C = this.courseState(); if(!C) return;
+    const s = (C.sorties||[]).find(x=>x.id===id); if(!s) return;
+    s.lendemain = rep;
+    const L = (this.db.seances||[]).find(x=>x.id===id);
+    if(L && L.course) L.course.lendemain = rep;
+    if(rep!=='plus' && s.couleur==='vert'){
+      s.couleur = 'orange'; if(L && L.course) L.course.couleur = 'orange';
+      if(C.niveau===s.niveauApres && s.niveauApres>s.niveauAvant) C.niveau = s.niveauAvant;
+      C.vertsDeSuite = 0; C.facilesDeSuite = 0;
+      toast('Douleur encore présente : on répète le niveau '+C.niveau);
+    } else if(rep==='pire'){
+      toast('Douleur pire : repos conseillé quelques jours, consulte si ça persiste');
+    }
+    saveDBOrWarn(this.db);
+    this.courseRender(); this.courseRenderCard();
+  }
+});
+// La carte Sport affiche le niveau courant : on l'actualise a chaque rendu de l'ecran Sport.
+(function(){
+  const _rs = app.renderSport;
+  app.renderSport = function(){ _rs.apply(this, arguments); try{ this.courseRenderCard(); }catch(e){} };
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState==='visible'){
+      const C = app.courseState && app.courseState();
+      if(C && C.enCours && C.enCours.fin==null && app._courseInt){ app._courseWakeLock(true); app._courseTick(); }
+    }
+  });
+})();
+
 
 document.addEventListener('DOMContentLoaded', ()=>{
   app.db = loadDB();
