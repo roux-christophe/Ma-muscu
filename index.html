@@ -1440,6 +1440,19 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
 .ex-duo .express-card .ex-txt b{ font-size:16px; }
 .ex-duo .express-card .ex-txt small{ font-size:12.5px; line-height:1.3; }
 .sheet-mode #course-setup-body, .sheet-mode #course-after-body{ flex:1 1 auto; min-height:0; max-height:none; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+/* Sport : boutons compacts + check-in compact */
+.ex-duo{ gap:8px; margin:0 0 14px; }
+.ex-duo .express-card{ gap:8px; padding:11px 12px; border-radius:16px; }
+.ex-duo .express-card .ex-ic{ width:34px; height:34px; border-radius:11px; }
+.ex-duo .express-card .ex-ic svg{ width:19px; height:19px; }
+.ex-duo .express-card .ex-txt{ gap:1px; }
+.ex-duo .express-card .ex-txt b{ font-size:15px; line-height:1.2; }
+.ex-duo .express-card .ex-txt small{ font-size:12px; line-height:1.25; }
+#sport-checkin .checkin-card{ padding:10px 14px; margin-bottom:10px; border-radius:16px; }
+#sport-checkin .checkin-card > div{ gap:10px; }
+#sport-checkin .checkin-card > div > div:first-child{ font-size:20px !important; }
+#sport-checkin .checkin-card [style*="font-weight:800"]{ font-size:15px; line-height:1.2; }
+#sport-checkin .checkin-card .small-note{ font-size:12px; line-height:1.3; margin-top:1px !important; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 </style>
 </head>
 <body>
@@ -2326,7 +2339,7 @@ RECIPES.push(...[{"id": "sp-wrap-poulet-yaourt-citron", "nom": "Wrap poulet, cru
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261106130000';
+const APP_BUILD_VERSION = '20261106140000';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -5513,7 +5526,7 @@ const app = {
           <div style="font-size:22px;">🙋</div>
           <div style="flex:1;">
             <div style="font-weight:800;">Comment tu te sens aujourd'hui ?</div>
-            <div class="small-note" style="margin:2px 0 0;">Check-in rapide (10 secondes) pour adapter ta séance</div>
+            <div class="small-note" style="margin:2px 0 0;">Check-in de 10 s pour adapter ta séance</div>
           </div>
           <div class="chev">›</div>
         </div>
