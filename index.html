@@ -1434,7 +1434,11 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
 .cr-speed{ text-align:center; font-size:22px; font-weight:800; margin-top:12px; min-height:28px; }
 .cr-speed span{ color:var(--text-dim); font-weight:700; }
 .cr-next.soon{ border-color:var(--accent); }
-#course-card{ margin-top:-6px; }
+.ex-duo{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:2px 0 18px; }
+.ex-duo .express-card{ flex-direction:column; align-items:flex-start; justify-content:flex-start; gap:10px; margin:0; padding:14px; min-width:0; }
+.ex-duo .express-card .ex-txt{ flex:none; width:100%; }
+.ex-duo .express-card .ex-txt b{ font-size:16px; }
+.ex-duo .express-card .ex-txt small{ font-size:12.5px; line-height:1.3; }
 .sheet-mode #course-setup-body, .sheet-mode #course-after-body{ flex:1 1 auto; min-height:0; max-height:none; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 </style>
 </head>
@@ -1480,16 +1484,16 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
     <div class="topbar"><h1>Sport</h1></div>
     <div class="quickstats" id="sport-quickstats"></div>
     <div id="sport-checkin"></div>
+    <div class="ex-duo">
     <button type="button" class="express-card" onclick="app.openExpress()">
       <span class="ex-ic"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.2 2.5 4.6 13.4a.7.7 0 0 0 .55 1.13H10l-1.1 7.2a.55.55 0 0 0 .98.42l8.5-11a.7.7 0 0 0-.55-1.13H13l1.2-7.1a.55.55 0 0 0-1-.43Z"/></svg></span>
-      <span class="ex-txt"><b>Séance express</b><small>Une durée, des muscles : l’appli compose ta séance</small></span>
-      <span class="chev">›</span>
+      <span class="ex-txt"><b>Séance express</b><small>L’appli compose ta séance</small></span>
     </button>
     <button type="button" class="express-card" id="course-card" onclick="app.courseOpen()">
       <span class="ex-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="15" cy="4.5" r="1.8"/><path d="M4.5 21l3.2-6.2 3.3 1.2 2-4.4-3.2-2.8-4.3 3"/><path d="M12.5 11.8l3 2.2 4-1"/><path d="M10.8 8.2l3 .6 2.2 2.2"/></svg></span>
-      <span class="ex-txt"><b>Course à pied</b><small id="course-card-sub">Reprise progressive, de quelques minutes à 1 h</small></span>
-      <span class="chev">›</span>
+      <span class="ex-txt"><b>Course à pied</b><small id="course-card-sub">Reprise progressive</small></span>
     </button>
+    </div>
     <div class="section-title">Programmes</div>
     <div class="tiles-row" id="sport-programs"></div>
     <div class="list-row" style="cursor:pointer;" onclick="nav.push('view-programmes'); app.renderProgrammesVisibilite(); app.renderProgrammesPerso();">
@@ -2322,7 +2326,7 @@ RECIPES.push(...[{"id": "sp-wrap-poulet-yaourt-citron", "nom": "Wrap poulet, cru
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261106120000';
+const APP_BUILD_VERSION = '20261106130000';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -10735,7 +10739,7 @@ Object.assign(app, {
   courseRenderCard(){
     const el = document.getElementById('course-card-sub'); if(!el) return;
     const C = this.courseState();
-    el.textContent = C ? ('Niveau '+C.niveau+' / '+COURSE_MAX+' · '+courseLevelTitle(C.niveau)) : 'Reprise progressive, de quelques minutes à 1 h';
+    el.textContent = C ? ('Niveau '+C.niveau+' / '+COURSE_MAX) : 'Reprise progressive';
   },
   courseOpen(){
     nav.push('view-course');
