@@ -1460,6 +1460,7 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
 .nutri-duo .express-card .ex-ic svg{ width:19px; height:19px; }
 .nutri-duo .express-card .ex-txt b{ font-size:15px; line-height:1.2; }
 .nutri-duo .express-card .ex-txt small{ font-size:12px; line-height:1.25; }
+.etat-chip{ font:inherit; font-size:12px; font-weight:700; padding:2px 8px; border-radius:999px; border:1px solid var(--accent); background:color-mix(in srgb, var(--accent) 14%, transparent); color:var(--accent); cursor:pointer; margin-left:2px; }
 .sheet-mode #ff-body{ flex:1 1 auto; min-height:0; max-height:none; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 </style>
 </head>
@@ -1970,12 +1971,13 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
       <div class="section-title" style="margin-top:0;">Total du plat entier</div>
       <div class="stat-grid" id="plat-totaux"></div>
       <p class="small-note" id="plat-estim" style="margin:12px 0 0;font-weight:700;"></p>
-      <p class="small-note" style="margin:4px 0 0;">Pas besoin de peser le plat : les ingrédients <b>crus</b> sont convertis automatiquement en poids cuit (pâtes ≈ ×2,2, riz ≈ ×2,5, viande ≈ ×0,75…). Quand tu le manges, tu indiques seulement les grammes de ton assiette.</p>
-      <p class="small-note" style="margin:4px 0 0;"><b>Eau :</b> si tu égouttes (pâtes, lentilles…), ne l’ajoute pas : l’eau absorbée est déjà comptée dans le « cru → cuit ». Si tu manges le liquide (soupe, dahl, risotto), ajoute « Eau du robinet » avec seulement l’eau en plus de celle absorbée.</p>
+      <p class="small-note" style="margin:4px 0 0;">Pas besoin de peser le plat : les ingrédients <b>crus</b> sont convertis automatiquement en poids cuit (pâtes ≈ ×2,2, riz ≈ ×2,5, légumineuses sèches ≈ ×2,4 ; viande ≈ ×0,9 car les jus restent dans le plat). Quand tu le manges, tu indiques seulement les grammes de ton assiette.</p>
+      <p class="small-note" style="margin:4px 0 0;"><b>Eau :</b> si tu as ajouté de l’eau dans la casserole (ex. 1 L pour des lentilles), ajoute « Eau du robinet » avec cette quantité. L’appli retire l’eau absorbée par les lentilles, pâtes ou riz crus, puis considère qu’environ 40 % du reste s’évapore ; le reste est la sauce. Si tu as égoutté, n’ajoute que l’eau restée dans le plat.</p>
       <p class="small-note" id="plat-ratio" style="margin:6px 0 0;font-weight:700;"></p>
       <div class="field" style="margin-top:14px;"><label>Nombre de parts (optionnel)</label><input type="number" inputmode="numeric" id="plat-parts" placeholder="Ex : 6" onfocus="this.select()"></div>
       <p class="small-note" style="margin:6px 0 0;">Si tu partages le plat en parts égales, tu pourras ensuite choisir « 1 part », « 2 parts »… sans te peser.</p>
-      <div class="field" style="margin-top:14px;"><label>Poids du plat fini, si tu l’as pesé (g)</label><input type="number" inputmode="numeric" id="plat-poids" placeholder="" onfocus="this.select()" oninput="app.renderPlatRatio()"></div>
+      <div class="field" style="margin-top:14px;"><label>Poids réel du plat ou total servi, si tu le connais (g)</label><input type="number" inputmode="numeric" id="plat-poids" placeholder="" onfocus="this.select()" oninput="app.renderPlatRatio()"></div>
+      <p class="small-note" style="margin:6px 0 0;">Astuce, c’est la méthode la plus fiable : pèse tes assiettes servies. Si le plat t’a fait 4 assiettes de 350 g, saisis 1400.</p>
     </div>
 
     <button class="btn btn-primary" id="plat-save-btn" style="margin-top:14px;" onclick="app.savePlatPerso()">Enregistrer le plat</button>
@@ -2397,7 +2399,7 @@ RECIPES.push(...[{"id": "sp-wrap-poulet-yaourt-citron", "nom": "Wrap poulet, cru
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261111120000';
+const APP_BUILD_VERSION = '20261111160000';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -9693,6 +9695,7 @@ const app = {
         this._platBuilder.ingredients.push({
           nom: p.product_name || 'Produit scanné',
           per100g: {cal:product100g.cal||0, prot:product100g.prot||0, gluc:product100g.gluc||0, lip:product100g.lip||0},
+          cats: (Array.isArray(p.categories_tags) ? p.categories_tags.slice(0,20).join(' ') : ''),
           quantite: 100,
         });
         this.renderPlatBuilder();
@@ -11325,28 +11328,67 @@ Object.assign(app, {
 const _platLegacyFill = app.addAlimentFromPlatPerso;
 const _platLegacyChips = app.renderPortionChips;
 const _platLegacyBuilder = app.renderPlatBuilder;
-// Rendement de cuisson : poids cuit / poids cru. Detecte par le nom de l'aliment
-// ("..., cru/crue/crus/crues") ; un aliment deja cuit ou pret a manger vaut x1.
-// Valeurs moyennes usuelles (pates ~x2,2, riz ~x2,5, viande ~x0,75...) : estimation
-// a quelques % pres, suffisante pour ramener des grammes mange en ratio du plat.
-function cookYield(nom){
-  const n = String(nom||'').toLowerCase();
-  if(!/\b(cru|crue|crus|crues)\b/.test(n)) return 1;
-  if(/pâtes|spaghetti|tagliatelle|macaroni|penne|fusilli|coquillette|vermicelle|nouille|lasagne/.test(n)) return 2.2;
-  if(/\briz\b/.test(n)) return 2.5;
-  if(/semoule|couscous|boulgour|bulgur|\bblé\b/.test(n)) return 2.3;
-  if(/quinoa|millet|sarrasin|amarante|épeautre|orge/.test(n)) return 2.7;
-  if(/haricot vert|haricots verts/.test(n)) return 0.9;
-  if(/lentille|pois chiche|haricot|fève|pois cassé|flageolet/.test(n)) return 2.4;
-  if(/épinard|champignon|oseille/.test(n)) return 0.6;
-  if(/viande|bœuf|boeuf|porc|veau|agneau|poulet|dinde|canard|lapin|steak|haché|saucisse|lardon|jambon|bacon|volaille/.test(n)) return 0.75;
-  if(/poisson|saumon|cabillaud|thon|colin|merlu|truite|crevette|moule|lieu|dorade|bar\b/.test(n)) return 0.85;
-  if(/courgette|aubergine|poivron|oignon|tomate|poireau|chou|brocoli|\bail\b|blette|endive|fenouil/.test(n)) return 0.85;
-  if(/œuf|oeuf/.test(n)) return 0.9;
+const _platLegacyRecalc = app.recalcFromQuantite;
+// ---- Rendement de cuisson (poids cuit / poids cru) ----
+// Plat mijote / gratine : les jus de viande et de legumes RESTENT dans le plat (seule l'evaporation
+// compte : viande ~x0,9, pas x0,75 comme a la poele). Valeurs moyennes usuelles : pates ~x2,2, riz
+// ~x2,5... estimation a quelques % pres, suffisante pour ramener des grammes manges en ratio du plat.
+// Coefficient par TYPE d'aliment, a appliquer quand l'aliment est cru / sec.
+function yieldForType(t){
+  if(/pâtes|pates|spaghetti|tagliatelle|macaroni|penne|fusilli|coquillette|vermicelle|nouille|lasagne/.test(t)) return 2.2;
+  if(/\briz\b/.test(t)) return 2.5;
+  if(/semoule|couscous|boulgour|bulgur|\bblé\b/.test(t)) return 2.3;
+  if(/quinoa|millet|sarrasin|amarante|épeautre|orge/.test(t)) return 2.7;
+  if(/haricot vert|haricots verts/.test(t)) return 0.95;
+  if(/lentille|pois chiche|haricot|fève|pois cassé|flageolet/.test(t)) return 2.4;
+  if(/épinard|champignon|oseille/.test(t)) return 0.8;
+  if(/viande|bœuf|boeuf|porc|veau|agneau|poulet|dinde|canard|lapin|steak|haché|saucisse|lardon|bacon|volaille|merguez|chipolata|escalope/.test(t)) return 0.9;
+  if(/poisson|saumon|cabillaud|thon|colin|merlu|truite|crevette|moule|lieu|dorade|bar\b/.test(t)) return 0.95;
+  if(/courgette|aubergine|poivron|oignon|tomate|poireau|chou|brocoli|\bail\b|blette|endive|fenouil/.test(t)) return 0.95;
+  if(/œuf|oeuf/.test(t)) return 0.95;
   return 1;
 }
+const _COOKED_WORDS = /cuit|cuite|cuits|cuites|précuit|precuit|cuisiné|cuisine|micro-?ondes?|express|conserve|boîte|boite|appertis|grillé|grille|rôti|roti|poêlé|braisé|bouilli|vapeur/;
+const _DRY_STARCH = /pâtes|pates|spaghetti|tagliatelle|macaroni|penne|fusilli|coquillette|vermicelle|nouille|\briz\b|semoule|couscous|boulgour|bulgur|quinoa|millet|sarrasin|épeautre|orge|lentille|pois chiche|pois cassé|flageolet|haricot|fève/;
+const _MEAT_RAW_SOLD = /lardon|saucisse|merguez|chipolata|steak|haché|hache|escalope|filet de (poulet|dinde|porc)|viande|côte|cote|bacon/;
+const _MEAT_NOT_RAW = /knack|strasbourg|francfort|saucisson|chorizo|jambon|blanc de poulet|tranche|sec\b|séché|seche|végétal|vegetal|vegan|végé/;
+// Etat de l'ingredient : true si cru / sec (donc a convertir en poids cuit).
+// Ordre : choix manuel > "cru" dans le nom > produit sec (feculent/legumineuse a forte densite
+// energetique, typique des produits scannes) > viande vendue a cuire (lardons, saucisses fraiches...).
+function ingEstCru(ing){
+  if(ing.etat==='cru') return true;
+  if(ing.etat==='cuit') return false;
+  const n = String(ing.nom||'').toLowerCase();
+  const txt = n+' '+String(ing.cats||'').toLowerCase().replace(/en:|fr:/g,' ').replace(/-/g,' ');
+  if(/\b(cru|crue|crus|crues)\b/.test(n) || /à cuire|a cuire/.test(n)) return true;
+  if(_COOKED_WORDS.test(txt)) return false;
+  const kcal = ing.per100g && Number(ing.per100g.cal);
+  if(_DRY_STARCH.test(txt) && (/dried|dehydrated|dry\b/.test(txt) || (kcal && kcal>=250))) return true;
+  if(_MEAT_RAW_SOLD.test(n) && !_MEAT_NOT_RAW.test(n)) return true;
+  return false;
+}
+// Rendement applique a un ingredient (1 si deja cuit / pret a manger).
+function ingYield(ing){
+  if(!ingEstCru(ing)) return 1;
+  return yieldForType((String(ing.nom||'')+' '+String(ing.cats||'')).toLowerCase().replace(/en:|fr:/g,' ').replace(/-/g,' '));
+}
+// Eau ajoutee en ingredient (eau du robinet, minerale...) : compte dans le poids du plat, mais
+// l'eau ABSORBEE par les ingredients crus (lentilles, pates, riz... deja convertis en poids cuit
+// par cookYield) est deduite pour ne pas la compter deux fois.
+function isEauIngredient(nom){
+  return /^eau(?! de vie| de coco| aromatis| gazeuse aromatis| tonique| vitamin)/i.test(String(nom||'').trim());
+}
 function platPoidsEstime(ings){
-  return (ings||[]).reduce((a,i)=>a+(Number(i.quantite)||0)*cookYield(i.nom),0);
+  let w = 0, eau = 0, absorbee = 0;
+  (ings||[]).forEach(i=>{
+    const q = Number(i.quantite)||0;
+    if(isEauIngredient(i.nom)){ eau += q; return; }
+    const y = ingYield(i);
+    w += q*y;
+    if(y>1) absorbee += q*(y-1);
+  });
+  // Eau non absorbee : une partie s'evapore pendant la cuisson (hypothese : 40 %), le reste fait la sauce.
+  return w + Math.max(0, eau - absorbee) * 0.6;
 }
 // Poids total d'un plat : poids saisi a la main, sinon estimation depuis les ingredients.
 function platPoids(p){
@@ -11483,7 +11525,7 @@ Object.assign(app,{
       const ings = (p.ingredients||[]).map(i=>{
         let per = i.per100g || null;
         if(!per){ const f = foodDbByName(i.nom); if(f) per = {cal:f.kcal||0, prot:f.prot||0, gluc:f.gluc||0, lip:f.lip||0}; }
-        return {nom:i.nom, quantite:i.quantite||0, per100g:per};
+        return {nom:i.nom, quantite:i.quantite||0, per100g:per, etat:i.etat, cats:i.cats};
       });
       const known = ings.filter(i=>i.per100g), unk = ings.filter(i=>!i.per100g);
       if(unk.length){
@@ -11520,7 +11562,7 @@ Object.assign(app,{
       nom,
       cal: Math.round(t.cal), prot: Math.round(t.prot*10)/10, gluc: Math.round(t.gluc*10)/10, lip: Math.round(t.lip*10)/10,
       portion: ings.length+' ingrédient'+(ings.length>1?'s':''),
-      ingredients: ings.map(i=>({nom:i.nom, quantite:i.quantite, per100g:i.per100g})),
+      ingredients: ings.map(i=>({nom:i.nom, quantite:i.quantite, per100g:i.per100g, etat:i.etat||undefined, cats:i.cats||undefined})),
     };
     const somme = platPoidsEstime(ings);
     const saisi = parseFloat(document.getElementById('plat-poids').value)||0;
@@ -11542,7 +11584,7 @@ Object.assign(app,{
     if(!p || !this._nutriAdd) return;
     const W = platPoids(p);
     if(!(W>0)) return _platLegacyFill.call(this, platId);
-    this._nutriAdd.product100g = { cal:p.cal/W*100, prot:(p.prot||0)/W*100, gluc:(p.gluc||0)/W*100, lip:(p.lip||0)/W*100, portionG:null, platW:W, platParts:p.parts||null };
+    this._nutriAdd.product100g = { cal:p.cal/W*100, prot:(p.prot||0)/W*100, gluc:(p.gluc||0)/W*100, lip:(p.lip||0)/W*100, portionG:null, platW:W, platParts:p.parts||null, platManuel:!!p.poidsManuel };
     document.getElementById('nutri-add-nom').value = p.nom;
     document.getElementById('nutri-db-search').value = '';
     document.getElementById('nutri-db-results').innerHTML = '';
@@ -11550,7 +11592,8 @@ Object.assign(app,{
     document.getElementById('nutri-db-online-zone').style.display = 'none';
     document.getElementById('nutri-add-quantite-wrap').style.display = 'block';
     document.getElementById('nutri-add-quantite').value = Math.round(W);
-    document.getElementById('nutri-add-hint').textContent = "Le plat entier pèse ≈ "+Math.round(W)+" g : indique les grammes que tu as mangés, les calories et macros se calculent seuls.";
+    this._nutriAdd.platHint = "Le plat entier pèse ≈ "+Math.round(W)+" g"+(p.poidsManuel?"":" (estimé)")+" : indique les grammes que tu as mangés, les calories et macros se calculent seuls.";
+    document.getElementById('nutri-add-hint').textContent = this._nutriAdd.platHint;
     this.recalcFromQuantite();
   },
   // Pastilles de portion pour un plat : entier, moitie, tiers, quart.
@@ -11564,9 +11607,33 @@ Object.assign(app,{
     const opts = N ? [['Entier',1],['1 part',1/N],['2 parts',2/N],['½ part',1/(2*N)]] : [['Entier',1],['½',1/2],['⅓',1/3],['¼',1/4]];
     box.innerHTML = opts.map(([l,f])=>{ const g=Math.round(W*f); return `<button type="button" class="pchip${q===g?' on':''}" onclick="app.setPortionG(${g})">${l} · ${g} g</button>`; }).join('');
   },
+  // Apres chaque recalcul : si le poids du plat est ESTIME (pas pese), on affiche la fourchette
+  // de calories correspondant a +/-15 % sur ce poids. Pas de fourchette si la quantite est un
+  // nombre entier (ou demi) de parts : dans ce cas le resultat est exact.
+  recalcFromQuantite(){
+    _platLegacyRecalc.call(this);
+    const ctx = this._nutriAdd, p = ctx && ctx.product100g;
+    if(!p || !p.platW || !ctx.platHint) return;
+    const hint = document.getElementById('nutri-add-hint');
+    const q = parseFloat(document.getElementById('nutri-add-quantite').value);
+    const cal = parseFloat(document.getElementById('nutri-add-cal').value);
+    let txt = ctx.platHint;
+    if(!p.platManuel && q>0 && cal>0){
+      const nb = p.platParts ? q/(p.platW/p.platParts) : 0;
+      const exact = p.platParts && Math.abs(nb*2-Math.round(nb*2))<0.02;
+      const entier = Math.abs(q-p.platW)<1;
+      if(!exact && !entier) txt += " Fourchette : "+Math.round(cal/1.15)+" à "+Math.round(cal/0.85)+" kcal (le poids du plat est estimé à ±15 %).";
+    }
+    if(hint) hint.textContent = txt;
+  },
   renderPlatBuilder(){
     _platLegacyBuilder.call(this);
     this.renderPlatRatio();
+  },
+  togglePlatEtat(idx){
+    const ing = this._platBuilder && this._platBuilder.ingredients[idx]; if(!ing) return;
+    ing.etat = ingEstCru(ing) ? 'cuit' : 'cru';
+    this.renderPlatBuilder();
   },
   renderPlatRatio(){
     const ings = (this._platBuilder && this._platBuilder.ingredients) || [];
@@ -11577,8 +11644,17 @@ Object.assign(app,{
     const rows = document.querySelectorAll('#plat-ing-liste .list-row');
     ings.forEach((ing,idx)=>{
       const t2 = rows[idx] && rows[idx].querySelector('.t2'); if(!t2) return;
-      const y = cookYield(ing.nom), q = Number(ing.quantite)||0;
-      t2.textContent = Math.round(ing.per100g.cal*q/100)+' kcal' + (y!==1 ? ' · cru ≈ '+Math.round(q*y)+' g cuit' : '');
+      const q = Number(ing.quantite)||0;
+      let extra = '';
+      if(isEauIngredient(ing.nom)) extra = ' · eau absorbée déduite, 40 % du reste évaporé';
+      else {
+        const raw = ingEstCru(ing);
+        const type = yieldForType((String(ing.nom||'')+' '+String(ing.cats||'')).toLowerCase().replace(/en:|fr:/g,' ').replace(/-/g,' '));
+        if(type!==1){
+          extra = ' · <button type="button" class="etat-chip" onclick="app.togglePlatEtat('+idx+')">'+(raw ? 'cru ≈ '+Math.round(q*type)+' g cuit' : 'déjà cuit')+' ⇄</button>';
+        }
+      }
+      t2.innerHTML = Math.round(ing.per100g.cal*q/100)+' kcal'+extra;
     });
     const manuel = parseFloat(inp.value)>0;
     const W = manuel ? parseFloat(inp.value) : est;
