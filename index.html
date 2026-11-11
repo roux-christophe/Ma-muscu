@@ -114,7 +114,7 @@
    restent en vert par defaut. */
 #view-nutrition, #view-nutri-profil, #view-nutri-add, #view-nutri-stats, #view-nutri-corps,
 #view-recettes, #view-aide-repas, #view-recette-detail, #view-liste-courses, #view-copier-repas,
-#view-nutri-plat-new,
+#view-nutri-plat-new, #view-nutri-favoris, #view-nutri-plats,
 .ctx-nutrition{
   --accent: var(--accent-nutrition);
   --accent-2: var(--accent-nutrition-2);
@@ -1453,6 +1453,14 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
 #sport-checkin .checkin-card > div > div:first-child{ font-size:20px !important; }
 #sport-checkin .checkin-card [style*="font-weight:800"]{ font-size:15px; line-height:1.2; }
 #sport-checkin .checkin-card .small-note{ font-size:12px; line-height:1.3; margin-top:1px !important; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+/* Nutrition : boutons Favoris / Mes plats */
+.nutri-duo{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0 0 14px; }
+.nutri-duo .express-card{ margin:0; padding:10px 12px; gap:10px; border-radius:16px; min-width:0; width:auto; }
+.nutri-duo .express-card .ex-ic{ width:34px; height:34px; border-radius:11px; }
+.nutri-duo .express-card .ex-ic svg{ width:19px; height:19px; }
+.nutri-duo .express-card .ex-txt b{ font-size:15px; line-height:1.2; }
+.nutri-duo .express-card .ex-txt small{ font-size:12px; line-height:1.25; }
+.sheet-mode #ff-body{ flex:1 1 auto; min-height:0; max-height:none; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 </style>
 </head>
 <body>
@@ -1881,10 +1889,15 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
       <div id="nutri-db-online-results"></div>
     </div>
     <div id="nutri-repastypes-zone"></div>
-    <div id="nutri-favoris-zone"></div>
-    <div id="nutri-plats-perso-zone"></div>
-    <div class="row" style="margin:0 0 12px;">
-      <button class="btn btn-secondary" onclick="app.openPlatBuilder()">🍽️ Créer un plat (plusieurs ingrédients)</button>
+    <div class="nutri-duo">
+      <button type="button" class="express-card" onclick="app.openFavoris()">
+        <span class="ex-ic"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4L2.8 9.5l6.4-.8z"/></svg></span>
+        <span class="ex-txt"><b>Favoris</b><small id="nutri-duo-fav-n"></small></span>
+      </button>
+      <button type="button" class="express-card" onclick="app.openPlats()">
+        <span class="ex-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v8M4 3v5a3 3 0 0 0 6 0V3M7 11v10"/><path d="M17 21V3c-2.5 1.5-3.5 4-3.5 7 0 2 1.2 3 3.5 3"/></svg></span>
+        <span class="ex-txt"><b>Mes plats</b><small id="nutri-duo-plats-n"></small></span>
+      </button>
     </div>
     <div class="section-title">Détails</div>
     <div class="card">
@@ -1926,7 +1939,7 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
        aliment", mais AJOUTE plusieurs ingredients a une liste au lieu d'en
        remplir un seul formulaire. -->
   <div class="view" id="view-nutri-plat-new">
-    <div class="topbar"><button class="back" onclick="nav.back()">‹</button><h1>Créer un plat</h1></div>
+    <div class="topbar"><button class="back" onclick="nav.back()">‹</button><h1 id="plat-title">Créer un plat</h1></div>
     <div class="field"><label>Nom du plat</label><input type="text" id="plat-nom" placeholder="Ex : Lasagnes maison"></div>
 
     <div class="section-title">Ajouter un ingrédient</div>
@@ -1954,11 +1967,34 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
     <p class="small-note" id="plat-ing-empty">Aucun ingrédient ajouté pour l'instant.</p>
 
     <div class="card" style="margin-top:4px;" id="plat-totaux-card">
-      <div class="section-title" style="margin-top:0;">Total du plat</div>
+      <div class="section-title" style="margin-top:0;">Total du plat entier</div>
       <div class="stat-grid" id="plat-totaux"></div>
+      <p class="small-note" id="plat-estim" style="margin:12px 0 0;font-weight:700;"></p>
+      <p class="small-note" style="margin:4px 0 0;">Pas besoin de peser le plat : les ingrédients <b>crus</b> sont convertis automatiquement en poids cuit (pâtes ≈ ×2,2, riz ≈ ×2,5, viande ≈ ×0,75…). Quand tu le manges, tu indiques seulement les grammes de ton assiette.</p>
+      <p class="small-note" style="margin:4px 0 0;"><b>Eau :</b> si tu égouttes (pâtes, lentilles…), ne l’ajoute pas : l’eau absorbée est déjà comptée dans le « cru → cuit ». Si tu manges le liquide (soupe, dahl, risotto), ajoute « Eau du robinet » avec seulement l’eau en plus de celle absorbée.</p>
+      <p class="small-note" id="plat-ratio" style="margin:6px 0 0;font-weight:700;"></p>
+      <div class="field" style="margin-top:14px;"><label>Nombre de parts (optionnel)</label><input type="number" inputmode="numeric" id="plat-parts" placeholder="Ex : 6" onfocus="this.select()"></div>
+      <p class="small-note" style="margin:6px 0 0;">Si tu partages le plat en parts égales, tu pourras ensuite choisir « 1 part », « 2 parts »… sans te peser.</p>
+      <div class="field" style="margin-top:14px;"><label>Poids du plat fini, si tu l’as pesé (g)</label><input type="number" inputmode="numeric" id="plat-poids" placeholder="" onfocus="this.select()" oninput="app.renderPlatRatio()"></div>
     </div>
 
-    <button class="btn btn-primary" style="margin-top:14px;" onclick="app.savePlatPerso()">Enregistrer le plat</button>
+    <button class="btn btn-primary" id="plat-save-btn" style="margin-top:14px;" onclick="app.savePlatPerso()">Enregistrer le plat</button>
+  </div>
+
+  <!-- ===== NUTRITION : PAGE FAVORIS ===== -->
+  <div class="view" id="view-nutri-favoris">
+    <div class="topbar"><button class="back" onclick="nav.back()">‹</button><h1>Favoris</h1></div>
+    <p class="small-note" style="margin-top:0;">Touche un favori pour l’ajouter à ton repas, ou utilise les boutons pour le modifier ou le retirer.</p>
+    <button type="button" class="btn btn-primary" style="margin-bottom:14px;" onclick="app.openFavForm()">＋ Ajouter un favori</button>
+    <div id="nutri-fav-liste"></div>
+  </div>
+
+  <!-- ===== NUTRITION : PAGE MES PLATS ===== -->
+  <div class="view" id="view-nutri-plats">
+    <div class="topbar"><button class="back" onclick="nav.back()">‹</button><h1>Mes plats</h1></div>
+    <p class="small-note" style="margin-top:0;">Un plat = plusieurs ingrédients cumulés, retrouvé tel quel les fois suivantes. Touche-le pour l’ajouter à ton repas.</p>
+    <button type="button" class="btn btn-primary" style="margin-bottom:14px;" onclick="app.openPlatBuilder()">＋ Créer un plat</button>
+    <div id="nutri-plats-liste"></div>
   </div>
 
   <!-- ===== NUTRITION : COPIER UN REPAS (restes de la veille etc.) ===== -->
@@ -2251,6 +2287,28 @@ body.focus-session .rest-timer-bar{ bottom:calc(84px + env(safe-area-inset-botto
   </div>
 </div>
 
+<div class="confirm-overlay ctx-nutrition" id="fav-form-overlay">
+  <div class="confirm-box">
+    <div class="sheet-head"><div class="sh-title" id="ff-title">Nouveau favori</div><button class="icon-btn" title="Fermer" onclick="app.closeFavForm()">✕</button></div>
+    <div id="ff-body">
+      <div class="field"><label>Chercher dans la base d’aliments</label><input type="text" id="ff-search" placeholder="Ex : poulet, riz cuit…" oninput="app.ffSearch()"></div>
+      <div id="ff-res"></div>
+      <div class="field" style="margin-top:4px;"><label>Nom</label><input type="text" id="ff-nom" placeholder="Ex : Poulet grillé"></div>
+      <div class="field" id="ff-qte-wrap" style="display:none;margin-top:12px;"><label>Quantité (g ou ml)</label><input type="number" inputmode="numeric" id="ff-qte" onfocus="this.select()" oninput="app.ffRecalc()"></div>
+      <div class="row" style="margin-top:12px;">
+        <div class="field"><label>Calories (kcal)</label><input type="number" inputmode="numeric" id="ff-cal" placeholder="0" oninput="app.ffManual()"></div>
+        <div class="field"><label>Protéines (g)</label><input type="number" inputmode="decimal" id="ff-prot" placeholder="0" oninput="app.ffManual()"></div>
+      </div>
+      <div class="row" style="margin-top:12px;">
+        <div class="field"><label>Glucides (g)</label><input type="number" inputmode="decimal" id="ff-gluc" placeholder="0" oninput="app.ffManual()"></div>
+        <div class="field"><label>Lipides (g)</label><input type="number" inputmode="decimal" id="ff-lip" placeholder="0" oninput="app.ffManual()"></div>
+      </div>
+      <div class="field" style="margin-top:12px;"><label>Portion (optionnel)</label><input type="text" id="ff-portion" placeholder="Ex : 1 assiette"></div>
+      <button type="button" class="btn btn-primary" style="margin-top:14px;" onclick="app.ffSave()">Enregistrer le favori</button>
+    </div>
+  </div>
+</div>
+
 <div class="confirm-overlay" id="checkin-overlay">
   <div class="confirm-box">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
@@ -2339,7 +2397,7 @@ RECIPES.push(...[{"id": "sp-wrap-poulet-yaourt-citron", "nom": "Wrap poulet, cru
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261106140000';
+const APP_BUILD_VERSION = '20261111120000';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -2385,7 +2443,7 @@ const SVG_BOOKMARK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
 const SVG_SWAP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>';
 
 const NAV_SPORT_FAMILY = ['view-sport','view-course','view-course-run','view-programmes','view-seance-list','view-log','view-exo-history','view-history','view-stats','view-profil-quiz'];
-const NAV_NUTRITION_FAMILY = ['view-nutrition','view-recettes','view-aide-repas','view-recette-detail','view-liste-courses','view-nutri-corps','view-nutri-stats','view-nutri-profil','view-nutri-add','view-copier-repas','view-nutri-plat-new'];
+const NAV_NUTRITION_FAMILY = ['view-nutrition','view-recettes','view-aide-repas','view-recette-detail','view-liste-courses','view-nutri-corps','view-nutri-stats','view-nutri-profil','view-nutri-add','view-copier-repas','view-nutri-plat-new','view-nutri-favoris','view-nutri-plats'];
 function seanceIconSVG(isCardio){ return isCardio ? SVG_HEART : SVG_DUMBBELL; }
 
 /* ===================== POSTERS ANATOMIQUES DES EXERCICES =====================
@@ -4732,6 +4790,7 @@ const Sheets = (function(){
     'pesee-overlay':'closePeseeSheet',
     'mens-overlay':'closeMensSheet',
     'express-overlay':'closeExpress',
+    'fav-form-overlay':'closeFavForm',
     'course-setup-overlay':'courseCloseSetup',
     'course-after-overlay':'courseCloseAfter',
     'imgcheck-overlay':'closeImgCheck',
@@ -11259,6 +11318,277 @@ Object.assign(app, {
     }
   });
 })();
+
+
+
+/* ===== NUTRITION : pages Favoris et Mes plats ===== */
+const _platLegacyFill = app.addAlimentFromPlatPerso;
+const _platLegacyChips = app.renderPortionChips;
+const _platLegacyBuilder = app.renderPlatBuilder;
+// Rendement de cuisson : poids cuit / poids cru. Detecte par le nom de l'aliment
+// ("..., cru/crue/crus/crues") ; un aliment deja cuit ou pret a manger vaut x1.
+// Valeurs moyennes usuelles (pates ~x2,2, riz ~x2,5, viande ~x0,75...) : estimation
+// a quelques % pres, suffisante pour ramener des grammes mange en ratio du plat.
+function cookYield(nom){
+  const n = String(nom||'').toLowerCase();
+  if(!/\b(cru|crue|crus|crues)\b/.test(n)) return 1;
+  if(/pâtes|spaghetti|tagliatelle|macaroni|penne|fusilli|coquillette|vermicelle|nouille|lasagne/.test(n)) return 2.2;
+  if(/\briz\b/.test(n)) return 2.5;
+  if(/semoule|couscous|boulgour|bulgur|\bblé\b/.test(n)) return 2.3;
+  if(/quinoa|millet|sarrasin|amarante|épeautre|orge/.test(n)) return 2.7;
+  if(/haricot vert|haricots verts/.test(n)) return 0.9;
+  if(/lentille|pois chiche|haricot|fève|pois cassé|flageolet/.test(n)) return 2.4;
+  if(/épinard|champignon|oseille/.test(n)) return 0.6;
+  if(/viande|bœuf|boeuf|porc|veau|agneau|poulet|dinde|canard|lapin|steak|haché|saucisse|lardon|jambon|bacon|volaille/.test(n)) return 0.75;
+  if(/poisson|saumon|cabillaud|thon|colin|merlu|truite|crevette|moule|lieu|dorade|bar\b/.test(n)) return 0.85;
+  if(/courgette|aubergine|poivron|oignon|tomate|poireau|chou|brocoli|\bail\b|blette|endive|fenouil/.test(n)) return 0.85;
+  if(/œuf|oeuf/.test(n)) return 0.9;
+  return 1;
+}
+function platPoidsEstime(ings){
+  return (ings||[]).reduce((a,i)=>a+(Number(i.quantite)||0)*cookYield(i.nom),0);
+}
+// Poids total d'un plat : poids saisi a la main, sinon estimation depuis les ingredients.
+function platPoids(p){
+  if(p && p.poidsManuel && p.poidsTotal>0) return p.poidsTotal;
+  if(p && p.ingredients && p.ingredients.length) return platPoidsEstime(p.ingredients);
+  return (p && p.poidsTotal>0) ? p.poidsTotal : 0;
+}
+Object.assign(app,{
+  _fmtMacros(o){
+    return Math.round(o.cal)||0 ? ((Math.round(o.cal)||0)+' kcal · P '+(Math.round((o.prot||0)*10)/10)+' · G '+(Math.round((o.gluc||0)*10)/10)+' · L '+(Math.round((o.lip||0)*10)/10)) : ((Math.round(o.cal)||0)+' kcal');
+  },
+  /* --- boutons de l'ecran d'ajout + liste de la page Favoris --- */
+  renderFavoris(){
+    const favs = this.db.alimentsFavoris || [];
+    const n = favs.length;
+    const c = document.getElementById('nutri-duo-fav-n'); if(c) c.textContent = n ? n+' aliment'+(n>1?'s':'') : 'Aucun pour l’instant';
+    const wrap = document.getElementById('nutri-fav-liste'); if(!wrap) return;
+    if(!n){ wrap.innerHTML = '<p class="empty">Aucun favori pour l’instant.<br>Ajoutes-en un avec le bouton ci-dessus, ou coche « Enregistrer comme aliment favori » en ajoutant un aliment.</p>'; return; }
+    const sorted = favs.slice().sort((a,b)=>String(a.nom).localeCompare(String(b.nom),'fr'));
+    wrap.innerHTML = '<div class="card">'+sorted.map(f=>`
+      <div class="list-row">
+        <div class="meta" style="cursor:pointer" onclick="app.useFavori('${f.id}')"><div class="t1">${escapeHtml(f.nom)}</div><div class="t2">${this._fmtMacros(f)}${f.portion?' · '+escapeHtml(f.portion):''}</div></div>
+        <button class="icon-btn" title="Modifier ce favori" onclick="event.stopPropagation(); app.openFavForm('${f.id}')">${SVG_EDIT}</button>
+        <button class="icon-btn" title="Retirer ce favori" onclick="event.stopPropagation(); app.deleteFavori('${f.id}')">${SVG_TRASH}</button>
+      </div>`).join('')+'</div>';
+  },
+  renderPlatsPerso(){
+    const plats = this.db.platsPerso || [];
+    const n = plats.length;
+    const c = document.getElementById('nutri-duo-plats-n'); if(c) c.textContent = n ? n+' plat'+(n>1?'s':'') : 'Aucun pour l’instant';
+    const wrap = document.getElementById('nutri-plats-liste'); if(!wrap) return;
+    if(!n){ wrap.innerHTML = '<p class="empty">Aucun plat pour l’instant.<br>Crée-en un en cumulant plusieurs ingrédients (ex : lasagnes maison).</p>'; return; }
+    const sorted = plats.slice().sort((a,b)=>String(a.nom).localeCompare(String(b.nom),'fr'));
+    wrap.innerHTML = '<div class="card">'+sorted.map(p=>{
+      const k = (p.ingredients||[]).length;
+      return `
+      <div class="list-row">
+        <div class="meta" style="cursor:pointer" onclick="app.usePlat('${p.id}')"><div class="t1">${escapeHtml(p.nom)}</div><div class="t2">${platPoids(p)>0 ? Math.round(platPoids(p))+' g · '+Math.round(p.cal/platPoids(p)*100)+' kcal/100 g' : Math.round(p.cal)+' kcal'} · ${k} ingrédient${k>1?'s':''}</div></div>
+        <button class="icon-btn" title="Modifier ce plat" onclick="event.stopPropagation(); app.openPlatBuilder('${p.id}')">${SVG_EDIT}</button>
+        <button class="icon-btn" title="Supprimer ce plat" onclick="event.stopPropagation(); app.deletePlatPerso('${p.id}')">${SVG_TRASH}</button>
+      </div>`;}).join('')+'</div>';
+  },
+  openFavoris(){ this.renderFavoris(); nav.push('view-nutri-favoris'); },
+  openPlats(){ this.renderPlatsPerso(); nav.push('view-nutri-plats'); },
+  useFavori(id){ nav.back(); this.addAlimentFromFavori(id); },
+  usePlat(id){ nav.back(); this.addAlimentFromPlatPerso(id); },
+
+  /* --- feuille Ajouter / Modifier un favori --- */
+  openFavForm(id){
+    const f = id ? (this.db.alimentsFavoris||[]).find(x=>x.id===id) : null;
+    if(id && !f) return;
+    this._ff = { id: f ? f.id : null, product100g: f && f.product100g ? JSON.parse(JSON.stringify(f.product100g)) : null };
+    document.getElementById('ff-title').textContent = f ? 'Modifier le favori' : 'Nouveau favori';
+    document.getElementById('ff-search').value = '';
+    document.getElementById('ff-res').innerHTML = '';
+    const set=(k,v)=>{ document.getElementById('ff-'+k).value = (v==null?'':v); };
+    set('nom', f?f.nom:''); set('cal', f?f.cal:''); set('prot', f?f.prot:''); set('gluc', f?f.gluc:''); set('lip', f?f.lip:''); set('portion', f?f.portion:'');
+    const wrap = document.getElementById('ff-qte-wrap');
+    if(this._ff.product100g){ wrap.style.display='block'; set('qte', f.quantite!=null?f.quantite:''); } else { wrap.style.display='none'; set('qte',''); }
+    Sheets.open('fav-form-overlay');
+  },
+  closeFavForm(){ Sheets.close('fav-form-overlay'); this._ff = null; },
+  ffSearch(){
+    const q = document.getElementById('ff-search').value.trim();
+    const wrap = document.getElementById('ff-res');
+    if(q.length < 2){ wrap.innerHTML=''; return; }
+    const norm = s => s.toLowerCase().replace(/œ/g,'oe').replace(/æ/g,'ae').normalize('NFKD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+    const nq = norm(q), qt = nq.split(' ').filter(Boolean), sc = [];
+    FOOD_DB.forEach(f=>{ const nf = norm(f.nom); if(!qt.every(t=>nf.includes(t))) return; sc.push({f, s: nf.startsWith(nq)?0:(nf.split(' ')[0]===qt[0]?1:2), len:nf.length}); });
+    sc.sort((a,b)=>a.s-b.s||a.len-b.len);
+    const m = sc.slice(0,6).map(x=>x.f); this._ffMatches = m;
+    if(!m.length){ wrap.innerHTML='<p class="empty" style="margin:6px 0;padding:8px;">Aucun résultat. Saisis les valeurs à la main ci-dessous.</p>'; return; }
+    wrap.innerHTML = '<div class="card" style="margin-bottom:12px;">'+m.map((f,i)=>{
+      const sub = f.portionG ? Math.round(f.kcal*f.portionG/100)+' kcal (portion '+f.portionG+' g)' : Math.round(f.kcal)+' kcal /100g';
+      return `<div class="list-row" style="cursor:pointer" onclick="app.ffPick(${i})">${foodCategoryIconHTML(f.nom)}<div class="meta"><div class="t1">${escapeHtml(f.nom)}</div><div class="t2">${sub}</div></div><div class="chev">›</div></div>`;
+    }).join('')+'</div>';
+  },
+  ffPick(i){
+    const f = this._ffMatches && this._ffMatches[i]; if(!f || !this._ff) return;
+    this._ff.product100g = { cal:f.kcal, prot:f.prot, gluc:f.gluc, lip:f.lip, portionG:f.portionG||null,
+      sucres:f.sucres!=null?f.sucres:null, agSatures:f.agSatures!=null?f.agSatures:null, fibres:f.fibres!=null?f.fibres:null, sel:f.sel!=null?f.sel:null };
+    document.getElementById('ff-nom').value = f.nom;
+    document.getElementById('ff-qte-wrap').style.display = 'block';
+    const pr = foodPortionPresets(f.nom, null);
+    document.getElementById('ff-qte').value = f.portionG ? f.portionG : (pr.length ? (pr[1]||pr[0]).g : 100);
+    document.getElementById('ff-search').value = '';
+    document.getElementById('ff-res').innerHTML = '';
+    this.ffRecalc();
+  },
+  ffRecalc(){
+    const F = this._ff; if(!F || !F.product100g) return;
+    const q = parseFloat(document.getElementById('ff-qte').value); if(!q) return;
+    const p = F.product100g, f = q/100, sx = ffSauceData(p.sauces);
+    document.getElementById('ff-cal').value = Math.round((p.cal||0)*f + sx.cal);
+    document.getElementById('ff-prot').value = Math.round(((p.prot||0)*f + sx.prot)*10)/10;
+    document.getElementById('ff-gluc').value = Math.round(((p.gluc||0)*f + sx.gluc)*10)/10;
+    document.getElementById('ff-lip').value = Math.round(((p.lip||0)*f + sx.lip)*10)/10;
+    document.getElementById('ff-portion').value = q+' g' + (sx.n ? ' + sauce '+sx.parts.join(', ') : '');
+  },
+  // Saisie manuelle des macros : on abandonne le lien avec la base /100 g
+  // (sinon la reprise du favori ecraserait les valeurs corrigees a la main).
+  ffManual(){
+    if(this._ff && this._ff.product100g){ this._ff.product100g = null; document.getElementById('ff-qte-wrap').style.display = 'none'; }
+  },
+  ffSave(){
+    const F = this._ff; if(!F) return;
+    const nom = document.getElementById('ff-nom').value.trim();
+    if(!nom){ toast('Indique un nom'); return; }
+    const num = k => parseFloat(document.getElementById('ff-'+k).value)||0;
+    const product100g = F.product100g || null;
+    const quantite = product100g ? (parseFloat(document.getElementById('ff-qte').value)||null) : null;
+    const rec = { nom, cal:num('cal'), prot:num('prot'), gluc:num('gluc'), lip:num('lip'), portion:document.getElementById('ff-portion').value.trim(), product100g, quantite };
+    const prev = this.db.alimentsFavoris;
+    if(F.id){
+      this.db.alimentsFavoris = prev.map(x=>x.id===F.id ? Object.assign({}, x, rec) : x);
+    } else {
+      this.db.alimentsFavoris = prev.concat([Object.assign({id:uid()}, rec)]);
+    }
+    if(!saveDBOrWarn(this.db)){ this.db.alimentsFavoris = prev; return; }
+    toast(F.id ? 'Favori modifié ✅' : 'Favori ajouté ✅');
+    this.closeFavForm();
+    this.renderFavoris();
+  },
+
+  /* --- plats : creation + modification --- */
+  openPlatBuilder(editId){
+    const p = editId ? (this.db.platsPerso||[]).find(x=>x.id===editId) : null;
+    this._platBuilder = { ingredients: [], editId: p ? p.id : null };
+    if(p){
+      // Ingredients : valeurs /100 g memorisees si presentes, sinon retrouvees dans la
+      // base ; pour les anciens plats dont un ingredient n'est plus retrouvable, on
+      // repartit le reste du total du plat (les totaux restent identiques tant qu'on
+      // ne change rien).
+      const ings = (p.ingredients||[]).map(i=>{
+        let per = i.per100g || null;
+        if(!per){ const f = foodDbByName(i.nom); if(f) per = {cal:f.kcal||0, prot:f.prot||0, gluc:f.gluc||0, lip:f.lip||0}; }
+        return {nom:i.nom, quantite:i.quantite||0, per100g:per};
+      });
+      const known = ings.filter(i=>i.per100g), unk = ings.filter(i=>!i.per100g);
+      if(unk.length){
+        const sum = {cal:0,prot:0,gluc:0,lip:0};
+        known.forEach(i=>{ const f=i.quantite/100; ['cal','prot','gluc','lip'].forEach(k=>sum[k]+=i.per100g[k]*f); });
+        const qtot = unk.reduce((a,i)=>a+i.quantite,0);
+        unk.forEach(i=>{
+          const share = qtot>0 ? i.quantite/qtot : 1/unk.length;
+          const per = {}; ['cal','prot','gluc','lip'].forEach(k=>{ const rest=Math.max(0,(p[k]||0)-sum[k])*share; per[k] = i.quantite>0 ? rest/i.quantite*100 : 0; });
+          i.per100g = per;
+        });
+      }
+      this._platBuilder.ingredients = ings;
+    }
+    document.getElementById('plat-nom').value = p ? p.nom : '';
+    document.getElementById('plat-poids').value = (p && p.poidsManuel && p.poidsTotal>0) ? p.poidsTotal : '';
+    document.getElementById('plat-parts').value = (p && p.parts) ? p.parts : '';
+    document.getElementById('plat-ing-search').value = '';
+    document.getElementById('plat-ing-results').innerHTML = '';
+    document.getElementById('plat-scan-zone').style.display = 'none';
+    document.getElementById('plat-title').textContent = p ? 'Modifier le plat' : 'Créer un plat';
+    document.getElementById('plat-save-btn').textContent = p ? 'Enregistrer les modifications' : 'Enregistrer le plat';
+    this.renderPlatBuilder();
+    nav.push('view-nutri-plat-new');
+  },
+  savePlatPerso(){
+    const nom = document.getElementById('plat-nom').value.trim();
+    const ings = (this._platBuilder && this._platBuilder.ingredients) || [];
+    if(!nom){ toast('Indique un nom pour ce plat'); return; }
+    if(!ings.length){ toast('Ajoute au moins un ingrédient'); return; }
+    const t = this.platBuilderTotals();
+    const editId = this._platBuilder.editId;
+    const rec = {
+      nom,
+      cal: Math.round(t.cal), prot: Math.round(t.prot*10)/10, gluc: Math.round(t.gluc*10)/10, lip: Math.round(t.lip*10)/10,
+      portion: ings.length+' ingrédient'+(ings.length>1?'s':''),
+      ingredients: ings.map(i=>({nom:i.nom, quantite:i.quantite, per100g:i.per100g})),
+    };
+    const somme = platPoidsEstime(ings);
+    const saisi = parseFloat(document.getElementById('plat-poids').value)||0;
+    rec.poidsManuel = saisi>0;
+    rec.poidsTotal = Math.round((saisi>0 ? saisi : somme)*10)/10;
+    const parts = parseInt(document.getElementById('plat-parts').value,10);
+    rec.parts = parts>1 ? parts : null;
+    const prev = this.db.platsPerso;
+    this.db.platsPerso = editId ? prev.map(x=>x.id===editId ? Object.assign({}, x, rec) : x) : prev.concat([Object.assign({id:uid()}, rec)]);
+    if(!saveDBOrWarn(this.db)){ this.db.platsPerso = prev; return; }
+    toast(editId ? 'Plat modifié ✅' : 'Plat enregistré ✅');
+    this.renderPlatsPerso();
+    nav.back();
+  },
+
+  /* --- reprise d'un plat : on saisit les grammes manges, le ratio se fait seul --- */
+  addAlimentFromPlatPerso(platId){
+    const p = this.db.platsPerso.find(x=>x.id===platId);
+    if(!p || !this._nutriAdd) return;
+    const W = platPoids(p);
+    if(!(W>0)) return _platLegacyFill.call(this, platId);
+    this._nutriAdd.product100g = { cal:p.cal/W*100, prot:(p.prot||0)/W*100, gluc:(p.gluc||0)/W*100, lip:(p.lip||0)/W*100, portionG:null, platW:W, platParts:p.parts||null };
+    document.getElementById('nutri-add-nom').value = p.nom;
+    document.getElementById('nutri-db-search').value = '';
+    document.getElementById('nutri-db-results').innerHTML = '';
+    document.getElementById('nutri-db-online-results').innerHTML = '';
+    document.getElementById('nutri-db-online-zone').style.display = 'none';
+    document.getElementById('nutri-add-quantite-wrap').style.display = 'block';
+    document.getElementById('nutri-add-quantite').value = Math.round(W);
+    document.getElementById('nutri-add-hint').textContent = "Le plat entier pèse ≈ "+Math.round(W)+" g : indique les grammes que tu as mangés, les calories et macros se calculent seuls.";
+    this.recalcFromQuantite();
+  },
+  // Pastilles de portion pour un plat : entier, moitie, tiers, quart.
+  renderPortionChips(){
+    _platLegacyChips.call(this);
+    const ctx = this._nutriAdd, W = ctx && ctx.product100g && ctx.product100g.platW;
+    const box = document.getElementById('nutri-add-chips');
+    if(!W || !box) return;
+    const q = parseFloat(document.getElementById('nutri-add-quantite').value);
+    const N = ctx.product100g.platParts;
+    const opts = N ? [['Entier',1],['1 part',1/N],['2 parts',2/N],['½ part',1/(2*N)]] : [['Entier',1],['½',1/2],['⅓',1/3],['¼',1/4]];
+    box.innerHTML = opts.map(([l,f])=>{ const g=Math.round(W*f); return `<button type="button" class="pchip${q===g?' on':''}" onclick="app.setPortionG(${g})">${l} · ${g} g</button>`; }).join('');
+  },
+  renderPlatBuilder(){
+    _platLegacyBuilder.call(this);
+    this.renderPlatRatio();
+  },
+  renderPlatRatio(){
+    const ings = (this._platBuilder && this._platBuilder.ingredients) || [];
+    const est = platPoidsEstime(ings);
+    const inp = document.getElementById('plat-poids'); if(!inp) return;
+    inp.placeholder = est>0 ? 'Estimé : '+Math.round(est) : '';
+    // indication cru -> cuit sous chaque ingredient converti
+    const rows = document.querySelectorAll('#plat-ing-liste .list-row');
+    ings.forEach((ing,idx)=>{
+      const t2 = rows[idx] && rows[idx].querySelector('.t2'); if(!t2) return;
+      const y = cookYield(ing.nom), q = Number(ing.quantite)||0;
+      t2.textContent = Math.round(ing.per100g.cal*q/100)+' kcal' + (y!==1 ? ' · cru ≈ '+Math.round(q*y)+' g cuit' : '');
+    });
+    const manuel = parseFloat(inp.value)>0;
+    const W = manuel ? parseFloat(inp.value) : est;
+    const t = this.platBuilderTotals();
+    const note = document.getElementById('plat-estim'); 
+    if(note) note.textContent = W>0 ? ('Poids du plat fini : ≈ '+Math.round(W)+' g'+(manuel?' (saisi)':' (estimé depuis tes ingrédients)')) : '';
+    const el = document.getElementById('plat-ratio'); if(!el) return;
+    el.textContent = W>0 ? ('Soit '+Math.round(t.cal/W*100)+' kcal pour 100 g de plat · P '+(Math.round(t.prot/W*1000)/10)+' · G '+(Math.round(t.gluc/W*1000)/10)+' · L '+(Math.round(t.lip/W*1000)/10)+' g') : '';
+  }
+});
 
 
 document.addEventListener('DOMContentLoaded', ()=>{
