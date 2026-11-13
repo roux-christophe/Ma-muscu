@@ -1595,6 +1595,10 @@ button.v2-chip::after{content:"";position:absolute;inset:-6px 0;}
 input[type="checkbox"]:not(.switch input){-webkit-appearance:none;appearance:none;flex:none;width:24px;height:24px;margin:0;border-radius:8px;border:1.5px solid var(--border-strong);background:var(--input-bg);display:inline-grid;place-content:center;cursor:pointer;vertical-align:middle;}
 input[type="checkbox"]:not(.switch input):checked{background:var(--grad);border-color:transparent;}
 input[type="checkbox"]:not(.switch input):checked::after{content:"✓";font-size:15px;font-weight:900;line-height:1;color:var(--accent-contrast);}
+/* cardio : bouton d'enregistrement dans la page quand le clavier est ouvert */
+#v2-inline-save{display:none;margin:16px 0 8px;}
+body.kb-open #view-log.active #v2-inline-save{display:block;}
+.v2-hint{display:block;font-size:12px;color:var(--text-faint);margin-top:5px;line-height:1.35;}
 
 </style>
 </head>
@@ -2533,7 +2537,7 @@ RECIPES.push(...[{"id": "sp-wrap-poulet-yaourt-citron", "nom": "Wrap poulet, cru
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261113120000';
+const APP_BUILD_VERSION = '20261113170000';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -12557,6 +12561,66 @@ Object.assign(app, {
     v2frText(document.getElementById('view-home'));
   },
 });
+
+/* ===================== V2c — CARDIO : chrono utile + bouton toujours accessible (nov. 2026) =====================
+   1. Le chrono de seance remplit la duree du cardio si elle est laissee vide
+      (comme en musculation). Une duree saisie a la main reste prioritaire.
+   2. Pendant la saisie (clavier ouvert), la barre du bas est masquee : un
+      bouton "Enregistrer la seance" est alors affiche en fin de page, et
+      toucher en dehors d'un champ referme le clavier (iOS ne le fait pas seul). */
+function v2ChronoMin(L){
+  if(!L || !L.startedAt || L.endedAt || L.date!==todayISO()) return null;
+  const ms = Date.now()-L.startedAt;
+  return (ms>0 && ms<=4*3600*1000) ? Math.max(1, Math.round(ms/60000)) : null;
+}
+const _v2Cardio = { saveSeance: app.saveSeance, renderLog: app.renderLog };
+Object.assign(app, {
+  saveSeance(){
+    const L = this.currentLog;
+    let auto = null;
+    if(L && L.cardio && L.cardio.blocs && L.cardio.blocs.length===1 && L.cardio.blocs[0].duree==null && !this._editingProgramSeance){
+      auto = v2ChronoMin(L);
+      if(auto!=null) L.cardio.blocs[0].duree = auto;
+    }
+    _v2Cardio.saveSeance.call(this);
+    if(auto==null) return;
+    if(document.getElementById('view-log').classList.contains('active')) L.cardio.blocs[0].duree = null;   // enregistrement non abouti
+    else toast('Séance enregistrée ✅ · '+auto+' min (chrono)');
+  },
+  renderLog(){
+    _v2Cardio.renderLog.call(this);
+    const L = this.currentLog, body = document.getElementById('log-body');
+    if(!L || !body || this._editingProgramSeance) return;
+    // Indice dans le champ duree du cardio : il sera rempli par le chrono si laisse vide.
+    if(L.cardio && L.cardio.blocs && L.cardio.blocs.length===1 && v2ChronoMin(L)!=null){
+      const inp = body.querySelector('input[onchange*="updateCardio(\'cardio\',0,\'duree\'"]');
+      if(inp && !inp.value){
+        inp.placeholder = 'Auto (chrono)';
+        const f = inp.closest('.field');
+        if(f && !f.querySelector('.v2-hint')) f.insertAdjacentHTML('beforeend', '<small class="v2-hint">Laisse vide : le chrono la remplit à l’enregistrement.</small>');
+      }
+    }
+    // Bouton d'enregistrement dans la page, visible seulement clavier ouvert.
+    if(!document.getElementById('v2-inline-save')){
+      const b = document.createElement('button');
+      b.type = 'button'; b.id = 'v2-inline-save'; b.className = 'btn btn-primary';
+      b.textContent = 'Enregistrer la séance';
+      b.onclick = ()=>{ if(document.activeElement && document.activeElement.blur) document.activeElement.blur(); app.saveSeance(); };
+      body.parentNode.insertBefore(b, body.nextSibling);
+    }
+    const saveBtn = document.getElementById('log-save-btn');
+    document.getElementById('v2-inline-save').textContent = saveBtn ? saveBtn.textContent : 'Enregistrer la séance';
+  },
+});
+// Toucher en dehors d'un champ referme le clavier dans la vue Seance (iOS ne
+// retire pas le focus seul, la barre du bas restait donc masquee).
+document.addEventListener('touchstart', e=>{
+  const a = document.activeElement;
+  if(!a || !/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || !a.closest('#view-log')) return;
+  const t = e.target;
+  if(t && t.closest && (t.closest('input,textarea,select,label') || t===a)) return;
+  a.blur();
+}, {passive:true});
 
 document.addEventListener('DOMContentLoaded', ()=>{
   app.db = loadDB();
