@@ -2637,7 +2637,7 @@ RECIPES.push(...[{"id": "sp-wrap-poulet-yaourt-citron", "nom": "Wrap poulet, cru
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261120120000';
+const APP_BUILD_VERSION = '20261120200000';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -13274,6 +13274,53 @@ Object.assign(app, {
     }
   },
 });
+
+/* ---------- Rythme de l'objectif : sans signe moins (clavier iPhone) ----------
+   Le clavier decimal de l'iPhone n'a pas de touche « - » : saisir 0,5 donnait
+   une PRISE de 0,5 kg/semaine (budget + 550 kcal). Le sens est maintenant deduit
+   du poids cible : cible sous le poids actuel = perte, au-dessus = prise. */
+function v2iSens(){
+  const s = app.db.settings, o = Number(s.objectifPoids), p = latestPoidsKg();
+  if(!o || !p) return 0;
+  return o < p - 0.05 ? -1 : (o > p + 0.05 ? 1 : 0);
+}
+const _v2I = { setNutriField: app.setNutriField, renderNutriProfil: app.renderNutriProfil };
+Object.assign(app, {
+  setNutriField(field, value){
+    if(field==='objectifRythme' && value!==''){
+      const v = Math.abs(Number(String(value).replace(',', '.')));
+      const sens = v2iSens();
+      value = isFinite(v) ? String(sens===0 ? Number(String(value).replace(',', '.')) : sens*v) : '';
+    }
+    _v2I.setNutriField.call(this, field, value);
+    if(field==='objectifPoids'){
+      const s = this.db.settings, sens = v2iSens();
+      if(sens && s.objectifRythme!=null && s.objectifRythme!=='' && Math.sign(Number(s.objectifRythme))!==sens){
+        s.objectifRythme = sens*Math.abs(Number(s.objectifRythme)); saveDBOrWarn(this.db); this.renderNutriProfil();
+      }
+    }
+    if(field==='objectifRythme' || field==='objectifPoids') this.v2iLibelle();
+  },
+  renderNutriProfil(){
+    _v2I.renderNutriProfil.call(this);
+    this.v2iLibelle();
+  },
+  v2iLibelle(){
+    const inp = document.getElementById('nutri-objectif-rythme'); if(!inp) return;
+    const s = this.db.settings, sens = v2iSens(), lab = inp.closest('.field') && inp.closest('.field').querySelector('label');
+    if(lab) lab.textContent = sens<0 ? 'Perte par semaine (kg)' : (sens>0 ? 'Prise par semaine (kg)' : 'Rythme (kg/semaine)');
+    inp.placeholder = sens ? '0,5' : '-0.5';
+    if(sens && s.objectifRythme!=null && s.objectifRythme!=='') inp.value = Math.abs(Number(s.objectifRythme));
+  },
+});
+// Rythme deja saisi dans le mauvais sens (ex. 0,5 positif avec un poids cible plus bas) : remis dans le sens du poids cible.
+document.addEventListener('DOMContentLoaded', ()=> setTimeout(()=>{ try{
+  const s = app.db && app.db.settings, sens = v2iSens();
+  if(s && sens && s.objectifRythme!=null && s.objectifRythme!=='' && Number(s.objectifRythme)!==0 && Math.sign(Number(s.objectifRythme))!==sens){
+    s.objectifRythme = sens*Math.abs(Number(s.objectifRythme)); saveDBOrWarn(app.db);
+    const v = document.querySelector('.view.active'); if(v && /nutri/.test(v.id) && app.renderNutrition) app.renderNutrition();
+  }
+}catch(e){} }, 0));
 
 /* ===================== V2h — message de fin de seance (nov. 2026) =====================
    Pop-up a l'enregistrement d'une seance du jour : resume + phrase de motivation
