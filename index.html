@@ -1676,6 +1676,28 @@ body.kb-open #view-log.active #v2-inline-save{display:block;}
 .v2f-express>div{width:38%;max-width:150px;}
 .ex-thumb .ph.v2f-fb{padding:0;overflow:hidden;width:100%;height:100%;}
 .ex-thumb .ph.v2f-fb .v2f-sil{width:100%;height:100%;}
+/* V2g : chrono non demarre */
+.log-chrono.v2g-off{padding:0;background:none;border:0;}
+.v2g-start{border:0;font:inherit;font-size:14.5px;font-weight:800;min-height:38px;padding:0 14px;border-radius:999px;background:var(--grad);color:var(--accent-contrast);}
+
+/* V2h : pop-up fin de seance */
+#v2h-bravo{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .2s;}
+#v2h-bravo.open{opacity:1;pointer-events:auto;}
+.v2h-card{position:relative;width:100%;max-width:340px;background:var(--card);border:1px solid var(--card-border);border-radius:26px;padding:26px 20px 18px;text-align:center;box-shadow:0 20px 60px -20px rgba(0,0,0,.6);transform:scale(.9);transition:transform .25s cubic-bezier(.2,1.4,.4,1);}
+#v2h-bravo.open .v2h-card{transform:scale(1);}
+.v2h-ic{font-size:52px;line-height:1;margin-bottom:8px;}
+.v2h-t{font-size:22px;font-weight:800;}
+.v2h-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:12px;}
+.v2h-chips span{font-size:13px;font-weight:700;padding:6px 10px;border-radius:99px;background:var(--chip-bg);color:var(--chip-text);}
+.v2h-msg{font-size:16px;line-height:1.45;color:var(--text-dim);margin:16px 0 18px;}
+.v2h-msg b{display:block;margin-top:6px;font-size:21px;color:var(--text);}
+.v2h-burst{position:absolute;left:50%;top:52px;width:0;height:0;pointer-events:none;}
+.v2h-burst i{position:absolute;width:6px;height:12px;border-radius:3px;background:var(--accent);opacity:0;transform:rotate(var(--a)) translateY(0);}
+#v2h-bravo.open .v2h-burst i{animation:v2hb .8s ease-out var(--d) forwards;}
+.v2h-burst i:nth-child(3n){background:#FF9F43;}
+.v2h-burst i:nth-child(3n+1){background:var(--accent-2);}
+@keyframes v2hb{0%{opacity:1;transform:rotate(var(--a)) translateY(0);}100%{opacity:0;transform:rotate(var(--a)) translateY(-90px);}}
+@media (prefers-reduced-motion: reduce){#v2h-bravo.open .v2h-burst i{animation:none;}.v2h-card{transition:none;}}
 
 </style>
 </head>
@@ -2615,7 +2637,7 @@ RECIPES.push(...[{"id": "sp-wrap-poulet-yaourt-citron", "nom": "Wrap poulet, cru
    (horodatage de build). Sert uniquement a detecter automatiquement quand
    une nouvelle version est en ligne (cf. checkForUpdate ci-dessous) —
    n'a aucun rapport avec les donnees utilisateur. */
-const APP_BUILD_VERSION = '20261117120000';
+const APP_BUILD_VERSION = '20261120120000';
 
 /* ===================== ICONES (SVG, presentation uniquement) =====================
    Remplace les emojis fonctionnels (❤️/🏋️/🗑️...) par des icones ligne
@@ -6000,7 +6022,7 @@ const app = {
         <span class="chip chip-ex">${exoCount!=null ? exoCount+' exercice'+(exoCount>1?'s':'') : 'Cardio'}</span>
         <span class="chip">${SVG_CLOCK_SM}${lastTxt}</span>
       </div>
-      <button type="button" class="cta" onclick="app.openLog('${featured.id}',${numero})">${SVG_PLAY}COMMENCER</button>
+      <button type="button" class="cta" onclick="app.v2gCommencer('${featured.id}',${numero})">${SVG_PLAY}COMMENCER</button>
     `;
   },
   // Choix explicite du programme mis en avant sur l'accueil (bascule du
@@ -13180,6 +13202,128 @@ Object.assign(app, {
       });
     }
   },
+});
+
+/* ===================== V2g — correctifs seance (nov. 2026) =====================
+   1. Clavier : apres une saisie qui redessine la seance (ex. calories de la
+      montre), le champ actif est detruit pendant qu'il a le focus : l'evenement
+      focusout n'atteint plus le document et l'appli restait en mode « clavier
+      ouvert » (barre du bas masquee -> bouton Enregistrer invisible).
+   2. Chrono : ouvrir une seance ne le lance plus. Il demarre avec le bouton
+      « Démarrer », a la premiere serie saisie, ou directement depuis le bouton
+      COMMENCER de l'accueil. On peut donc consulter la seance du soir le matin. */
+(function(){
+  const saisie = el => !!(el && el.closest && el.closest('#view-log') && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) && !/^(checkbox|radio|button|submit)$/.test(el.type||''));
+  let t;
+  const verif = ()=>{ clearTimeout(t); t = setTimeout(()=>{ if(!saisie(document.activeElement)) document.body.classList.remove('kb-open'); }, 250); };
+  document.addEventListener('change', verif, true);
+  document.addEventListener('blur', verif, true);
+  window.v2gVerifClavier = verif;
+})();
+function v2gADonnees(L){
+  if((L.exercices||[]).some(e=>(e.series||[]).some(v2SerieFaite) || (e.dropset||[]).some(v2SerieFaite))) return true;
+  return !!(L.cardio && (L.cardio.blocs||[]).some(b=>b && (b.duree!=null || b.distance!=null)));
+}
+function v2gPeutDemarrer(L, app){ return !!(L && !app._editingProgramSeance && L.date===todayISO() && !L.startedAt && !L.endedAt); }
+const _v2G = { saveSeance: app.saveSeance, openLog: app.openLog, renderLog: app.renderLog, autosaveLog: app.autosaveLog, _logChronoSetup: app._logChronoSetup };
+Object.assign(app, {
+  openLog(programmeId, seanceNumero, dateISO){
+    _v2G.openLog.call(this, programmeId, seanceNumero, dateISO);
+    const L = this.currentLog;
+    // Nouvelle seance : pas de depart automatique (consultation possible)
+    if(L && !L.isEdit && !this._v2gGo && !v2gADonnees(L)){ L.startedAt = null; this._logChronoSetup(L, false); }
+    this._v2gGo = false;
+  },
+  // Seance enregistree sans chrono : elle est terminee, plus de bouton Demarrer a la reouverture
+  saveSeance(){
+    const L = this.currentLog;
+    if(L && !this._editingProgramSeance && !L.startedAt && !L.endedAt && L.date===todayISO()) L.endedAt = Date.now();
+    return _v2G.saveSeance.call(this);
+  },
+  v2gCommencer(programmeId, seanceNumero){
+    this._v2gGo = true;
+    this.openLog(programmeId, seanceNumero);
+  },
+  v2gDemarrer(){
+    const L = this.currentLog; if(!v2gPeutDemarrer(L, this)) return;
+    L.startedAt = Date.now();
+    this._logChronoSetup(L, false);
+    if(v2gADonnees(L) || L.isEdit) _v2G.autosaveLog.call(this);
+    toast('Chrono lancé');
+  },
+  autosaveLog(){
+    const L = this.currentLog;
+    let lance = false;
+    if(v2gPeutDemarrer(L, this) && v2gADonnees(L)){ L.startedAt = Date.now(); lance = true; }
+    const r = _v2G.autosaveLog.call(this);
+    if(lance) this._logChronoSetup(L, false);
+    return r;
+  },
+  renderLog(){
+    _v2G.renderLog.call(this);
+    if(window.v2gVerifClavier) window.v2gVerifClavier();
+  },
+  _logChronoSetup(L, editingSeance){
+    _v2G._logChronoSetup.call(this, L, editingSeance);
+    const el = document.getElementById('log-chrono'); if(!el) return;
+    el.classList.toggle('v2g-off', false);
+    if(!editingSeance && v2gPeutDemarrer(L, this)){
+      clearInterval(this._chronoTimer);
+      el.hidden = false; el.classList.add('v2g-off');
+      el.innerHTML = '<button type="button" class="v2g-start" onclick="app.v2gDemarrer()">▶ Démarrer</button>';
+    }
+  },
+});
+
+/* ===================== V2h — message de fin de seance (nov. 2026) =====================
+   Pop-up a l'enregistrement d'une seance du jour : resume + phrase de motivation
+   qui se termine toujours par « Tu es un monstre, <prenom> ». */
+const V2H_PHRASES = ['Séance bouclée, rien lâché.', 'Encore une brique de posée.', 'Le plus dur, c’était d’y aller. C’est fait.', 'Ton futur toi te dit merci.', 'Pendant que d’autres hésitaient, toi tu l’as fait.', 'Régulier, c’est comme ça qu’on avance.'];
+const _v2H = { saveSeance: app.saveSeance };
+Object.assign(app, {
+  saveSeance(){
+    const L = this.currentLog;
+    const eligible = !!(L && !this._editingProgramSeance && L.date===todayISO() && !L.endedAt);
+    const r = _v2H.saveSeance.call(this);
+    const v = document.getElementById('view-log');
+    if(eligible && v && !v.classList.contains('active') && this.db.seances.some(s=>s.id===L.id)) setTimeout(()=>this.v2hBravo(L), 350);
+    return r;
+  },
+  v2hBravo(L){
+    const muscu = (L.exercices||[]).length>0;
+    const series = muscu ? L.exercices.reduce((a,e)=>a+(e.series||[]).filter(v2SerieFaite).length,0) : 0;
+    if(muscu && !series && !L.cardio) return;
+    const prog = PROGRAMS.find(p=>p.id===L.programmeId), def = prog && prog.seances.find(s=>s.numero===L.seanceNumero);
+    let vol = 0; try{ vol = def ? computeTotalPoidsSouleve(L, def) : 0; }catch(e){}
+    // Records : 1RM estime au-dessus de toutes les seances precedentes
+    let rec = 0;
+    (L.exercices||[]).forEach(e=>{
+      const v = v2E1RM(e.series); if(!v) return;
+      let best = 0; this.db.seances.forEach(s=>{ if(s.id===L.id || s.date>L.date) return; (s.exercices||[]).forEach(x=>{ if(x.exercice===e.exercice){ const b = v2E1RM(x.series); if(b>best) best = b; } }); });
+      if(best && v>best*1.001) rec++;
+    });
+    const chips = [];
+    if(L.dureeMin) chips.push(L.dureeMin+' min');
+    if(series) chips.push(series+' série'+(series>1?'s':''));
+    if(vol>0) chips.push(v2n(vol)+' kg');
+    if(L.cardio && L.cardio.blocs) { const d = L.cardio.blocs.reduce((a,b)=>a+(Number(b.duree)||0),0); if(d && !L.dureeMin) chips.push(d+' min de cardio'); }
+    const prenom = (this.db.settings.prenom||'').trim();
+    const k = String(L.id||'').split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+    const phrase = rec ? (rec>1 ? rec+' records battus aujourd’hui.' : 'Un record battu aujourd’hui.') : V2H_PHRASES[k % V2H_PHRASES.length];
+    let o = document.getElementById('v2h-bravo');
+    if(!o){ o = document.createElement('div'); o.id = 'v2h-bravo'; o.addEventListener('click', ev=>{ if(ev.target===o || ev.target.closest('[data-close]')) app.v2hFermer(); }); document.body.appendChild(o); }
+    o.innerHTML = `<div class="v2h-card" role="dialog" aria-label="Séance terminée">
+      <div class="v2h-burst" aria-hidden="true">${Array.from({length:14},(_,i)=>`<i style="--a:${i*360/14}deg;--d:${(i%3)*60}ms"></i>`).join('')}</div>
+      <div class="v2h-ic">${rec?'🏆':'🔥'}</div>
+      <div class="v2h-t">Séance terminée !</div>
+      ${chips.length?`<div class="v2h-chips">${chips.map(c=>`<span>${escapeHtml(c)}</span>`).join('')}</div>`:''}
+      <p class="v2h-msg">${escapeHtml(phrase)}<br><b>Tu es un monstre${prenom?', '+escapeHtml(prenom):''} 💪</b></p>
+      <button type="button" class="btn btn-primary" data-close>Merci !</button></div>`;
+    o.classList.add('open');
+    const tst = document.getElementById('toast'); if(tst) tst.classList.remove('show');
+    if(navigator.vibrate) try{ navigator.vibrate(30); }catch(e){}
+  },
+  v2hFermer(){ const o = document.getElementById('v2h-bravo'); if(o){ o.classList.remove('open'); setTimeout(()=>{ if(!o.classList.contains('open')) o.innerHTML=''; }, 250); } },
 });
 
 document.addEventListener('DOMContentLoaded', ()=>{
